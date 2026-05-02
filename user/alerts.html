@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETOSHA | Inserisci ALERT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../shared/db.js"></script>
+    <script src="../shared/app.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root { 
+            --primary: #2d7a4d; 
+            --accent: #ffab40; 
+            --dark-bg: #0d1e1a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --sidebar-width: 300px;
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Outfit', sans-serif; background: var(--dark-bg); color: white;
+            overflow: hidden;
+        }
+
+        .layout { display: flex; height: 100vh; width: 100vw; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 2000;
+        }
+
+        .sidebar-logo { width: 260px; margin-bottom: 30px; }
+        .sidebar-logo img { width: 100%; height: auto; display: block; }
+
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        .sidebar-menu li {
+            padding: 15px 20px;
+            margin-bottom: 8px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 600;
+            transition: 0.3s;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+        .sidebar-menu li:hover, .sidebar-menu li.active { background: var(--glass); color: var(--accent); }
+        .sidebar-menu li.active { background: rgba(255, 171, 64, 0.1); border: 1px solid rgba(255, 171, 64, 0.2); }
+
+        .logout-btn {
+            margin-top: auto;
+            background: rgba(255, 82, 82, 0.1);
+            color: #ff5252;
+            border: 1px solid rgba(255, 82, 82, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 700;
+            transition: 0.3s;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+        }
+
+        header { 
+            padding: 1rem 2rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: rgba(0,0,0,0.8); 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            z-index: 1001; 
+        }
+
+        #map {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Leaflet Overrides */
+        .leaflet-container { background: #0d1e1a; }
+        .leaflet-bar a { background: rgba(0,0,0,0.8); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        .leaflet-bar a:hover { background: var(--accent); color: black; }
+
+        .custom-marker {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+        .custom-marker img {
+            width: 44px;
+            height: 44px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+            background: rgba(0,0,0,0.4);
+            border-radius: 50%;
+            padding: 4px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .custom-marker .marker-text {
+            background: rgba(255, 255, 255, 0.95);
+            color: #000;
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 900;
+            white-space: nowrap;
+            text-transform: uppercase;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+            border: 2px solid var(--accent);
+        }
+
+        /* TOOLBAR */
+        .toolbar {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(13, 30, 26, 0.98);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 35px;
+            padding: 15px 30px;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            z-index: 3000;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.7);
+            width: auto;
+            max-width: 90vw;
+        }
+
+        .icon-selector {
+            display: flex;
+            gap: 15px;
+            background: rgba(255,255,255,0.03);
+            padding: 10px 20px;
+            border-radius: 25px;
+            max-width: 500px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) transparent;
+        }
+
+        .icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+            padding: 8px;
+            border-radius: 15px;
+            min-width: 70px;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .icon-circle {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid transparent;
+            transition: 0.3s;
+        }
+
+        .icon-item img { width: 34px; height: 34px; object-fit: contain; }
+        .icon-item span { font-size: 10px; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.5); text-align: center; max-width: 65px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        .icon-item:hover .icon-circle { transform: translateY(-3px); background: rgba(255,255,255,0.1); }
+        .icon-item.active .icon-circle { border-color: var(--accent); background: rgba(255,171,64,0.3); box-shadow: 0 0 15px rgba(255,171,64,0.4); }
+        .icon-item.active span { color: var(--accent); }
+
+        .form-group { display: flex; gap: 12px; align-items: center; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px; }
+
+        .alert-input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 20px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            width: 220px;
+            transition: 0.3s;
+        }
+        .alert-input:focus { border-color: var(--accent); background: rgba(255,255,255,0.1); }
+
+        .actions { display: flex; gap: 10px; }
+
+        .btn-action {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            flex-shrink: 0;
+        }
+        
+        .btn-cancel { background: rgba(255, 82, 82, 0.1); color: #ff5252; border: 1px solid rgba(255, 82, 82, 0.2); }
+        .btn-cancel:hover { background: #ff5252; color: #fff; transform: rotate(90deg); }
+
+        .btn-save {
+            background: var(--accent);
+            color: #000;
+            width: auto;
+            padding: 0 18px; /* Reduced padding */
+            border-radius: 25px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.5px; /* Reduced spacing */
+            font-size: 0.7rem; /* Reduced font size */
+            box-shadow: 0 5px 15px rgba(255,171,64,0.3);
+            white-space: nowrap;
+        }
+        .btn-save:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255,255,255,0.2); }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            background: #4caf50;
+            color: white;
+            padding: 18px 35px;
+            border-radius: 20px;
+            font-weight: 900;
+            z-index: 5000;
+            transform: translateX(200%);
+            transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+        .toast.show { transform: translateX(0); }
+    </style>
+</head>
+<body>
+
+    <div id="toast" class="toast"><i data-lucide="check-circle"></i> ALERT INVIATO AI RANGERS!</div>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="../shared/parks_logo_combined_white.svg" alt="PARKS">
+            </div>
+            <ul class="sidebar-menu">
+                <li onclick="window.location.href='homepage.html'"><i data-lucide="home"></i> Home</li>
+                <li onclick="window.location.href='map.html'"><i data-lucide="map"></i> Mappa Interattiva</li>
+                <li onclick="window.location.href='itineraries.html'"><i data-lucide="milestone"></i> Itinerari</li>
+                <li class="active"><i data-lucide="bell"></i> <span>Inserisci un ALERT</span></li>
+                <li onclick="window.location.href='library.html'"><i data-lucide="book-open"></i> Libreria</li>
+                <li onclick="window.location.href='library.html?view=mustsee'"><i data-lucide="star"></i> Must See</li>
+                <li onclick="window.location.href='kids_corner.html'"><i data-lucide="baby"></i> <span>Kid's Corner</span></li>
+                <li onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
+                <li onclick="window.location.href='memory2/index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
+            </ul>
+            <button class="logout-btn" onclick="logout()"><i data-lucide="log-out"></i> Logout</button>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <div style="font-size: 1.2rem; font-weight: 900; letter-spacing: 5px; color: var(--accent); text-transform: uppercase;">Mappa Segnalazioni Rangers</div>
+                <div id="gps-status" style="font-size: 11px; font-weight: 700; color: #4caf50; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="navigation"></i> POSIZIONE RILEVATA
+                </div>
+            </header>
+
+            <div id="map"></div>
+
+            <div class="toolbar">
+                <div class="icon-selector" id="alert-icons"></div>
+                
+                <div class="form-group">
+                    <input type="text" id="alert-text" class="alert-input" placeholder="TITOLO SEGNALAZIONE..." maxlength="30">
+                    <div class="actions">
+                        <button class="btn-action btn-cancel" onclick="resetAll()" title="Annulla Segnalazione"><i data-lucide="x"></i></button>
+                        <button class="btn-action btn-save" onclick="saveAlert()">INVIA ALERT AI RANGERS</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        let library = { available_icons: { alert: [] }, map_markers: [] };
+        let selectedIconIdx = -1;
+        let map, tempMarkerLayer;
+        let tempCoords = null;
+
+        function initMap() {
+            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-18.85, 16.33], 10);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+            L.control.zoom({ position: 'topright' }).addTo(map);
+            
+            tempMarkerLayer = L.layerGroup().addTo(map);
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                    tempCoords = { lat, lng };
+                    map.setView([lat, lng], 15);
+                    refreshTempMarker();
+                }, () => {
+                    document.getElementById('gps-status').style.color = '#ff5252';
+                    document.getElementById('gps-status').innerHTML = '<i data-lucide="navigation-off"></i> GPS NON DISPONIBILE';
+                    lucide.createIcons();
+                });
+            }
+
+            map.on('click', function(e) {
+                tempCoords = e.latlng;
+                refreshTempMarker();
+            });
+        }
+
+        function renderIconSelector() {
+            const container = document.getElementById('alert-icons');
+            const icons = library.available_icons.alert || [];
+            if(icons.length === 0) { container.innerHTML = '<div style="font-size:11px; opacity:0.5;">NESSUNA ICONA CARICATA</div>'; return; }
+
+            container.innerHTML = icons.map((icon, idx) => `
+                <div class="icon-item" onclick="selectIcon(${idx}, this)">
+                    <div class="icon-circle"><img src="${icon.url}"></div>
+                    <span>${icon.name || 'ALERT'}</span>
+                </div>
+            `).join('');
+        }
+
+        function selectIcon(idx, el) {
+            selectedIconIdx = idx;
+            document.querySelectorAll('.icon-item').forEach(item => item.classList.remove('active'));
+            if(el) el.classList.add('active');
+            refreshTempMarker();
+        }
+
+        function refreshTempMarker() {
+            tempMarkerLayer.clearLayers(); 
+            if(!tempCoords || selectedIconIdx === -1) return;
+
+            const iconData = library.available_icons.alert[selectedIconIdx];
+            const text = document.getElementById('alert-text').value;
+            
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="custom-marker"><img src="${iconData.url}">${text ? `<div class="marker-text">${text}</div>` : ''}</div>`,
+                iconSize: [250, 50],
+                iconAnchor: [24, 24]
+            });
+
+            L.marker([tempCoords.lat, tempCoords.lng], { icon: icon }).addTo(tempMarkerLayer);
+        }
+
+        document.getElementById('alert-text').oninput = refreshTempMarker;
+
+        function resetAll() {
+            tempCoords = null;
+            tempMarkerLayer.clearLayers();
+            document.getElementById('alert-text').value = '';
+            selectedIconIdx = -1;
+            document.querySelectorAll('.icon-item').forEach(i => i.classList.remove('active'));
+            
+            const saveBtn = document.querySelector('.btn-save');
+            saveBtn.innerHTML = 'INVIA ALERT AI RANGERS';
+            saveBtn.style.background = 'var(--accent)';
+        }
+
+        function saveAlert() {
+            if(!tempCoords) { alert("Scegli un punto sulla mappa cliccando!"); return; }
+            if(selectedIconIdx === -1) { alert("Seleziona prima un'icona di Alert!"); return; }
+            
+            const iconData = library.available_icons.alert[selectedIconIdx];
+            const text = document.getElementById('alert-text').value.toUpperCase();
+            
+            window.PARKS_APP.getSession((session) => {
+                const newMarker = {
+                    id: Date.now(),
+                    lat: tempCoords.lat, lng: tempCoords.lng,
+                    icon: iconData.url,
+                    title: text || iconData.name || "ALERT",
+                    type: 'alert',
+                    touristNumber: session ? session.tNumber : '?',
+                    isRealGeo: true,
+                    timestamp: new Date().getTime()
+                };
+
+                library.map_markers.push(newMarker);
+                
+                window.PARKS_DB.save('parks_library_v2', library, () => {
+                    const saveBtn = document.querySelector('.btn-save');
+                    const originalText = 'INVIA ALERT AI RANGERS';
+                    saveBtn.innerHTML = 'INVIATO ✔';
+                    saveBtn.style.background = '#4caf50';
+                    showToast();
+                    
+                    // Reset pulsante dopo 3 secondi per permettere nuovi invii
+                    setTimeout(() => {
+                        saveBtn.innerHTML = originalText;
+                        saveBtn.style.background = 'var(--accent)';
+                    }, 3000);
+                });
+            });
+        }
+
+        function showToast() {
+            const t = document.getElementById('toast');
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function logout() {
+            window.PARKS_APP.setSession({ loggedIn: false }, () => window.location.href = 'index.html');
+        }
+
+        window.PARKS_APP.init(() => {
+            window.PARKS_APP.getSession((session) => { if (!session || !session.loggedIn) window.location.href = 'index.html'; });
+            window.PARKS_DB.get('parks_library_v2', {}, (data) => {
+                library = data || { available_icons: { alert: [] }, map_markers: [] };
+                if(!library.available_icons) library.available_icons = { alert: [] };
+                if(!library.map_markers) library.map_markers = [];
+                initMap();
+                renderIconSelector();
+            });
+        });
+    </script>
+</body>
+</html>l>

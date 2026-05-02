@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETOSHA | Mappa Interattiva</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../shared/db.js"></script>
+    <script src="../shared/app.js"></script>
+    <style>
+        :root { 
+            --primary: #2d7a4d; 
+            --accent: #ffab40; 
+            --dark-bg: #0d1e1a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --sidebar-width: 300px;
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Outfit', sans-serif; background: var(--dark-bg); color: white;
+            overflow: hidden;
+        }
+
+        .layout { display: flex; height: 100vh; width: 100vw; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            width: 260px;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+        .sidebar-logo img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .sidebar-menu li {
+            padding: 15px 20px;
+            margin-bottom: 8px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 600;
+            transition: 0.3s;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .sidebar-menu li:hover, .sidebar-menu li.active {
+            background: var(--glass);
+            color: var(--accent);
+        }
+
+        .sidebar-menu li.active {
+            background: rgba(255, 171, 64, 0.1);
+            border: 1px solid rgba(255, 171, 64, 0.2);
+        }
+
+        .sidebar-menu li i { width: 20px; }
+
+        .logout-btn {
+            margin-top: auto;
+            background: rgba(255, 82, 82, 0.1);
+            color: #ff5252;
+            border: 1px solid rgba(255, 82, 82, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 700;
+            transition: 0.3s;
+        }
+        .logout-btn:hover { background: #ff5252; color: white; }
+
+        /* MAIN CONTENT - MAP */
+        .main-content {
+            flex-grow: 1;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header { 
+            padding: 1rem 2rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: rgba(0,0,0,0.8); 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            z-index: 50; 
+        }
+
+        .map-viewport { 
+            flex-grow: 1;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            position: relative;
+        }
+
+        .map-canvas { position: relative; width: max-content; }
+        .map-base { display: block; height: 85vh; width: auto; box-shadow: 0 0 100px rgba(0,0,0,0.8); }
+        
+        .marker { 
+            position: absolute; 
+            transform: translate(-50%, -100%); 
+            width: 45px; height: 45px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.6)); 
+        }
+        .marker:hover { transform: translate(-50%, -110%) scale(1.3); z-index: 100; }
+
+        .tooltip { 
+            position: absolute; 
+            background: white; 
+            color: black; 
+            padding: 18px; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            width: 240px; 
+            display: none; 
+            transform: translate(-50%, -140%); 
+            z-index: 2000; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6); 
+            border-bottom: 6px solid var(--accent); 
+        }
+        .tooltip::after { 
+            content: ''; 
+            position: absolute; 
+            bottom: -12px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            border-left: 12px solid transparent; 
+            border-right: 12px solid transparent; 
+            border-top: 12px solid white; 
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 80px; padding: 30px 10px; }
+            .sidebar-menu li span, .sidebar-logo, .logout-btn span { display: none; }
+            .sidebar-menu li { justify-content: center; padding: 15px; }
+            .map-base { height: 75vh; }
+        }
+
+        /* FICHE OVERLAY */
+        #fiche-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--dark-bg);
+            z-index: 5000;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .fiche-content {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .close-fiche {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 5001;
+            transition: 0.3s;
+        }
+        .close-fiche:hover { background: #ff5252; border-color: #ff5252; transform: rotate(90deg); }
+
+        .fiche-header { 
+            height: 450px; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            position: relative; 
+            background: #000; 
+            margin-bottom: 2rem; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        .fiche-header img { width: 100%; height: 100%; object-fit: contain; }
+        
+        .slide-btn { 
+            position: absolute; top:50%; transform:translateY(-50%); 
+            background: var(--accent); color: #000; border:none; 
+            width: 44px; height: 44px; cursor:pointer; border-radius:50%; 
+            z-index: 10; display: flex; align-items: center; justify-content: center; 
+            font-weight: 900; box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+        }
+
+        #fiche-stats { 
+            background: rgba(255,255,255,0.05); 
+            padding: 20px 30px; 
+            border-radius: 15px; 
+            border: 1px solid rgba(255,255,255,0.05); 
+            min-width: 300px;
+            flex-shrink: 0;
+        }
+        #stats-list { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        #stats-list p { margin: 0; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
+        #stats-list p:last-child { border-bottom: none; padding-bottom: 0; }
+        #stats-list span { text-align: right; font-weight: 600; opacity: 0.9; }
+        b, strong { font-weight: 900; color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="../shared/parks_logo_combined_white.svg" alt="PARKS">
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li onclick="window.location.href='homepage.html'">
+                    <i data-lucide="home"></i> <span>Home</span>
+                </li>
+                <li class="active" onclick="window.location.href='map.html'">
+                    <i data-lucide="map"></i> <span>Mappa Interattiva</span>
+                </li>
+                <li onclick="window.location.href='itineraries.html'">
+                    <i data-lucide="milestone"></i> <span>Itinerari</span>
+                </li>
+                <li onclick="window.location.href='alerts.html'">
+                    <i data-lucide="bell"></i> <span>Inserisci un ALERT</span>
+                </li>
+                <li onclick="window.location.href='library.html'">
+                    <i data-lucide="book-open"></i> <span>Libreria</span>
+                </li>
+                <li onclick="window.location.href='library.html?view=mustsee'">
+                    <i data-lucide="star"></i> <span>Must See</span>
+                </li>
+                <li onclick="window.location.href='kids_corner.html'">
+                    <i data-lucide="baby"></i> <span>Kid's Corner</span>
+                </li>
+                <li onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
+                <li onclick="window.location.href='memory2/index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
+            </ul>
+
+            <button class="logout-btn" onclick="logout()">
+                <i data-lucide="log-out"></i> <span>Logout</span>
+            </button>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <div style="font-size: 1.2rem; font-weight: 900; letter-spacing: 6px; color: var(--accent); opacity: 0.8; text-transform: uppercase;">
+                    Esploratore Virtuale
+                </div>
+                <!-- Meteo rimosso (ora in Homepage) -->
+            </header>
+
+            <div class="map-viewport" id="map-viewport">
+                <div class="map-canvas" id="map-canvas">
+                    <img id="map-base" class="map-base" src="">
+                    <div id="markers-layer"></div>
+                    <div id="tooltip" class="tooltip">
+                        <h2 id="tt-title" style="margin:0 0 8px 0; color:#1a3c34; font-size:1.4rem;">PUNTO</h2>
+                        <p style="font-size:13px; margin:0; opacity:0.8; font-weight:500;">INFO LOCATION...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- OVERLAY SCHEDA ANIMALE -->
+    <div id="fiche-overlay">
+        <button class="close-fiche" onclick="closeFiche()"><i data-lucide="x"></i></button>
+        <div class="fiche-content">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 20px; flex-wrap: wrap;">
+                <h1 id="f-title" style="color:var(--accent); font-size:3.5rem; margin:0; font-weight:900; text-transform:uppercase; word-break: break-word; flex: 1; min-width: 250px;">TITOLO</h1>
+                <div id="fiche-stats">
+                    <h4 style="color:var(--accent); margin-top:0; margin-bottom:15px; letter-spacing:2px; font-weight:900; text-transform:uppercase; font-size:0.9rem;">Scheda Tecnica</h4>
+                    <div id="stats-list"></div>
+                </div>
+            </div>
+            <div class="fiche-header">
+                <img id="f-img" src="">
+                <button class="slide-btn" style="left:20px;" onclick="prevSlide()">‹</button>
+                <button class="slide-btn" style="right:20px;" onclick="nextSlide()">›</button>
+            </div>
+            <div id="f-desc" style="font-size:1.3rem; line-height:1.7; opacity:0.9; margin-bottom: 3rem; white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        var library = { active_map_id: null, map_markers: [], available_maps: [] };
+
+        function renderMap() {
+            var mActive = (library.available_maps || []).find(m => m.id === library.active_map_id);
+            if(mActive) { 
+                document.getElementById('map-base').src = mActive.url; 
+            } else { 
+                document.getElementById('map-base').src = "../assets/library/MAPS/Etosha map 02.jpg"; 
+            }
+            
+            var filtered = (library.map_markers || []).filter(m => m.mapId == library.active_map_id);
+            document.getElementById('markers-layer').innerHTML = filtered.map(m => {
+                // Determine label color/style based on type
+                let labelStyle = "background:rgba(0,0,0,0.7); color:white; border:1px solid rgba(255,255,255,0.2);";
+                if (m.type === 'alert') labelStyle = "background:rgba(0,0,0,0.7); color:white; border:1px solid var(--danger);";
+                if (m.type === 'must_see') labelStyle = "background:rgba(0,0,0,0.7); color:white; border:1px solid #4caf50;";
+
+                // Check if linkable
+                let isLinked = !!m.ficheId;
+                const mTitle = (m.title || "").trim().toUpperCase();
+                let linkedItem = null;
+                if(mTitle) {
+                    [library, (typeof visitNamibia !== 'undefined' ? visitNamibia : {categories:[]})].forEach(db => {
+                        (db.categories || []).forEach(c => (c.subcategories || []).forEach(s => {
+                            const found = s.items.find(it => (it.name || "").trim().toUpperCase() === mTitle);
+                            if(found) linkedItem = found;
+                        }));
+                    });
+                }
+                if(linkedItem) isLinked = true;
+                
+                let isAlertWithCard = false;
+                if (m.type === 'alert') {
+                    const iconDef = (library.available_icons && library.available_icons.alert ? library.available_icons.alert : []).find(i => i.url === m.icon || i.name === mTitle);
+                    if (iconDef && iconDef.description) isAlertWithCard = true;
+                }
+
+                // VISIBILITY CHECK: If linked to an invisible item, hide marker
+                if(linkedItem && linkedItem.isVisible === false) return '';
+
+                let imgContainerStyle = "";
+                if (isAlertWithCard) {
+                    imgContainerStyle = "border: 3px solid #ff5252; border-radius: 8px; background: rgba(0,0,0,0.5); padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;";
+                } else if (isLinked) {
+                    imgContainerStyle = "border: 3px solid #ffeb3b; border-radius: 8px; background: rgba(0,0,0,0.5); padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;";
+                } else {
+                    imgContainerStyle = "padding: 4px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));";
+                }
+                
+                // STAR for Must See items
+                let starHtml = "";
+                if(linkedItem && linkedItem.isMustSee) {
+                    starHtml = '<i data-lucide="star" style="width:12px; height:12px; fill:#ffeb3b; color:#ffeb3b; margin-right:4px;"></i>';
+                }
+                
+                return `
+                    <div class="marker-container marker-wrapper" data-id="${m.id}" style="position:absolute; left:${m.x}%; top:${m.y}%; transform:translate(-50%, -100%); display:flex; flex-direction:column; align-items:center; z-index:100;" onclick="handleMarkerClick(event, ${m.id})">
+                        <div style="${imgContainerStyle} display:flex; align-items:center; justify-content:center; transition:0.2s;">
+                            <img src="${m.icon}" style="width:50px; height:50px; object-fit:contain;">
+                        </div>
+                        <div style="${labelStyle} padding:3px 8px; border-radius:5px; font-size:11px; font-weight:800; margin-top:6px; white-space:nowrap; text-transform:uppercase; pointer-events:none; display:flex; align-items:center; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
+                            ${starHtml}${m.title}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function handleMarkerClick(e, id) {
+            const m = library.map_markers.find(x => x.id == id);
+            if(!m) return;
+
+            const mTitle = (m.title || "").trim().toUpperCase();
+
+            // ALERT CARDS
+            if (m.type === 'alert') {
+                const iconDef = (library.available_icons && library.available_icons.alert ? library.available_icons.alert : []).find(i => i.url === m.icon || i.name === mTitle);
+                if (iconDef && iconDef.description) {
+                    activeItem = { name: m.title || iconDef.name, description: iconDef.description, photos: [iconDef.url], facts: {} };
+                    itemImages = [iconDef.url];
+                    slideIdx = 0;
+                    document.getElementById('f-title').innerText = activeItem.name;
+                    document.getElementById('f-desc').innerText = activeItem.description;
+                    updateSlider();
+                    document.getElementById('stats-list').innerHTML = '';
+                    document.getElementById('fiche-stats').style.display = 'none';
+                    document.getElementById('fiche-overlay').style.display = 'flex';
+                    lucide.createIcons();
+                    return;
+                }
+            }
+
+            let ficheId = m.ficheId;
+            
+            // SMART FALLBACK: se non c'è ficheId, prova a cercarlo per nome (titolo)
+            if(!ficheId && mTitle) {
+                // Check Library
+                (library.categories || []).forEach(c => (c.subcategories || []).forEach(s => {
+                    const it = s.items.find(i => (i.name || "").trim().toUpperCase() === mTitle);
+                    if(it) ficheId = it.id;
+                }));
+                // Check Namibia
+                if(!ficheId && typeof visitNamibia !== 'undefined') {
+                    (visitNamibia.categories || []).forEach(c => (c.subcategories || []).forEach(s => {
+                        const it = s.items.find(i => (i.name || "").trim().toUpperCase() === mTitle);
+                        if(it) ficheId = it.id;
+                    }));
+                }
+            }
+
+            if(ficheId) {
+                document.getElementById('fiche-stats').style.display = 'block';
+                openFiche(ficheId);
+            } else {
+                showTooltip(e, m.title);
+            }
+        }
+
+        let activeItem = null;
+        let itemImages = [];
+        let slideIdx = 0;
+
+        function openFiche(ficheId) {
+            // Cerca l'item in tutta la libreria
+            let found = null;
+            library.categories.forEach(c => {
+                c.subcategories.forEach(s => {
+                    const it = s.items.find(i => i.id == ficheId);
+                    if(it) found = it;
+                });
+            });
+
+            if(!found) { alert("Scheda non trovata nella libreria."); return; }
+            
+            activeItem = found;
+            itemImages = (activeItem.photos || []).filter(p => {
+                return !((typeof p === 'object' && p.type === 'application/pdf') || (typeof p === 'string' && p.startsWith('data:application/pdf')));
+            }).map(p => typeof p === 'object' ? p.url : p);
+
+            slideIdx = 0;
+            document.getElementById('f-title').innerText = activeItem.name;
+            document.getElementById('f-desc').innerText = activeItem.description || "";
+            document.getElementById('fiche-stats').style.display = 'block';
+            updateSlider();
+            renderStats();
+            
+            document.getElementById('fiche-overlay').style.display = 'flex';
+            lucide.createIcons();
+        }
+
+        function updateSlider() {
+            document.getElementById('f-img').src = itemImages[slideIdx] || "";
+            document.querySelector('.fiche-header').style.display = (itemImages.length > 0) ? 'block' : 'none';
+        }
+
+        function nextSlide() { if(itemImages.length > 0) { slideIdx = (slideIdx + 1) % itemImages.length; updateSlider(); } }
+        function prevSlide() { if(itemImages.length > 0) { slideIdx = (slideIdx - 1 + itemImages.length) % itemImages.length; updateSlider(); } }
+
+        function renderStats() {
+            const f = activeItem.facts || {};
+            
+            function fmt(val) {
+                if (!val || val === '-') return '-';
+                return String(val).trim()
+                    .replace(/([\d])([a-zA-Z])/g, '$1 $2')
+                    .replace(/\b(\d{4,})\b/g, m => m.replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+            }
+
+            document.getElementById('stats-list').innerHTML = `
+                <p><b>${f.label1 || 'Peso'}</b> <span>${fmt(f.weight)}</span></p>
+                <p><b>${f.label2 || 'Dimens.'}</b> <span>${fmt(f.size)}</span></p>
+                <p><b>${f.label3 || 'Longev.'}</b> <span>${fmt(f.life)}</span></p>
+                ${f.speed ? `<p><b>Velocità</b> <span>${fmt(f.speed)}</span></p>` : ''}
+            `;
+        }
+
+        function closeFiche() {
+            document.getElementById('fiche-overlay').style.display = 'none';
+        }
+
+        function showTooltip(e, title) { 
+            e.stopPropagation(); 
+            var tt = document.getElementById('tooltip'); 
+            document.getElementById('tt-title').innerText = title.toUpperCase(); 
+            tt.style.left = e.target.style.left; 
+            tt.style.top = e.target.style.top; 
+            tt.style.display = 'block'; 
+        }
+
+        document.getElementById('map-viewport').onclick = function() { 
+            document.getElementById('tooltip').style.display = 'none'; 
+        }
+
+        function logout() {
+            window.PARKS_APP.setSession({ loggedIn: false }, function() {
+                window.location.href = 'index.html';
+            });
+        }
+
+        window.PARKS_APP.init(() => { 
+            window.PARKS_APP.getSession(function(session) {
+                if (!session || !session.loggedIn) {
+                    window.location.href = 'index.html';
+                }
+            });
+
+            // Carica entrambi i DB per permettere i collegamenti intelligenti
+            window.PARKS_DB.get('parks_visit_namibia_v1', {categories:[]}, function(vData) {
+                visitNamibia = vData;
+                window.PARKS_DB.get('parks_library_v2', {categories:[]}, function(data) { 
+                    if(data){
+                        library = data; 
+                        if(!library.available_maps) library.available_maps = [];
+                    } 
+                    
+                    // Handle URL Params for deep linking
+                    const params = new URLSearchParams(window.location.search);
+                    const mapId = params.get('mapId');
+                    const markerId = params.get('markerId');
+                    
+                    if(mapId) {
+                        library.active_map_id = parseInt(mapId);
+                    }
+                    
+                    renderMap();
+
+                    if(markerId) {
+                        setTimeout(() => {
+                            const markerEl = document.querySelector(`.marker-wrapper[data-id="${markerId}"]`);
+                            if(markerEl) {
+                                markerEl.style.animation = 'pulse 2s infinite';
+                                markerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                markerEl.click();
+                            }
+                        }, 500);
+                    }
+                }); 
+            });
+        });
+    </script>
+    <style>
+        @keyframes pulse {
+            0% { transform: scale(1) translate(-50%, -100%); filter: drop-shadow(0 0 0 var(--accent)); }
+            50% { transform: scale(1.3) translate(-40%, -80%); filter: drop-shadow(0 0 30px var(--accent)); }
+            100% { transform: scale(1) translate(-50%, -100%); filter: drop-shadow(0 0 0 var(--accent)); }
+        }
+    </style>
+</body>
+</html>

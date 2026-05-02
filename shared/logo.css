@@ -1,0 +1,50 @@
+/* Logo Component Styles */
+.parks-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+.parks-logo img, .parks-logo svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Color Themes */
+.parks-logo.white { color: #ffffff; }
+.parks-logo.green { color: #2d7a4d; }
+.parks-logo.black { color: #000000; }
+.parks-logo.accent { color: #ffab40; }
+
+/* Variations with BG (as seen in the provided images) */
+.parks-logo-box.white-on-green {
+  background: #2d7a4d;
+  padding: 40px;
+  border-radius: 40px;
+}
+.parks-logo-box.green-on-white {
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 40px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+}
+
+/* Sizing Utilities */
+.logo-sm { max-width: 60px; }
+.logo-md { max-width: 120px; }
+.logo-lg { max-width: 200px; }
+.logo-xl { max-width: 320px; }
+
+/* Micro-animations */
+.parks-logo.hover-breath:hover g.logo-mark {
+  transform: translate(200px, 140px) scale(1.05);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.parks-logo.hover-breath g.logo-mark {
+  transition: transform 0.4s ease;
+  transform-origin: center;
+}

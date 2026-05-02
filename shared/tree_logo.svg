@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 250" width="100%" height="100%">
+  <!-- Base lineare minimalista -->
+  <rect x="110" y="215" width="80" height="4" rx="2" fill="black" />
+
+  <!-- Tronco principale e rami realizzati con "strokes" così da essere matematicamente precisi ed eleganti -->
+  <g stroke="black" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Tronco massiccio alla base -->
+    <path d="M150,215 L150,150" stroke-width="26" />
+    
+    <!-- Tronco centrale che si restringe -->
+    <path d="M150,150 L150,90" stroke-width="14" />
+
+    <!-- Grande ramo a sinistra -->
+    <path d="M150,155 Q115,135 80,120" stroke-width="14" />
+    
+    <!-- Grande ramo a destra -->
+    <path d="M150,155 Q185,135 220,120" stroke-width="14" />
+
+    <!-- Diramazioni ramo sinistro -->
+    <path d="M110,140 Q90,110 70,105" stroke-width="8" />
+    <path d="M90,125 Q70,120 50,115" stroke-width="6" />
+
+    <!-- Diramazioni ramo destro -->
+    <path d="M190,140 Q210,110 230,105" stroke-width="8" />
+    <path d="M210,125 Q230,120 250,115" stroke-width="6" />
+
+    <!-- Diramazioni verso l'alto ed il centro -->
+    <path d="M150,125 Q130,105 120,95" stroke-width="8" />
+    <path d="M150,125 Q170,105 180,95" stroke-width="8" />
+    <path d="M150,100 L150,80" stroke-width="10" />
+  </g>
+
+  <!-- Chioma a forma di ombrello, tipica dell'acacia, fatta di ellissi incastrate perfettamente -->
+  <g fill="black">
+    <!-- Chioma centrale alta -->
+    <ellipse cx="150" cy="85" rx="55" ry="18" />
+    <ellipse cx="125" cy="75" rx="35" ry="14" />
+    <ellipse cx="175" cy="75" rx="35" ry="14" />
+    <ellipse cx="150" cy="65" rx="40" ry="16" />
+    
+    <!-- Blocco chiome a sinistra -->
+    <ellipse cx="115" cy="95" rx="40" ry="14" />
+    <ellipse cx="90" cy="90" rx="35" ry="14" />
+    <ellipse cx="70" cy="100" rx="40" ry="12" />
+    <ellipse cx="80" cy="115" rx="30" ry="10" />
+    <ellipse cx="45" cy="108" rx="25" ry="8" />
+
+    <!-- Blocco chiome a destra -->
+    <ellipse cx="185" cy="95" rx="40" ry="14" />
+    <ellipse cx="210" cy="90" rx="35" ry="14" />
+    <ellipse cx="230" cy="100" rx="40" ry="12" />
+    <ellipse cx="220" cy="115" rx="30" ry="10" />
+    <ellipse cx="255" cy="108" rx="25" ry="8" />
+
+    <!-- Cerchi riempitivi per dare più respiro e compattezza all'icona -->
+    <circle cx="105" cy="85" r="18" />
+    <circle cx="195" cy="85" r="18" />
+    <circle cx="150" cy="75" r="22" />
+    <circle cx="135" cy="85" r="22" />
+    <circle cx="165" cy="85" r="22" />
+    <circle cx="65" cy="98" r="12" />
+    <circle cx="235" cy="98" r="12" />
+    <ellipse cx="150" cy="95" rx="50" ry="15" />
+  </g>
+</svg>

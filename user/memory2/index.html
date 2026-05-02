@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEMORY | Video Composer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../shared/logo.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../../shared/db.js"></script>
+    <script src="../../shared/app.js"></script>
+    <link rel="stylesheet" href="styles.css?v=1.3">
+    <style>
+        :root { 
+            --primary: #2d7a4d; 
+            --accent: #ffab40; 
+            --dark-bg: #0d1e1a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --sidebar-width: 300px;
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Outfit', sans-serif; background: var(--dark-bg); color: white;
+            overflow: hidden;
+        }
+
+        .layout { display: flex; height: 100vh; width: 100vw; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            width: 260px;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+        .sidebar-logo img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .sidebar-menu li {
+            padding: 15px 20px;
+            margin-bottom: 8px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 600;
+            transition: 0.3s;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .sidebar-menu li:hover, .sidebar-menu li.active {
+            background: var(--glass);
+            color: var(--accent);
+        }
+
+        .sidebar-menu li.active {
+            background: rgba(255, 171, 64, 0.1);
+            border: 1px solid rgba(255, 171, 64, 0.2);
+        }
+
+        .logout-btn {
+            margin-top: auto;
+            background: rgba(255, 82, 82, 0.1);
+            color: #ff5252;
+            border: 1px solid rgba(255, 82, 82, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 700;
+            transition: 0.3s;
+        }
+        .logout-btn:hover { background: #ff5252; color: white; }
+
+        .main-content-scroll {
+            flex-grow: 1;
+            overflow-y: auto;
+            position: relative;
+            background: linear-gradient(to bottom, rgba(13, 30, 26, 0.9), var(--dark-bg)), url('../../assets/bg_homepage_2.JPG');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            padding: 40px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { width: 80px; padding: 30px 10px; }
+            .sidebar-menu li span, .sidebar-logo, .logout-btn span { display: none; }
+            .sidebar-menu li { justify-content: center; padding: 15px; }
+            .main-content-scroll { padding: 20px; }
+        }
+    </style>
+</head>
+<body
+    ondragover="event.preventDefault(); event.dataTransfer.dropEffect='copy'; document.getElementById('drop-zone').classList.add('dragover');"
+    ondragleave="if(!event.relatedTarget || event.relatedTarget===document.documentElement) document.getElementById('drop-zone').classList.remove('dragover');"
+    ondrop="event.preventDefault(); document.getElementById('drop-zone').classList.remove('dragover'); if(window.Memory && window.Memory.draggedIndex===null) window.Memory.handleFiles(event.dataTransfer.files);">
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="../../shared/parks_logo_combined_white.svg" alt="PARKS">
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li onclick="window.location.href='../homepage.html'">
+                    <i data-lucide="home"></i> <span>Home</span>
+                </li>
+                <li onclick="window.location.href='../map.html'">
+                    <i data-lucide="map"></i> <span>Mappa Interattiva</span>
+                </li>
+                <li onclick="window.location.href='../itineraries.html'">
+                    <i data-lucide="milestone"></i> <span>Itinerari</span>
+                </li>
+                <li onclick="window.location.href='../alerts.html'">
+                    <i data-lucide="bell"></i> <span>Inserisci un ALERT</span>
+                </li>
+                <li onclick="window.location.href='../library.html'">
+                    <i data-lucide="book-open"></i> <span>Libreria</span>
+                </li>
+                <li onclick="window.location.href='../library.html?view=mustsee'">
+                    <i data-lucide="star"></i> <span>Must See</span>
+                </li>
+                <li onclick="window.location.href='../kids_corner.html'"><i data-lucide="baby"></i> <span>Kid's Corner</span></li>
+                <li onclick="window.location.href='../visit_namibia.html'"><img src="../../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
+                <li class="active" onclick="window.location.href='index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
+            </ul>
+
+            <button class="logout-btn" onclick="logout()">
+                <i data-lucide="log-out"></i> <span>Logout</span>
+            </button>
+        </aside>
+
+        <main class="main-content-scroll">
+            <div class="app-container">
+                <header class="header">
+                    <div class="logo-area">
+                        <i class="fa-solid fa-film"></i>
+                        <h1>Memory Composer</h1>
+                    </div>
+                    <p class="subtitle">Trasforma le tue immagini di viaggio in un bellissimo ricordo animato.</p>
+                </header>
+
+                <div class="main-content">
+                    <!-- 1. Area Caricamento -->
+                    <div class="upload-section glass-panel" id="drop-zone">
+                        <i class="fa-solid fa-images upload-icon"></i>
+                        <h2>Trascina le immagini qui</h2>
+                        <p>oppure usa il pulsante qui sotto</p>
+                        <label for="file-input" class="upload-btn">
+                            <i class="fa-solid fa-folder-open"></i> Scegli Foto
+                        </label>
+                        <input
+                            type="file"
+                            id="file-input"
+                            multiple
+                            accept="image/jpeg,image/png,image/webp,image/gif,image/bmp"
+                            hidden
+                            onchange="if(window.Memory) window.Memory.handleFiles(this.files); this.value='';">
+                    </div>
+
+                    <!-- 2. Layout Centrale: Timeline + Opzioni -->
+                    <div class="middle-layout">
+                        <!-- Timeline -->
+                        <section class="timeline-section glass-panel">
+                            <div class="section-header">
+                                <h3><i class="fa-solid fa-film"></i> La tua Timeline</h3>
+                                <span class="text-muted text-sm badge-info">Trascina le foto per riordinarle</span>
+                            </div>
+                            
+                            <!-- Zoom Drag & Drop Tools -->
+                            <div class="zoom-tools-wrapper">
+                                <div class="zoom-tools-header">
+                                    <i class="fa-solid fa-magnifying-glass-plus text-brand"></i>
+                                    <span class="text-sm">Tocca un effetto e poi tocca la foto, oppure trascinalo, per applicare lo Zoom.</span>
+                                </div>
+                                <div class="zoom-tools-container">
+                                    <div class="zoom-row">
+                                        <span class="zoom-label">Zoom IN</span>
+                                        <div class="zoom-btn" draggable="true" ondragstart="if(window.Memory) window.Memory.handleZoomDrag(event, 'in', 1)" onclick="if(window.Memory) window.Memory.handleZoomClick('in', 1, this)"><div class="zoom-bar bar-1"></div></div>
+                                        <div class="zoom-btn" draggable="true" ondragstart="if(window.Memory) window.Memory.handleZoomDrag(event, 'in', 2)" onclick="if(window.Memory) window.Memory.handleZoomClick('in', 2, this)"><div class="zoom-bar bar-2"></div></div>
+                                        <div class="zoom-btn" draggable="true" ondragstart="if(window.Memory) window.Memory.handleZoomDrag(event, 'in', 3)" onclick="if(window.Memory) window.Memory.handleZoomClick('in', 3, this)"><div class="zoom-bar bar-3"></div></div>
+                                    </div>
+                                    <div class="zoom-row">
+                                        <span class="zoom-label">Zoom OUT</span>
+                                        <div class="zoom-btn" draggable="true" ondragstart="if(window.Memory) window.Memory.handleZoomDrag(event, 'out', 1)" onclick="if(window.Memory) window.Memory.handleZoomClick('out', 1, this)"><div class="zoom-bar bar-1"></div></div>
+                                        <div class="zoom-btn" draggable="true" ondragstart="if(window.Memory) window.Memory.handleZoomDrag(event, 'out', 2)" onclick="if(window.Memory) window.Memory.handleZoomClick('out', 2, this)"><div class="zoom-bar bar-2"></div></div>
+                                        <div class="zoom-btn" draggable="true" ondragstart="if(window.Memory) window.Memory.handleZoomDrag(event, 'out', 3)" onclick="if(window.Memory) window.Memory.handleZoomClick('out', 3, this)"><div class="zoom-bar bar-3"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-container" id="timeline">
+                                <div class="empty-timeline">Carica alcune foto per iniziare a comporre il tuo video.</div>
+                            </div>
+                        </section>
+
+                        <!-- Opzioni -->
+                        <section class="settings-section glass-panel">
+                            <div class="section-header">
+                                <h3><i class="fa-solid fa-sliders"></i> Opzioni</h3>
+                            </div>
+                            <div class="settings-vertical-list">
+                                <div class="form-group">
+                                    <label for="video-format">Formato Video</label>
+                                    <select id="video-format" class="glass-input" onchange="if(window.Memory) window.Memory.updateCanvasAspect();">
+                                        <option value="9:16">Verticale (Mobile 9x16)</option>
+                                        <option value="16:9">Orizzontale (PC/TV 16x9)</option>
+                                        <option value="1:1">Quadrato (Post 1x1)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="video-quality">Resa Finale</label>
+                                    <select id="video-quality" class="glass-input" onchange="if(window.Memory) window.Memory.updateCanvasAspect();">
+                                        <option value="1080">Alta (1080 HQ)</option>
+                                        <option value="720">Standard (720 Lite)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="slide-duration">Durata Foto</label>
+                                    <select id="slide-duration" class="glass-input">
+                                        <option value="4">Media (4 Secondi)</option>
+                                        <option value="2">Veloce (2 Secondi)</option>
+                                        <option value="6">Lenta (6 Secondi)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="zoom-amount">Effetto Cinemacity (Zoom)</label>
+                                    <select id="zoom-amount" class="glass-input">
+                                        <option value="0.15">Sottile (0.15x)</option>
+                                        <option value="0.30">Evidente (0.30x)</option>
+                                        <option value="0">Disattivato</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="transition-type">Transizione</label>
+                                    <select id="transition-type" class="glass-input">
+                                        <option value="fade">Dissolvenza Dolce</option>
+                                        <option value="none">Stacco Netto</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="title-placement">Titolo Video</label>
+                                    <select id="title-placement" class="glass-input" onchange="document.getElementById('title-bg-options').style.display = (this.value === 'intro') ? 'block' : 'none'; if(window.Memory && window.Memory.forceRedraw) window.Memory.forceRedraw();">
+                                        <option value="intro">Cartello Iniziale</option>
+                                        <option value="overlay">Testo su Prima Foto</option>
+                                        <option value="none" selected>Nessun Titolo</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="video-title">Testo Titolo (Opzionale)</label>
+                                    <input oninput="if(window.Memory && window.Memory.forceRedraw) window.Memory.forceRedraw();" type="text" id="video-title" class="glass-input" placeholder="Es: Avventura nel Parco">
+                                </div>
+                                <div class="form-group" id="title-bg-options" style="display: none;">
+                                    <label>Colori Sfondo Cartello</label>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="color" id="title-bg-color-1" value="#2d7a4d" class="glass-input" style="padding: 0; width: 100%; height: 40px; cursor: pointer;" oninput="if(window.Memory && window.Memory.forceRedraw) window.Memory.forceRedraw();">
+                                        <input type="color" id="title-bg-color-2" value="#ffab40" class="glass-input" style="padding: 0; width: 100%; height: 40px; cursor: pointer;" oninput="if(window.Memory && window.Memory.forceRedraw) window.Memory.forceRedraw();">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Colonna Sonora</label>
+                                    <div class="file-input-wrapper glass-input">
+                                        <label for="music-input" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;width:100%;">
+                                            <i class="fa-solid fa-music text-brand"></i>
+                                            <span id="music-text">Carica un MP3...</span>
+                                        </label>
+                                        <input type="file" id="music-input" accept="audio/*,audio/mpeg,audio/mp3,.mp3,.m4a,.wav" hidden
+                                            onchange="if(window.Memory) window.Memory.handleMusicChange(this);">
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- 3. Anteprima e Produzione -->
+                    <section class="preview-section glass-panel">
+                        <div class="preview-layout" id="preview-layout">
+                            <div class="canvas-container vertical-aspect" id="canvas-container">
+                                <canvas id="video-canvas"></canvas>
+                                <div class="preview-overlay" id="preview-overlay">
+                                    <i class="fa-solid fa-play"></i>
+                                    <span>Premere per l'Anteprima</span>
+                                </div>
+                            </div>
+                            <div class="preview-actions">
+                                <div class="section-header" style="margin-bottom: 0.5rem; padding-bottom: 0.5rem;">
+                                    <h3><i class="fa-solid fa-clapperboard"></i> Produzione</h3>
+                                </div>
+                                <button class="btn btn-secondary" id="btn-preview" disabled
+                                    onclick="if(window.Memory) window.Memory.togglePreview();">
+                                    <i class="fa-solid fa-eye"></i> <span>Avvia Anteprima</span>
+                                </button>
+                                <div style="display: flex; gap: 10px; width: 100%;">
+                                    <button class="btn btn-primary" id="btn-render-mp4" disabled
+                                        onclick="if(window.Memory) window.Memory.startRender('mp4');" style="flex: 1; background: #2d7a4d;">
+                                        <i class="fa-solid fa-file-video"></i> <span>Genera MP4</span>
+                                    </button>
+                                    <button class="btn btn-secondary" id="btn-render-webm" disabled
+                                        onclick="if(window.Memory) window.Memory.startRender('webm');" style="flex: 1; border: 1px solid #ffab40; color: #ffab40;">
+                                        <i class="fa-solid fa-file-code"></i> <span>Genera WEBM</span>
+                                    </button>
+                                </div>
+                                <div class="progress-wrapper" id="progress-container" style="display: none;">
+                                    <div class="progress-bar-wrap">
+                                        <div class="progress-bar" id="progress-bar"></div>
+                                    </div>
+                                    <p class="progress-text" id="progress-text">Inizio rendering...</p>
+                                </div>
+                                <audio id="audio-player" style="display:none;"></audio>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modale Successo -->
+    <div class="modal" id="download-modal">
+        <div class="modal-content glass-panel" style="max-height: 90vh; overflow-y: auto; position: relative;">
+            <!-- Pulsante X in alto a destra -->
+            <button class="btn-text" style="position: absolute; top: 15px; right: 15px; font-size: 1.5rem; opacity: 0.6; z-index: 10;" 
+                onclick="document.getElementById('download-modal').classList.remove('active'); var vd=document.getElementById('final-video-preview'); if(vd){vd.pause(); vd.src='';}">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <i class="fa-solid fa-circle-check success-icon" style="margin-bottom: 0.5rem; margin-top: 1rem;"></i>
+            <h2>Completato!</h2>
+            <p style="margin-bottom: 0.8rem; font-size: 0.9rem;">Il tuo video è pronto. Su computer il download parte in automatico, su mobile usa i tasti qui sotto.</p>
+            
+            <video id="final-video-preview" controls playsinline loop onended="this.play()" style="width: 100%; border-radius: 8px; margin-bottom: 1.2rem; background: #000; display: none; max-height: 40vh;"></video>
+
+            <div class="modal-actions" style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+                <button class="btn btn-primary" id="btn-share-native" style="display: none; background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); border: none; width: 100%;">
+                    <i class="fa-solid fa-share-nodes"></i> Condividi (WhatsApp/Social)
+                </button>
+                
+                <a class="btn btn-primary text-decoration-none" id="download-link-mp4" style="background: #2d7a4d; color: white; border: none; width: 100%; padding: 1.2rem;">
+                    <i class="fa-solid fa-file-video"></i> SCARICA VIDEO (MP4)
+                </a>
+                
+                <a class="btn btn-secondary text-decoration-none" id="download-link-webm" style="border: 2px solid #ffab40; color: #ffab40; background: transparent; width: 100%; padding: 1.2rem;">
+                    <i class="fa-solid fa-file-code"></i> SCARICA WEBM (.HTML)
+                </a>
+            </div>
+            <button class="btn btn-text" style="margin-top: 1rem; font-weight: 800; color: #ff5252;" 
+                onclick="document.getElementById('download-modal').classList.remove('active'); var vd=document.getElementById('final-video-preview'); if(vd){vd.pause(); vd.src='';}">
+                CHIUDI ANTEPRIMA
+            </button>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        function logout() {
+            window.PARKS_APP.setSession({ loggedIn: false }, function() {
+                window.location.href = '../index.html';
+            });
+        }
+        // Verifica sessione all'avvio
+        window.PARKS_APP.init(() => {
+            window.PARKS_APP.getSession(function(session) {
+                if (!session || !session.loggedIn) {
+                    window.location.href = '../index.html';
+                }
+            });
+        });
+    </script>
+    <script src="app.js?v=1.8"></script>
+</body>
+</html>

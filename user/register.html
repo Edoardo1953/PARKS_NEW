@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parks App | Create Account</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../shared/db.js"></script>
+    <script src="../shared/app.js"></script>
+    <style>
+        :root { --primary: #2d7a4d; --accent: #ffab40; --dark-bg: #0d1e1a; --glass: rgba(255, 255, 255, 0.05); }
+        body { margin: 0; font-family: 'Outfit', sans-serif; background: var(--dark-bg); color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow-x: hidden; }
+        
+        .slideshow { position: fixed; inset: 0; z-index: -2; }
+        .bg-image { position: absolute; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.8) saturate(1.3); opacity: 0; animation: crossfade 20s infinite; }
+        .bg-1 { animation-delay: 0s; }
+        .bg-2 { animation-delay: 4s; }
+        .bg-3 { animation-delay: 8s; }
+        .bg-4 { animation-delay: 12s; }
+        .bg-5 { animation-delay: 16s; }
+        @keyframes crossfade { 0% { opacity: 0; } 5% { opacity: 1; } 20% { opacity: 1; } 25% { opacity: 0; } 100% { opacity: 0; } }
+        .overlay { position: fixed; inset: 0; background: radial-gradient(circle at center, transparent, rgba(0,0,0,0.5)); z-index: -1; }
+        .bg-gradient { position: fixed; inset: 0; background: radial-gradient(circle at 10% 20%, rgba(45, 122, 77, 0.1) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(255, 171, 64, 0.05) 0%, transparent 40%); z-index: 0; pointer-events: none; }
+
+        .form-container { width: 100%; max-width: 900px; padding: 40px; padding-top: 160px; box-sizing: border-box; animation: slideUp 0.8s ease-out; position: relative; z-index: 10; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: rgba(0, 0, 0, 0.35); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 40px; padding: 60px; padding-top: 110px; box-shadow: 0 40px 100px rgba(0,0,0,0.8); position: relative; overflow: hidden; }
+        .card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 8px; background: linear-gradient(to right, var(--primary), var(--accent)); }
+
+        .header { margin-bottom: 50px; text-align: left; display: flex; align-items: center; gap: 40px; }
+        /* Branding Header (Logo + Title) */
+        .top-page-logo { position: fixed; top: 20px; left: 20px; width: 260px; z-index: 30; filter: drop-shadow(0 10px 25px rgba(0,0,0,0.8)); }
+        .top-page-logo img { width: 100%; height: auto; display: block; }
+
+        .branding-title-container { position: fixed; top: 40px; left: 50%; transform: translateX(-50%); text-align: center; z-index: 20; }
+        .branding-title { font-size: 3.5rem; font-weight: 900; letter-spacing: 12px; margin: 0; line-height: 1; color: var(--accent); white-space: nowrap; }
+        .branding-subtitle { font-size: 14px; font-weight: 300; letter-spacing: 6px; opacity: 0.7; margin-top: 10px; text-transform: uppercase; color: white; }
+        .header div h1 { font-size: 0.8rem; font-weight: 900; letter-spacing: 5px; color: var(--accent); margin: 0 0 5px 0; text-transform: uppercase; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .full { grid-column: span 2; }
+        
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        label { font-size: 10px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; padding-left: 5px; }
+        
+        input, select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; border-radius: 15px; color: white; font-size: 15px; font-weight: 700; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit; }
+        input:focus, select:focus { border-color: var(--primary); background: rgba(255,255,255,0.1); box-shadow: 0 0 0 4px rgba(45,122,77,0.15); }
+
+        .password-wrapper { position: relative; display: flex; align-items: center; }
+        .toggle-password { position: absolute; right: 15px; background: none; border: none; color: rgba(255, 255, 255, 0.4); cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; transition: 0.3s; z-index: 10; }
+        .toggle-password:hover { color: var(--accent); }
+        .password-wrapper input { padding-right: 50px; width: 100%; }
+        
+        option { background: var(--dark-bg); color: white; }
+
+        .btn-create { background: var(--primary); color: white; border: none; padding: 20px 60px; border-radius: 50px; font-size: 1.1rem; font-weight: 900; cursor: pointer; display: block; margin: 50px auto 0; text-transform: uppercase; letter-spacing: 3px; transition: 0.4s; box-shadow: 0 15px 40px rgba(45,122,77,0.3); }
+        .btn-create:hover { transform: translateY(-5px); background: #3eb471; box-shadow: 0 25px 50px rgba(45,122,77,0.5); }
+
+        .success-overlay { position: fixed; inset: 0; background: var(--dark-bg); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; padding: 20px; }
+        .success-overlay i { color: var(--primary); width: 100px; height: 100px; margin-bottom: 30px; filter: drop-shadow(0 0 20px rgba(45,122,77,0.5)); }
+        .success-overlay h2 { font-size: 2.5rem; margin-bottom: 10px; font-weight: 900; }
+        .success-overlay p { opacity: 0.6; font-size: 1.1rem; margin-bottom: 40px; }
+
+        .back-link { position: absolute; top: 40px; left: 40px; color: var(--accent); text-shadow: 0 0 10px rgba(255,171,64,0.5); text-decoration: none; font-size: 15px; font-weight: 900; display: flex; align-items: center; gap: 8px; transition: 0.3s; letter-spacing: 1px; }
+        .back-link:hover { color: white; text-shadow: 0 0 15px rgba(255,255,255,0.8); transform: translateX(-5px); }
+
+        /* ===== MOBILE ===== */
+        @media (max-width: 600px) {
+            body { align-items: flex-start; }
+            .top-page-logo { width: 180px; top: 15px; left: 50%; transform: translateX(-50%); }
+            .branding-title-container { top: 75px; width: 100%; }
+            .branding-title { font-size: 2.2rem; letter-spacing: 6px; }
+            .branding-subtitle { font-size: 10px; letter-spacing: 3px; margin-top: 5px; }
+            .form-container { padding: 16px; padding-top: 220px; }
+            .card { padding: 60px 20px 30px; border-radius: 24px; background: rgba(0,0,0,0.15); backdrop-filter: blur(6px); }
+            .header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 25px; }
+            .header div h2 { font-size: 1.4rem; }
+            .form-grid { grid-template-columns: 1fr; gap: 18px; }
+            .full { grid-column: span 1; }
+            input, select { padding: 14px 16px; font-size: 14px; }
+            .btn-create { padding: 16px 40px; font-size: 1rem; margin-top: 35px; }
+            .back-link { top: 18px; left: 18px; font-size: 13px; }
+        }
+        @media (max-width: 400px) {
+            .card { padding: 28px 14px 24px; }
+            .header div h2 { font-size: 1.2rem; }
+        }
+
+        /* Logo mobile top (visibile solo su mobile) */
+        .mobile-top-logo { display: none; position: fixed; top: 25px; left: 50%; transform: translateX(-50%); width: 230px; z-index: 30; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6)); }
+    </style>
+</head>
+<body>
+
+    <div class="slideshow">
+        <img src="../assets/bg_homepage_1.jpg" class="bg-image bg-1" alt="Slide 1">
+        <img src="../assets/bg_homepage_2.JPG" class="bg-image bg-2" alt="Slide 2">
+        <img src="../assets/bg_homepage_3.jpg" class="bg-image bg-3" alt="Slide 3">
+        <img src="../assets/bg_homepage_4.JPG" class="bg-image bg-4" alt="Slide 4">
+        <img src="../assets/bg_homepage_5.jpg" class="bg-image bg-5" alt="Slide 5">
+    </div>
+    <div class="overlay"></div>
+    <div class="bg-gradient"></div>
+
+    <!-- LOGO IN ALTO (fisso, visibile su desktop, tablet e mobile) -->
+    <div class="top-page-logo">
+        <img src="../shared/parks_logo_combined_white.svg" alt="PARKS Namibia">
+    </div>
+
+    <div class="branding-title-container">
+        <h2 class="branding-title">ETOSHA</h2>
+        <div class="branding-subtitle">National Park · Namibia</div>
+    </div>
+
+    <div class="form-container">
+        <div class="card">
+            <a href="index.html" class="back-link"><i data-lucide="arrow-left" style="width:18px;"></i> INDIETRO</a>
+            <header class="header">
+                <div style="text-align: left;">
+                    <h1 style="font-size: 0.8rem; font-weight: 900; letter-spacing: 5px; color: white; opacity: 0.4; margin: 0; text-transform: uppercase;">OFFICIAL APP</h1>
+                    <h2 style="font-size: 1.5rem; font-weight: 900; margin: 5px 0 0 0; letter-spacing: 1px; text-transform: uppercase;">REGISTRAZIONE</h2>
+                </div>
+            </header>
+
+            <form id="regForm">
+                <div class="form-grid">
+                    <div class="full" style="border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:10px;">
+                        <h3 style="font-size:12px; letter-spacing:3px; color:var(--accent); font-weight:900;">1. INFORMAZIONI OBBLIGATORIE</h3>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Nome *</label>
+                        <input type="text" id="firstName" placeholder="Inserisci il tuo nome" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Cognome *</label>
+                        <input type="text" id="lastName" placeholder="Inserisci il tuo cognome" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Email *</label>
+                        <input type="email" id="email" placeholder="nome@esempio.it" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Telefono / WhatsApp *</label>
+                        <input type="tel" id="phone" placeholder="+39 ..." required>
+                    </div>
+
+
+                    <div class="input-group">
+                        <label>Scegli Password *</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" placeholder="••••••••" required>
+                            <button type="button" class="toggle-password" onclick="togglePass('password', this)">
+                                <i data-lucide="eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Conferma Password *</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="confirmPassword" placeholder="••••••••" required>
+                            <button type="button" class="toggle-password" onclick="togglePass('confirmPassword', this)">
+                                <i data-lucide="eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="full" style="border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-top:30px; margin-bottom:10px;">
+                        <h3 style="font-size:12px; letter-spacing:3px; color:var(--accent); font-weight:900;">2. DATI STATISTICI (OPZIONALI)</h3>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Indirizzo</label>
+                        <input type="text" id="address" placeholder="Via/Piazza, Civico">
+                    </div>
+                    <div class="input-group">
+                        <label>CAP / Postal Code</label>
+                        <input type="text" id="postalCode" placeholder="Codice Postale">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Città</label>
+                        <input type="text" id="city" placeholder="La tua città">
+                    </div>
+                    <div class="input-group">
+                        <label>Nazione di residenza *</label>
+                        <input type="text" id="country" placeholder="Es: Italia, Namibia, ..." required>
+                    </div>
+                    <div class="input-group">
+                        <label>Nazionalità</label>
+                        <input type="text" id="nationality" placeholder="Es: Italiana, Tedesca, ...">
+                    </div>
+                    <div class="input-group">
+                        <label>Data di Nascita</label>
+                        <input type="date" id="dob">
+                    </div>
+
+                    <input type="hidden" id="type" value="Tourist">
+                </div>
+
+                <button type="submit" class="btn-create">CREA IL MIO ACCOUNT</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="successView" class="success-overlay">
+        <i data-lucide="check-circle"></i>
+        <h2>ACCOUNT ATTIVATO!</h2>
+        <p>Il tuo profilo è pronto. Ora puoi effettuare il <br> <strong>Login</strong> per accedere all'App.</p>
+        <p style="font-size: 12px; margin-top: -20px; opacity: 0.5;">Supporto: parks.luxembourg@gmail.com</p>
+        <button class="btn-create" onclick="window.location.href='login.html'">VAI AL LOGIN</button>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function togglePass(id, btn) {
+            const input = document.getElementById(id);
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+            const icon = btn.querySelector('i');
+            icon.setAttribute('data-lucide', type === 'password' ? 'eye' : 'eye-off');
+            lucide.createIcons();
+        }
+
+        document.getElementById('regForm').onsubmit = function(e) {
+            e.preventDefault();
+            var p1 = document.getElementById('password').value;
+            var p2 = document.getElementById('confirmPassword').value;
+            if(p1 !== p2) { alert("Attenzione: Le password inserite non corrispondono!"); return; }
+
+            var tourist = {
+                id: 't_' + Date.now(),
+                type: document.getElementById('type').value,
+                firstName: document.getElementById('firstName').value.toUpperCase(),
+                lastName: document.getElementById('lastName').value.toUpperCase(),
+                email: document.getElementById('email').value.toLowerCase(),
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                postalCode: document.getElementById('postalCode').value,
+                city: document.getElementById('city').value,
+                country: document.getElementById('country').value,
+                nationality: document.getElementById('nationality').value.toUpperCase(),
+                dob: document.getElementById('dob').value,
+                password: p1,
+                regDate: new Date().toISOString(),
+                passActive: true // Auto-activated for ease of use
+            };
+
+            window.PARKS_APP.init(function() {
+                window.PARKS_DB.get('parks_tourists', [], function(data) {
+                    tourist.tNumber = data.length + 1; // Assign tourist number
+                    data.push(tourist);
+                    window.PARKS_DB.save('parks_tourists', data, function() {
+                        document.getElementById('successView').style.display = 'flex';
+                        lucide.createIcons();
+                    });
+                });
+            });
+        };
+    </script>
+</body>
+</html>

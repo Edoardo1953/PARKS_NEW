@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETOSHA | Homepage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../shared/db.js"></script>
+    <script src="../shared/app.js"></script>
+    <style>
+        :root { 
+            --primary: #2d7a4d; 
+            --accent: #ffab40; 
+            --dark-bg: #0d1e1a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --sidebar-width: 300px;
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Outfit', sans-serif; background: var(--dark-bg); color: white;
+            overflow: hidden;
+        }
+
+        .layout { display: flex; height: 100vh; width: 100vw; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            width: 260px;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+        .sidebar-logo img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .sidebar-menu li {
+            padding: 15px 20px;
+            margin-bottom: 8px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 600;
+            transition: 0.3s;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .sidebar-menu li:hover, .sidebar-menu li.active {
+            background: var(--glass);
+            color: var(--accent);
+        }
+
+        .sidebar-menu li.active {
+            background: rgba(255, 171, 64, 0.1);
+            border: 1px solid rgba(255, 171, 64, 0.2);
+        }
+
+        .sidebar-menu li i { width: 20px; }
+
+        .logout-btn {
+            margin-top: auto;
+            background: rgba(255, 82, 82, 0.1);
+            color: #ff5252;
+            border: 1px solid rgba(255, 82, 82, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 700;
+            transition: 0.3s;
+        }
+        .logout-btn:hover { background: #ff5252; color: white; }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            position: relative;
+            background: linear-gradient(to bottom, rgba(13, 30, 26, 0.8), var(--dark-bg)), url('../assets/bg_homepage_2.JPG');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .hero {
+            padding: 60px 40px;
+            max-width: 1400px;
+            margin: 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .hero h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            margin: 0;
+            line-height: 0.9;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .hero p.tagline {
+            font-size: 1.5rem;
+            opacity: 0.6;
+            margin: 20px 0 40px 0;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: 300;
+        }
+
+        .description-card {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 40px;
+            line-height: 1.8;
+            font-size: 1.2rem;
+            font-weight: 300;
+            color: rgba(255,255,255,0.9);
+            max-height: 350px;
+            overflow-y: auto;
+            flex-grow: 1; /* Occupa lo spazio rimanente accanto al meteo */
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) transparent;
+        }
+        .description-card::-webkit-scrollbar { width: 6px; }
+        .description-card::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+        .grid-sections {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 25px;
+        }
+
+        .section-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 30px;
+            transition: 0.3s;
+        }
+        .section-card:hover { 
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .section-card h3 {
+            color: var(--accent);
+            margin-top: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .map-preview {
+            width: 100%;
+            height: 300px;
+            border-radius: 20px;
+            object-fit: cover;
+            margin-top: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+        }
+
+        .photo-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .photo-strip img {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .photo-strip img:hover { transform: scale(1.05); }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* LIGHTBOX SLIDESHOW */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(15px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+            animation: fadeIn 0.3s;
+        }
+        .lightbox img {
+            max-width: 90%;
+            max-height: 80%;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(0,0,0,1);
+            transition: opacity 0.3s ease-in-out;
+            opacity: 1;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .lightbox-close:hover { color: var(--accent); transform: rotate(90deg); }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            z-index: 1001;
+        }
+        .lightbox-nav:hover {
+            background: var(--accent);
+            color: black;
+            transform: translateY(-50%) scale(1.1);
+        }
+        .lightbox-nav.prev { left: 40px; }
+        .lightbox-nav.next { right: 40px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* LANGUAGE SELECTOR */
+        .language-selector {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        .lang-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .lang-icon img {
+            width: 130%; /* Slightly larger to cover the circle better */
+            height: 130%;
+            object-fit: cover;
+        }
+        .lang-icon.active {
+            border-color: var(--accent);
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255, 171, 64, 0.4);
+        }
+        .lang-icon.inactive {
+            opacity: 0.4;
+            filter: grayscale(1);
+            cursor: not-allowed;
+        }
+        .lang-icon:hover:not(.inactive) {
+            transform: scale(1.15);
+            border-color: var(--accent);
+        }
+
+        .play-btn {
+            background: var(--accent);
+            color: black;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            box-shadow: 0 4px 15px rgba(255, 171, 64, 0.2);
+        }
+        .play-btn:hover {
+            transform: translateY(-2px);
+            background: white;
+            box-shadow: 0 6px 20px rgba(255, 171, 64, 0.3);
+        }
+        .play-btn i { width: 16px; height: 16px; }
+
+        /* MOBILE ARADAPTATION */
+        @media (max-width: 1024px) {
+            .sidebar { width: 80px; padding: 30px 10px; }
+            .sidebar-menu li span, .sidebar-logo, .logout-btn span { display: none; }
+            .sidebar-menu li { justify-content: center; padding: 15px; }
+            .hero h1 { font-size: 3.5rem; }
+            .grid-sections { grid-template-columns: 1fr; }
+            .language-selector { top: 20px; right: 20px; }
+            .lang-icon { width: 30px; height: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="../shared/parks_logo_combined_white.svg" alt="PARKS">
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li class="active" onclick="window.location.href='homepage.html'">
+                    <i data-lucide="home"></i> <span>Home</span>
+                </li>
+                <li onclick="window.location.href='map.html'">
+                    <i data-lucide="map"></i> <span>Mappa Interattiva</span>
+                </li>
+                <li onclick="window.location.href='itineraries.html'">
+                    <i data-lucide="milestone"></i> <span>Itinerari</span>
+                </li>
+                <li onclick="window.location.href='alerts.html'">
+                    <i data-lucide="bell"></i> <span>Inserisci un ALERT</span>
+                </li>
+                <li onclick="window.location.href='library.html'">
+                    <i data-lucide="book-open"></i> <span>Libreria</span>
+                </li>
+                <li onclick="window.location.href='library.html?view=mustsee'">
+                    <i data-lucide="star"></i> <span>Must See</span>
+                </li>
+                <li onclick="window.location.href='kids_corner.html'"><i data-lucide="baby"></i> <span>Kid's Corner</span></li>
+                <li onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
+                <li onclick="window.location.href='memory2/index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
+            </ul>
+
+            <button class="logout-btn" onclick="logout()">
+                <i data-lucide="log-out"></i> <span>Logout</span>
+            </button>
+        </aside>
+
+        <main class="main-content">
+            <div class="language-selector">
+                <div class="lang-icon active" title="Italiano">
+                    <img src="https://flagcdn.com/w80/it.png" alt="Italiano">
+                </div>
+                <div class="lang-icon inactive" title="English">
+                    <img src="https://flagcdn.com/w80/gb.png" alt="English">
+                </div>
+                <div class="lang-icon inactive" title="Français">
+                    <img src="https://flagcdn.com/w80/fr.png" alt="Français">
+                </div>
+            </div>
+            <div class="hero">
+                <h1 id="home-title" style="color:var(--accent); font-weight:900; letter-spacing:-2px;">ETOSHA</h1>
+                <p class="tagline" id="home-tagline" style="font-weight:300; letter-spacing:4px; opacity:0.6; text-transform:uppercase;">National Park · Namibia</p>
+
+                <div style="display: flex; gap: 20px; align-items: stretch; margin-bottom: 30px;">
+                    <!-- MINI METEO CARD WITH SLIDESHOW BACKGROUND -->
+                    <div id="meteo-card" class="section-card" onclick="window.location.href='weather_original.html'" style="width: 160px; flex-shrink: 0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; cursor:pointer; background: rgba(255,171,64,0.15); border: 2px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.3); position:relative; overflow:hidden;">
+                        <div id="meteo-bg" style="position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; transition: opacity 1s ease-in-out; opacity:0.4;"></div>
+                        <div style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center;">
+                            <i data-lucide="sun" style="width:54px; height:54px; color:var(--accent); margin-bottom:12px; filter: drop-shadow(0 0 10px var(--accent));"></i>
+                            <h3 style="font-size:20px; margin:0; letter-spacing:3px; font-weight:900;">METEO</h3>
+                            <div style="font-size:10px; opacity:0.8; margin-top:6px; font-weight:700;">NAMIBIA LIVE</div>
+                        </div>
+                    </div>
+
+                    <div class="description-card" id="home-description">
+                        L'Etosha National Park è una delle riserve naturali più importanti dell'Africa. 
+                        Il suo nome significa "grande luogo bianco", in riferimento all'Etosha Pan, una vastissima depressione salina che copre circa un quarto dell'area del parco. 
+                        Questo ecosistema unico attrae una fauna straordinaria: elefanti, rinoceronti neri, leoni e innumerevoli specie di antilopi si radunano attorno alle pozze d'acqua, offrendo uno degli spettacoli naturali più emozionanti del continente.
+                    </div>
+                </div>
+
+                <div class="grid-sections">
+                    <div class="section-card">
+                        <h3><i data-lucide="map-pin"></i> Il Territorio</h3>
+                        <p>Esplora la vastità del Parco attraverso la nostra cartografia tematica.</p>
+                        <img src="../assets/library/MAPS/Etosha-National-Park.png" class="map-preview" onclick="window.location.href='map.html'">
+                    </div>
+
+                    <div class="section-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="margin:0;"><i data-lucide="camera"></i> Galleria</h3>
+                            <button onclick="startSlideshowMode()" class="play-btn">
+                                <i data-lucide="play"></i> Slideshow
+                            </button>
+                        </div>
+                        <p>Scatti mozzafiato dal cuore selvaggio dell'Etosha.</p>
+                        <div class="photo-strip" id="gallery-container">
+                            <img src="../assets/bg_homepage_1.jpg" alt="Etosha 1" onclick="openSlideshow(this.src)">
+                            <img src="../assets/bg_homepage_3.jpg" alt="Etosha 3" onclick="openSlideshow(this.src)">
+                            <img src="../assets/bg_homepage_4.JPG" alt="Etosha 4" onclick="openSlideshow(this.src)">
+                            <img src="../assets/bg_homepage_5.jpg" alt="Etosha 5" onclick="openSlideshow(this.src)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="lightbox" class="lightbox">
+        <div onclick="closeLightbox()" style="position:absolute; inset:0; z-index:999;"></div>
+        <i data-lucide="x" class="lightbox-close" size="48" style="z-index:1002;" onclick="closeLightbox()"></i>
+        
+        <button class="lightbox-nav prev" onclick="changeSlide(-1)">
+            <i data-lucide="chevron-left" size="32"></i>
+        </button>
+        
+        <img id="lightbox-img" src="" style="z-index:1001;">
+        
+        <button class="lightbox-nav next" onclick="changeSlide(1)">
+            <i data-lucide="chevron-right" size="32"></i>
+        </button>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        let currentSlideIdx = 0;
+        let slideshowInterval = null;
+        let galleryImages = [
+            "../assets/bg_homepage_1.jpg",
+            "../assets/bg_homepage_3.jpg",
+            "../assets/bg_homepage_4.JPG",
+            "../assets/bg_homepage_5.jpg"
+        ];
+
+        let meteoSlideIdx = 0;
+        function startMeteoSlideshow() {
+            const bg = document.getElementById('meteo-bg');
+            if(!bg || galleryImages.length === 0) return;
+            
+            setInterval(() => {
+                meteoSlideIdx = (meteoSlideIdx + 1) % galleryImages.length;
+                bg.style.opacity = 0;
+                setTimeout(() => {
+                    bg.style.backgroundImage = `url('${galleryImages[meteoSlideIdx]}')`;
+                    bg.style.opacity = 0.4;
+                }, 1000);
+            }, 3000);
+            
+            bg.style.backgroundImage = `url('${galleryImages[0]}')`;
+        }
+
+        function openSlideshow(src) {
+            const lb = document.getElementById('lightbox');
+            currentSlideIdx = galleryImages.indexOf(src);
+            if (currentSlideIdx === -1) currentSlideIdx = 0;
+            
+            updateLightbox(true);
+            lb.style.display = 'flex';
+        }
+
+        function startSlideshowMode() {
+            openSlideshow(galleryImages[0]);
+            startSlideshowTimer();
+        }
+
+        function startSlideshowTimer() {
+            if (slideshowInterval) clearInterval(slideshowInterval);
+            slideshowInterval = setInterval(() => {
+                changeSlide(1, true); // true indicates it's from auto-timer
+            }, 3000);
+        }
+
+        function stopSlideshowTimer() {
+            if (slideshowInterval) {
+                clearInterval(slideshowInterval);
+                slideshowInterval = null;
+            }
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').style.display = 'none';
+            stopSlideshowTimer();
+        }
+
+        function changeSlide(delta, isAuto = false) {
+            if (!isAuto) stopSlideshowTimer(); // Pause slideshow on manual interaction
+            
+            currentSlideIdx += delta;
+            if (currentSlideIdx < 0) currentSlideIdx = galleryImages.length - 1;
+            if (currentSlideIdx >= galleryImages.length) currentSlideIdx = 0;
+            updateLightbox();
+        }
+
+        let lightboxTimeout;
+        function updateLightbox(immediate = false) {
+            const img = document.getElementById('lightbox-img');
+            if (lightboxTimeout) clearTimeout(lightboxTimeout);
+            
+            if (immediate) {
+                img.src = galleryImages[currentSlideIdx];
+                img.style.opacity = 1;
+                return;
+            }
+            img.style.opacity = 0;
+            lightboxTimeout = setTimeout(() => {
+                img.src = galleryImages[currentSlideIdx];
+                if (img.complete) {
+                    img.style.opacity = 1;
+                } else {
+                    img.onload = () => {
+                        img.style.opacity = 1;
+                    };
+                }
+            }, 300);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            const lb = document.getElementById('lightbox');
+            if (lb && lb.style.display === 'flex') {
+                if (e.key === 'ArrowLeft') changeSlide(-1);
+                if (e.key === 'ArrowRight') changeSlide(1);
+                if (e.key === 'Escape') lb.style.display = 'none';
+            }
+        });
+
+        function renderGallery(images) {
+            galleryImages = images;
+            const container = document.getElementById('gallery-container');
+            if(!container) return;
+            container.innerHTML = images.map(src => `<img src="${src}" alt="Gallery" onclick="openSlideshow(this.src)">`).join('');
+            lucide.createIcons();
+            // Inizializza meteo slideshow se non ancora partito
+            if(window.meteoStarted) return;
+            window.meteoStarted = true;
+            startMeteoSlideshow();
+        }
+
+        function logout() {
+            window.PARKS_APP.setSession({ loggedIn: false }, function() {
+                window.location.href = 'index.html';
+            });
+        }
+
+        // Verifica sessione all'avvio
+        window.PARKS_APP.init(() => {
+            window.PARKS_APP.getSession(function(session) {
+                if (!session || !session.loggedIn) {
+                    window.location.href = 'index.html';
+                }
+            });
+
+            // Caricamento Contenuti Dinamici Home
+            window.PARKS_DB.get('parks_home_content', null, function(content) {
+                if(content) {
+                    if(content.title) document.getElementById('home-title').innerText = content.title;
+                    if(content.tagline) document.getElementById('home-tagline').innerText = content.tagline;
+                    if(content.description) document.getElementById('home-description').innerText = content.description;
+                }
+            });
+
+            window.PARKS_DB.get('parks_gallery', null, function(images) {
+                if(images && images.length > 0) {
+                    renderGallery(images);
+                } else {
+                    startMeteoSlideshow();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

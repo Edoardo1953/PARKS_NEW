@@ -1,0 +1,2556 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARKS Admin | Pro Expert Control</title>
+    <link rel="stylesheet" href="../shared/design.css">
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="../shared/db.js"></script>
+    <script src="../shared/app.js"></script>
+    <style>
+        :root { --primary-green: #2d7a4d; --danger: #ff5252; --accent: #ffab40; --dark-bg: #0d1e1a; }
+        body { background: var(--dark-bg); color: white; display: flex; height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; margin: 0; }
+        
+        .sidebar-left { width: 220px; background: rgba(0,0,0,0.6); border-right: 1px solid rgba(255,255,255,0.1); padding: 1.5rem; display: flex; flex-direction: column; }
+        .logo { margin-bottom: 2.5rem; display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 1.3rem; color: var(--accent); }
+        .nav-btn { width: 100%; text-align: left; background: none; border: none; color: white; padding: 14px; margin-bottom: 8px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-weight: 800; opacity: 0.4; transition: 0.3s; }
+        .nav-btn.active { background: var(--primary-green); opacity: 1; }
+
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .topbar { padding: 1rem 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); }
+        
+        /* PULSANTE USER VIEW RIPRISTINATO */
+        .btn-user-view { background: var(--accent); color: #000; border: none; padding: 10px 22px; border-radius: 30px; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; transition: 0.2s; box-shadow: 10px 0 30px rgba(0,0,0,0.4); }
+        .btn-user-view:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+        .container { flex: 1; padding: 1rem; overflow: hidden; }
+        .view-pane { display: none; height: 100%; }
+        .view-pane.active { display: flex; flex-direction: column; overflow-y: auto; }
+
+        /* MAP EDITOR LAYOUT GRID */
+        .map-editor-grid { display: flex; gap: 1.2rem; height: 100%; }
+        .map-viewport { flex: 1; background: #000; border-radius: 20px; border: 2px solid #333; overflow: auto; position: relative; }
+        .map-inner { position: relative; width: max-content; }
+        
+        /* SIDEBAR DB (RIGHT) */
+        .db-sidebar { width: 450px; display: flex; flex-direction: column; gap: 1rem; overflow: hidden; }
+        .db-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; }
+        .section-header { padding: 16px 20px; background: rgba(255,171,64,0.08); font-size: 14px; font-weight: 900; letter-spacing: 4px; color: var(--accent); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); text-transform: uppercase; }
+
+        .tab-grid { display: grid; grid-template-columns: repeat(5, 1fr); padding: 5px; background: rgba(0,0,0,0.2); gap: 4px; }
+        .t-btn { padding: 12px 2px; border: none; background: rgba(255,255,255,0.03); color: white; font-size: 9px; font-weight: 900; cursor: pointer; border-radius: 8px; opacity: 0.4; text-transform: uppercase; }
+        .t-btn.active { opacity: 1; background: var(--accent); color: #000; }
+
+        .list-scroll { flex: 1; overflow-y: auto; padding: 12px; min-height: 100px; }
+        .marker-list { max-height: 380px; }
+        
+        .row-item { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+        .row-item.selected { border: 2px solid var(--accent); background: rgba(255,171,64,0.1); }
+        
+        .thumb { width: 35px; height: 35px; object-fit: contain; }
+        .row-input { flex: 1; background: none; border: none; color: white; font-weight: 800; font-size: 12px; text-transform: uppercase; outline: none; }
+        .btn-plus-s { background: var(--primary-green); color: white; padding: 12px; border-radius: 10px; border: none; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11px; margin: 8px; }
+
+        /* MARKERS ON CANVAS */
+        .marker-wrapper { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; cursor: move; z-index: 10; padding: 5px; }
+        .marker-wrapper img { width: 28px; height: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); pointer-events: none; }
+        .marker-label { margin-top: 3px; background: rgba(0,0,0,0.8); color: white; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap; pointer-events: none; }
+        .marker-label { margin-top: 3px; background: rgba(0,0,0,0.8); color: white; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap; pointer-events: none; }
+
+        /* LIBRARY CENTERED REFINEMENTS */
+        .lib-centered-hub { max-width: 1400px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 1.5rem; }
+        .drag-over { border-top: 3px solid var(--accent) !important; padding-top: 15px !important; }
+
+        /* FICHE EDITOR STYLES */
+        .editor-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
+        .input-group { margin-bottom: 1.2rem; }
+        .label { display: block; font-size: 10px; font-weight: 900; color: var(--accent); margin-bottom: 5px; letter-spacing: 1px; }
+        .f-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 10px; font-weight: 700; outline: none; }
+        .f-area { height: 450px; resize: vertical; font-family: inherit; line-height: 1.6; }
+        .photo-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .photo-box { width: 100px; height: 100px; border-radius: 10px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.1); }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-del { position: absolute; top: 5px; right: 5px; background: var(--danger); color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 10px; font-weight: 900; }
+
+        /* EDITOR BUTTONS */
+        .btn-editor { border: none; padding: 10px 20px; border-radius: 12px; font-weight: 900; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.3s; color: white; }
+        .btn-editor i { width: 18px; height: 18px; }
+        .btn-editor.btn-save { background: #2d7a4d; border: 2px solid #3eb471; box-shadow: 0 4px 15px rgba(45,122,77,0.3); }
+        .btn-editor.btn-save:hover { background: #3eb471; transform: translateY(-2px); }
+        .btn-editor.btn-delete { background: #ff5252; border: 2px solid #ff8a80; box-shadow: 0 4px 15px rgba(255,82,82,0.3); }
+        .btn-editor.btn-delete:hover { background: #ff8a80; transform: translateY(-2px); }
+        .btn-editor.btn-close { background: #000; border: 2px solid rgba(255,255,255,0.2); width: 45px; height: 45px; padding: 0; justify-content: center; }
+        .btn-editor.btn-close:hover { background: #333; border-color: white; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar-left">
+        <div style="width: 220px; margin-bottom: 30px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));">
+            <div class="parks-logo white">
+                <img src="../shared/parks_logo_combined_white.svg" alt="PARKS Namibia">
+            </div>
+        </div>
+        <div style="font-size: 0.7rem; font-weight: 900; letter-spacing: 4px; color: var(--accent); margin-bottom: 2rem; opacity: 0.6;">ADMIN DASHBOARD</div>
+        <nav style="flex:1;">
+            <button class="nav-btn" id="nav-dashboard" onclick="switchView('dashboard')"><i data-lucide="activity"></i> MONITOR REAL-TIME</button>
+            <button class="nav-btn" id="nav-users" onclick="switchView('users')"><i data-lucide="shield-check"></i> ACCESSI & UTENTI</button>
+            <button class="nav-btn" id="nav-home" onclick="switchView('home')"><i data-lucide="layout"></i> HOME PRO</button>
+            <button class="nav-btn" id="nav-library" onclick="switchView('library')"><i data-lucide="folders"></i> LIBRERIA</button>
+            <button class="nav-btn" id="nav-visit" onclick="switchView('visit')"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:18px; border-radius:3px; margin-right:4px;"> VISIT NAMIBIA</button>
+            <button class="nav-btn" id="nav-map" onclick="switchView('map')"><i data-lucide="map"></i> MAP EDITOR</button>
+            <button class="nav-btn" id="nav-weather" onclick="switchView('weather')"><i data-lucide="sun"></i> METEO</button>
+            <button class="nav-btn" id="nav-kids" onclick="switchView('kids')"><i data-lucide="baby"></i> KIDS CORNER</button>
+        </nav>
+        <button onclick="location.reload()" style="background:none; border:none; color:white; font-size:10px; opacity:0.3; cursor:pointer;"><i data-lucide="refresh-cw" style="width:10px;"></i> RE-SYNC SYSTEM</button>
+    </aside>
+
+    <main class="main">
+        <div class="topbar">
+            <strong>MAP OPERATIONS | ASSET ARCHITECT</strong>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <!-- VISTA USER -->
+                <button class="btn-user-view" onclick="window.open('../user/index.html')">
+                    <i data-lucide="external-link" style="width:16px;"></i> VISTA USER
+                </button>
+                
+                <!-- BACKUP TOOLS -->
+                <label title="Importa un backup salvato in precedenza" style="background:rgba(255,255,255,0.08); color:white; border:1px solid rgba(255,255,255,0.2); padding:9px 16px; border-radius:30px; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:12px; transition:0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'">
+                    <i data-lucide="upload" style="width:14px;"></i> RIPRISTINA
+                    <input type="file" accept=".json" style="display:none;" onchange="importBackup(event)">
+                </label>
+                <button onclick="exportBackup()" title="Scarica un backup completo di tutti i tuoi dati" style="background:rgba(45,122,77,0.3); color:white; border:1px solid rgba(45,122,77,0.6); padding:9px 16px; border-radius:30px; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:12px; transition:0.2s;" onmouseover="this.style.background='rgba(45,122,77,0.6)'" onmouseout="this.style.background='rgba(45,122,77,0.3)'">
+                    <i data-lucide="download" style="width:14px;"></i> BACKUP
+                </button>
+                <button onclick="exitAndBackup()" title="Salva un backup ed esci dalla modalità Admin" style="background:#ff5252; color:white; border:none; padding:10px 22px; border-radius:30px; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:13px; transition:0.2s; box-shadow:0 5px 15px rgba(255,82,82,0.4);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i data-lucide="power" style="width:15px;"></i> ESCI E BACKUP
+                </button>
+            </div>
+        </div>
+
+        <div class="container">
+            <div id="view-dashboard" class="view-pane active">
+                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
+                    <div>
+                        <h1 style="letter-spacing: 5px; margin:0;">MONITOR REAL-TIME</h1>
+                        <p style="font-size:11px; opacity:0.5; margin-top:5px; font-weight:700; color:var(--accent);">ETOSHA NATIONAL PARK • LIVE TRACKING SYSTEM</p>
+                    </div>
+                    <div style="background:rgba(45,122,77,0.2); border:1px solid var(--primary-green); padding:10px 20px; border-radius:30px; display:flex; align-items:center; gap:10px; font-size:12px; font-weight:900;">
+                        <div style="width:10px; height:10px; background:#00ff00; border-radius:50%; box-shadow:0 0 10px #00ff00;"></div>
+                        SISTEMA ATTIVO
+                    </div>
+                </header>
+
+                <div style="flex:1; background:#000; border-radius:25px; overflow:hidden; border:2px solid rgba(255,255,255,0.1); position:relative; min-height:500px;" id="dashboard-map">
+                    <!-- Leaflet map will be initialized here -->
+                    
+                    <div style="position:absolute; bottom:30px; left:30px; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); padding:20px; border-radius:20px; border:1px solid rgba(255,255,255,0.2); width:300px; z-index:1000; max-height:400px; display:flex; flex-direction:column; gap:15px;">
+                        <div>
+                            <h3 style="margin:0 0 15px 0; font-size:12px; letter-spacing:2px; color:var(--accent);">STATISTICHE LIVE</h3>
+                            <div style="display:flex; flex-direction:column; gap:10px;">
+                                <div style="display:flex; justify-content:space-between; font-size:11px;"><span>TURISTI REGISTRATI:</span> <strong id="stat-tourists" style="color:var(--accent);">0</strong></div>
+                                <div style="display:flex; justify-content:space-between; font-size:11px;"><span>DISPOSITIVI ATTIVI:</span> <strong id="stat-devices" style="color:var(--accent);">0</strong></div>
+                                <div style="display:flex; justify-content:space-between; font-size:11px;"><span>AVVISI ATTIVI:</span> <strong id="stat-alerts" style="color:var(--danger);">0</strong></div>
+                            </div>
+                        </div>
+                        
+                        <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
+                            <h3 style="margin:0 0 10px 0; font-size:10px; letter-spacing:1px; opacity:0.6;">LOG SEGNALAZIONI RECENTI</h3>
+                            <div id="alerts-log" style="font-size:10px; overflow-y:auto; max-height:150px; display:flex; flex-direction:column; gap:5px;">
+                                <!-- Alerts list here -->
+                                <div style="opacity:0.3; text-align:center; padding:10px;">Nessun avviso attivo</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-users" class="view-pane">
+                <div class="lib-centered-hub">
+                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
+                        <div>
+                            <h1 style="letter-spacing: 5px; margin:0;">SISTEMA ACCESSI</h1>
+                            <div style="display:flex; gap:15px; margin-top:10px;">
+                                <button class="t-btn active" id="tab-sys-users" onclick="switchUserTab('sys')" style="font-size:9px; padding:10px 15px;">UTENTI SISTEMA</button>
+                                <button class="t-btn" id="tab-tourists" onclick="switchUserTab('tourist')" style="font-size:9px; padding:10px 15px;">ELENCO TURISTI</button>
+                                <button class="t-btn" id="tab-fiches" onclick="switchUserTab('fiche')" style="font-size:9px; padding:10px 15px;">ARCHIVIO SCHEDE</button>
+                            </div>
+                        </div>
+                        <div id="user-ops-btn">
+                            <button class="btn-plus-s" onclick="addUser()">+ NUOVO UTENTE SISTEMA</button>
+                        </div>
+                    </header>
+                    
+                    <div id="users-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:1.5rem; padding-bottom:5rem;">
+                        <!-- Users will be rendered here -->
+                    </div>
+
+                    <div id="tourists-container" style="display:none; flex-direction:column; gap:1rem; padding-bottom:5rem;">
+                        <table style="width:100%; border-collapse: collapse; background:rgba(255,171,64,0.03); border-radius:15px; overflow:hidden;">
+                            <thead>
+                                <tr style="background:rgba(255,171,64,0.1); color:var(--accent); font-size:10px; text-align:left;">
+                                    <th style="padding:15px;">TURISTA (NOME/COGNOME)</th>
+                                    <th style="padding:15px;">CONTATTI (EMAIL/TEL)</th>
+                                    <th style="padding:15px;">PASSWORD</th>
+                                    <th style="padding:15px;">N. REPERTORIO</th>
+                                    <th style="padding:15px;">STATO PASS</th>
+                                    <th style="padding:15px;">AZIONI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tourists-list"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="fiches-container" style="display:none; flex-direction:column; gap:1rem; padding-bottom:5rem;">
+                        <table id="fiches-table" style="width:100%; border-collapse: collapse; background:rgba(255,255,255,0.02); border-radius:15px; overflow:hidden;">
+                            <thead>
+                                <tr style="background:rgba(255,255,255,0.05); color:var(--accent); font-size:10px; text-align:left;">
+                                    <th style="padding:15px;">TURISTA (NOME/COGNOME)</th>
+                                    <th style="padding:15px;">CONTATTI (EMAIL/TEL)</th>
+                                    <th style="padding:15px;">RESIDENZA (CITTÀ/STATO)</th>
+                                    <th style="padding:15px;">N. REPERTORIO</th>
+                                    <th style="padding:15px; text-align:right;">AZIONI</th>
+                                </tr>
+                                <tr style="background:rgba(0,0,0,0.2);">
+                                    <th style="padding:10px 15px;"><input type="text" id="filter-name" placeholder="Cerca nome..." class="f-input" style="font-size:10px; padding:5px; border-color:rgba(255,255,255,0.1);" oninput="renderFiches()"></th>
+                                    <th style="padding:10px 15px;"><input type="text" id="filter-contact" placeholder="Cerca email/tel..." class="f-input" style="font-size:10px; padding:5px; border-color:rgba(255,255,255,0.1);" oninput="renderFiches()"></th>
+                                    <th style="padding:10px 15px;"><input type="text" id="filter-country" placeholder="Cerca stato/città..." class="f-input" style="font-size:10px; padding:5px; border-color:rgba(255,255,255,0.1);" oninput="renderFiches()"></th>
+                                    <th style="padding:10px 15px;"><input type="text" id="filter-rep" placeholder="Cerca repertorio..." class="f-input" style="font-size:10px; padding:5px; border-color:rgba(255,255,255,0.1);" oninput="renderFiches()"></th>
+                                    <th style="padding:10px 15px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="fiches-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-library" class="view-pane">
+                <div class="lib-centered-hub">
+                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
+                        <h1 style="letter-spacing: 5px;">ARCHIVIO PRO</h1>
+                        <button class="btn-plus-s" onclick="addCategory()">+ AGGIUNGI MACRO-CATEGORIA</button>
+                    </header>
+                    <div id="lib-container" style="display:flex; flex-direction:column; gap:2rem; padding-bottom:5rem;"></div>
+                </div>
+            </div>
+
+            <div id="view-visit" class="view-pane">
+                <div class="lib-centered-hub">
+                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
+                        <h1 style="letter-spacing: 5px;">VISIT NAMIBIA PRO</h1>
+                        <button class="btn-plus-s" onclick="addCategory()">+ AGGIUNGI MACRO-CATEGORIA</button>
+                    </header>
+                    <div id="visit-container" style="display:flex; flex-direction:column; gap:2rem; padding-bottom:5rem;"></div>
+                </div>
+            </div>
+
+            <div id="view-home" class="view-pane">
+                <div class="lib-centered-hub">
+                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
+                        <h1 style="letter-spacing: 5px;">HOME CONTROLLO PRO</h1>
+                        <button class="btn-editor btn-save" onclick="saveHomeAll()">
+                            <i data-lucide="check"></i> SALVA TUTTO
+                        </button>
+                    </header>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div class="db-section" style="padding:1.5rem;">
+                            <h3 style="color:var(--accent); font-size:12px; letter-spacing:3px; margin-bottom:20px;">1. TESTI HOMEPAGE</h3>
+                            <div class="input-group">
+                                <span class="label">TITOLO PARCO (ES. ETOSHA)</span>
+                                <input type="text" id="home-title" class="f-input">
+                            </div>
+                            <div class="input-group">
+                                <span class="label">TAGLINE / SOTTOTITOLO</span>
+                                <input type="text" id="home-tagline" class="f-input">
+                            </div>
+                            <div class="input-group">
+                                <span class="label">DESCRIZIONE PRINCIPALE</span>
+                                <textarea id="home-description" class="f-input f-area" style="height:300px;"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="db-section" style="padding:1.5rem;">
+                            <h3 style="color:var(--accent); font-size:12px; letter-spacing:3px; margin-bottom:20px;">2. GALLERIA HQ</h3>
+                            <p style="font-size:11px; opacity:0.6; margin-bottom:20px;">Carica qui le foto che appariranno nella rubrica Galleria della Homepage.</p>
+                            
+                            <label class="btn-plus-s" style="cursor:pointer; margin:0 0 20px 0;">
+                                <i data-lucide="image-plus"></i> AGGIUNGI FOTO ALLA GALLERY
+                                <input type="file" multiple accept="image/*" style="display:none;" onchange="uploadGallery(event)">
+                            </label>
+
+                            <div id="gallery-grid" class="photo-grid">
+                                <!-- Gallery photos here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-weather" class="view-pane">
+                <header style="margin-bottom:1rem;"><h1>CONFIGURAZIONE METEO NAMIBIA</h1></header>
+                <div style="background:rgba(255,255,255,0.05); padding:2rem; border-radius:20px; text-align:center;">
+                    <i data-lucide="cloud-sun" style="width:64px; height:64px; color:var(--accent); margin-bottom:1rem;"></i>
+                    <p>Modulo Meteo Live sincronizzato tramite Open-Meteo & Windy.</p>
+                    <button class="btn-user-view" onclick="window.open('../user/weather_original.html')">APRI DASHBOARD METEO <i data-lucide="external-link"></i></button>
+                </div>
+            </div>
+
+            <div id="view-kids" class="view-pane">
+                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
+                    <div>
+                        <h1 style="letter-spacing: 5px; margin:0;">KIDS CORNER PRO</h1>
+                        <p style="font-size:11px; opacity:0.5; margin-top:5px; font-weight:700; color:var(--accent);">GESTIONE CONTENUTI MULTIMEDIALI PER BAMBINI</p>
+                    </div>
+                </header>
+
+                <!-- GAME TYPE TABS -->
+                <div style="display:flex; gap:10px; margin-bottom:30px; background:rgba(255,255,255,0.03); padding:10px; border-radius:20px; width:fit-content;">
+                    <button id="tab-kids-coloring" class="kid-tab active" onclick="switchKidsTab('coloring')" style="background:var(--accent); color:black; border:none; padding:10px 25px; border-radius:15px; font-weight:900; cursor:pointer; font-size:11px; text-transform:uppercase;">Disegni da Colora</button>
+                    <button id="tab-kids-memory" class="kid-tab" onclick="switchKidsTab('memory')" style="background:transparent; color:white; border:none; padding:10px 25px; border-radius:15px; font-weight:900; cursor:pointer; opacity:0.4; font-size:11px; text-transform:uppercase;">Memory Game</button>
+                    <button id="tab-kids-puzzle" class="kid-tab" onclick="switchKidsTab('puzzle')" style="background:transparent; color:white; border:none; padding:10px 25px; border-radius:15px; font-weight:900; cursor:pointer; opacity:0.4; font-size:11px; text-transform:uppercase;">Puzzle</button>
+                    <button id="tab-kids-quiz" class="kid-tab" onclick="switchKidsTab('quiz')" style="background:transparent; color:white; border:none; padding:10px 25px; border-radius:15px; font-weight:900; cursor:pointer; opacity:0.4; font-size:11px; text-transform:uppercase;">Safari Quiz</button>
+                </div>
+
+                <!-- CONTENT AREA FOR COLORING (ACTIVE) -->
+                <div id="kids-coloring-zone">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h3 style="margin:0; opacity:0.6; letter-spacing:2px; font-size:0.8rem;">RACCOLTA DISEGNI (CANVAS)</h3>
+                        <button class="btn-plus-s" onclick="openKidEditor()" style="margin:0; padding:8px 20px; font-size:11px;"><i data-lucide="plus"></i> AGGIUNGI DISEGNO</button>
+                    </div>
+                    <div id="kids-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:20px; padding-bottom:50px;"></div>
+                </div>
+
+                <!-- CONTENT AREA FOR MEMORY -->
+                <div id="kids-memory-zone" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h3 style="margin:0; opacity:0.6; letter-spacing:2px; font-size:0.8rem;">GESTIONE TESSERE MEMORY</h3>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="seedAllMemory()" style="background:rgba(255,171,64,0.1); color:#ffab40; border:1px solid rgba(255,171,64,0.2); padding:8px 20px; border-radius:15px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="refresh-cw"></i> REIMPOSTA GIOCHI 1 E 2
+                            </button>
+                            <button class="btn-plus-s" onclick="openMemoryEditor()" style="margin:0; padding:8px 20px; font-size:11px;"><i data-lucide="plus"></i> AGGIUNGI TESSERA</button>
+                        </div>
+                    </div>
+                    <div id="memory-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:20px; padding-bottom:50px;"></div>
+                </div>
+
+                <div id="kids-quiz-zone" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <div style="display:flex; flex-direction:column;">
+                            <h3 style="margin:0; opacity:0.6; letter-spacing:2px; font-size:0.8rem;">DOMANDE SAFARI QUIZ</h3>
+                            <p style="margin:5px 0 0 0; font-size:10px; opacity:0.4;">Gestisci le sfide per i 5 livelli di difficoltà</p>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="seedQuizQuestions()" style="background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); padding:8px 20px; border-radius:15px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="database"></i> CARICA PREDEFINITE
+                            </button>
+                            <button class="btn-plus-s" onclick="openQuizEditor()" style="margin:0; padding:8px 20px; font-size:11px;">
+                                <i data-lucide="plus"></i> AGGIUNGI DOMANDA
+                            </button>
+                        </div>
+                    </div>
+                    <div id="quiz-list" style="display:flex; flex-direction:column; gap:15px; padding-bottom:30px;"></div>
+                    
+                    <div style="margin-top:30px; padding:25px; background:rgba(255,255,255,0.03); border-radius:20px; border:1px solid rgba(255,255,255,0.05);">
+                        <h3 style="margin:0 0 15px 0; font-size:0.8rem; letter-spacing:2px; color:var(--accent);">ASSET GIOCO E LOGICA</h3>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                            <div>
+                                <span class="label">IMMAGINE SUCCESSO (VITTORIA)</span>
+                                <div style="height:120px; background:#000; border-radius:15px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); margin-top:10px;">
+                                    <img src="../assets/kids/quiz_success.png" style="width:100%; height:100%; object-fit:contain;">
+                                </div>
+                            </div>
+                            <div>
+                                <span class="label">IMMAGINE RITENTA (NON PASSATO)</span>
+                                <div style="height:120px; background:#000; border-radius:15px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); margin-top:10px;">
+                                    <img src="../assets/kids/quiz_retry.png" style="width:100%; height:100%; object-fit:contain;">
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top:20px; padding:15px; background:rgba(156, 39, 176, 0.1); border-radius:12px; border:1px solid rgba(156, 39, 176, 0.3); font-size:11px; display:flex; align-items:center; gap:10px;">
+                            <i data-lucide="shuffle" style="width:18px; color:#9c27b0;"></i>
+                            <span style="opacity:0.8;">La <strong>randomizzazione</strong> è attiva: il sistema pesca 5 domande casuali dal pool del livello (es. 5 su 15) per garantire varietà ogni volta che si rigioca.</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:30px; padding:25px; background:rgba(255,255,255,0.03); border-radius:20px; border:1px solid rgba(255,255,255,0.05);">
+                        <h3 style="margin:0 0 20px 0; font-size:0.8rem; letter-spacing:2px; color:var(--accent);">ICONE DEI LIVELLI (ANIMALI)</h3>
+                        <p style="font-size:11px; opacity:0.5; margin-bottom:20px;">Associa un animale ad ogni livello per renderlo più riconoscibile dai bambini.</p>
+                        <div id="quiz-level-icons" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:15px;">
+                            <!-- Generated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="kids-puzzle-zone" style="display:none; padding-bottom:50px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h3 style="margin:0; opacity:0.6; letter-spacing:2px; font-size:0.8rem;">RACCOLTA IMMAGINI PUZZLE</h3>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="seedDefaultPuzzles()" style="background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); padding:8px 20px; border-radius:15px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="database"></i> CARICA PREDEFINITI
+                            </button>
+                            <button class="btn-plus-s" onclick="openPuzzleEditor()" style="margin:0; padding:8px 20px; font-size:11px;"><i data-lucide="plus"></i> AGGIUNGI PUZZLE</button>
+                        </div>
+                    </div>
+                    <div id="puzzles-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:20px;"></div>
+                </div>
+            </div>
+
+            <!-- MODAL EDITOR FOR KIDS DRAWINGS -->
+            <div id="kid-editor-modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+                <div class="modal-content" style="max-width:500px; width:90%; background:#1a1a1a; padding:40px; border-radius:30px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+                    <h2 id="kid-modal-title" style="letter-spacing:5px; margin:0; color:var(--accent); font-size:1.5rem;">NUOVO DISEGNO</h2>
+                    <p id="kid-modal-hint" style="font-size:11px; opacity:0.5; margin:10px 0 30px 0; font-weight:700;">CARICA UN'IMMAGINE IN BIANCO E NERO DA FAR COLORARE AI BIMBI</p>
+                    
+                    <div style="display:flex; flex-direction:column; gap:20px;">
+                        <div class="input-group">
+                            <span class="label">NOME DELL'ANIMALE</span>
+                            <input type="text" id="kid-name" placeholder="Es: Leone Safari" class="f-input">
+                        </div>
+                        
+                        <div style="background:rgba(255,255,255,0.03); border:2px dashed rgba(255,255,255,0.1); border-radius:20px; padding:40px; text-align:center; cursor:pointer; transition:0.3s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'" onclick="document.getElementById('kid-file').click()">
+                            <input type="file" id="kid-file" accept="image/*" style="display:none;" onchange="previewKidImage(event)">
+                            <div id="kid-preview-container" style="display:none; margin-bottom:15px;">
+                                <img id="kid-preview" style="max-width:100%; max-height:250px; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+                            </div>
+                            <div id="kid-upload-placeholder">
+                                <i data-lucide="image" style="width:50px; height:50px; opacity:0.2; margin:0 auto 15px;"></i>
+                                <p style="font-size:12px; opacity:0.4; font-weight:700;">CLICCA QUI PER SELEZIONARE L'IMMAGINE</p>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:15px; margin-top:10px;">
+                            <button class="btn-editor btn-save" onclick="saveKidDrawing()" style="flex:2; justify-content:center;">SALVA NEL DATABASE</button>
+                            <button class="btn-editor btn-close" onclick="closeKidEditor()" style="flex:1; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1);"><i data-lucide="x"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL EDITOR FOR QUIZ -->
+            <div id="quiz-editor-modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+                <div class="modal-content" style="max-width:600px; width:95%; background:#1a1a1a; padding:40px; border-radius:30px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 20px 50px rgba(0,0,0,0.5); max-height:90vh; overflow-y:auto;">
+                    <h2 style="letter-spacing:5px; margin:0; color:var(--accent); font-size:1.5rem;">NUOVA DOMANDA QUIZ</h2>
+                    <p style="font-size:11px; opacity:0.5; margin:10px 0 30px 0; font-weight:700;">IMPOSTA LA DOMANDA, LE OPZIONI E CARICA UN'IMMAGINE DI RIFERIMENTO</p>
+                    
+                    <div style="display:flex; flex-direction:column; gap:20px;">
+                        <div class="input-group">
+                            <span class="label">TESTO DELLA DOMANDA</span>
+                            <input type="text" id="quiz-q" placeholder="Es: Qual è l'animale più veloce della savana?" class="f-input">
+                        </div>
+                        
+                        <div style="display:grid; grid-template-columns: 1fr 40px; gap:10px; align-items:center;">
+                            <div class="input-group" style="margin:0;"><span class="label">OPZIONE A</span><input type="text" id="quiz-o0" class="f-input"></div>
+                            <input type="radio" name="quiz-correct" value="0" style="width:20px; height:20px; accent-color:var(--accent);">
+                            
+                            <div class="input-group" style="margin:0;"><span class="label">OPZIONE B</span><input type="text" id="quiz-o1" class="f-input"></div>
+                            <input type="radio" name="quiz-correct" value="1" style="width:20px; height:20px; accent-color:var(--accent);">
+                            
+                            <div class="input-group" style="margin:0;"><span class="label">OPZIONE C</span><input type="text" id="quiz-o2" class="f-input"></div>
+                            <input type="radio" name="quiz-correct" value="2" style="width:20px; height:20px; accent-color:var(--accent);">
+                            
+                            <div class="input-group" style="margin:0;"><span class="label">OPZIONE D</span><input type="text" id="quiz-o3" class="f-input"></div>
+                            <input type="radio" name="quiz-correct" value="3" style="width:20px; height:20px; accent-color:var(--accent);">
+                        </div>
+
+                        <div class="input-group">
+                            <span class="label">LIVELLO DI DIFFICOLTÀ</span>
+                            <select id="quiz-level" class="f-input" style="background:#222; color:white; border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px;">
+                                <option value="1">Livello 1 (Facile)</option>
+                                <option value="2">Livello 2</option>
+                                <option value="3">Livello 3</option>
+                                <option value="4">Livello 4</option>
+                                <option value="5">Livello 5 (Difficile)</option>
+                            </select>
+                        </div>
+
+                        <div style="background:rgba(255,255,255,0.03); border:2px dashed rgba(255,255,255,0.1); border-radius:20px; padding:20px; text-align:center; cursor:pointer;" onclick="document.getElementById('quiz-file').click()">
+                            <input type="file" id="quiz-file" accept="image/*" style="display:none;" onchange="previewQuizImage(event)">
+                            <div id="quiz-preview-container" style="display:none; margin-bottom:10px;">
+                                <img id="quiz-preview" style="max-width:100%; max-height:150px; border-radius:10px;">
+                            </div>
+                            <div id="quiz-upload-placeholder">
+                                <i data-lucide="image" style="width:30px; height:30px; opacity:0.2; margin-bottom:5px;"></i>
+                                <p style="font-size:10px; opacity:0.4; font-weight:700;">CARICA IMMAGINE (FACOLTATIVO)</p>
+                                <p style="font-size:8px; opacity:0.3; margin-top:5px;">Nota: Nel gioco verrà mostrato il disegno di gruppo per non suggerire la soluzione.</p>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:15px; margin-top:10px;">
+                            <button class="btn-editor btn-save" onclick="saveKidQuiz()" style="flex:2; justify-content:center;">SALVA DOMANDA</button>
+                            <button class="btn-editor btn-close" onclick="closeQuizEditor()" style="flex:1; background:rgba(255,255,255,0.05); color:white;"><i data-lucide="x"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-fiche-editor" class="view-pane">
+                <div class="lib-centered-hub">
+                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                        <div style="display:flex; align-items:center; gap:20px;">
+                            <h1 id="edit-header">MODIFICA SCHEDA</h1>
+                            <button id="f-star" onclick="toggleMustSee()" style="background:none; border:none; cursor:pointer; color:#666; transition:0.3s; padding:0; display:flex; align-items:center;" title="Aggiungi ai MUST SEE">
+                                <i data-lucide="star" style="width:32px; height:32px;"></i>
+                            </button>
+                        </div>
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <button class="btn-editor btn-save" onclick="saveFiche()">
+                                <i data-lucide="check"></i> SALVA SCHEDA
+                            </button>
+                            <button class="btn-editor btn-delete" onclick="deleteItem()">
+                                <i data-lucide="trash-2"></i> ELIMINA
+                            </button>
+                            <button class="btn-editor btn-close" onclick="switchView(curSection || 'library')" title="Esci senza salvare">
+                                <i data-lucide="x"></i>
+                            </button>
+                        </div>
+                    </header>
+                    <div class="editor-grid">
+                        <div class="db-section" style="padding:1.5rem;">
+                            <div class="input-group">
+                                <span class="label">TITOLO VISUALIZZATO</span>
+                                <input id="f-title" type="text" class="f-input" placeholder="Es: ELEFANTE AFRICANO">
+                            </div>
+                            <div class="input-group">
+                                <span class="label">DESCRIZIONE DETTAGLIATA (USER VIEW)</span>
+                                <textarea id="f-desc" class="f-input f-area" placeholder="Inserisci qui i testi informativi..."></textarea>
+                            </div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                            <div class="db-section" style="padding:1.5rem;">
+                                <div class="section-header" style="background:none; border:none; padding:0 0 10px 0;">SCHEDA TECNICA</div>
+                                <div class="input-group"><input type="text" id="f-label1" value="PESO" class="label" style="background:none; border:none; width:100%; outline:none; font-family:inherit; padding:0; margin-bottom:5px; text-transform:uppercase;"><input id="f-weight" type="text" class="f-input"></div>
+                                <div class="input-group"><input type="text" id="f-label2" value="DIMENSIONI" class="label" style="background:none; border:none; width:100%; outline:none; font-family:inherit; padding:0; margin-bottom:5px; text-transform:uppercase;"><input id="f-size" type="text" class="f-input"></div>
+                                <div class="input-group"><input type="text" id="f-label3" value="LONGEVITÀ" class="label" style="background:none; border:none; width:100%; outline:none; font-family:inherit; padding:0; margin-bottom:5px; text-transform:uppercase;"><input id="f-life" type="text" class="f-input"></div>
+                            </div>
+                            <div class="db-section" style="padding:1.5rem;">
+                                <div class="section-header" style="background:none; border:none; padding:0 0 10px 0;">MULTIMEDIA HUB (IMG/PDF/VIDEO)</div>
+                                <label class="btn-plus-s" style="margin:0 0 5px 0;">
+                                    + AGGIUNGI MEDIA
+                                    <input type="file" multiple accept="image/*,application/pdf,video/mp4,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-powerpoint" style="display:none;" onchange="uploadItemPhotos(event)">
+                                </label>
+                                <div style="background: rgba(255,171,64,0.1); border: 1px solid rgba(255,171,64,0.3); padding: 10px; border-radius: 8px; font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;">
+                                    <i data-lucide="info" style="width:16px; margin-top:2px; flex-shrink:0;"></i>
+                                    <span>Guida per l'Admin: Se carichi una presentazione PPTX, ti consigliamo di caricare anche la versione PDF per gli utenti sprovvisti di PowerPoint.</span>
+                                </div>
+                                <div id="f-photos" class="photo-grid"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-tourist-editor" class="view-pane">
+                <div class="lib-centered-hub">
+                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                        <h1 id="edit-tourist-header">MODIFICA TURISTA</h1>
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <button class="btn-editor btn-save" onclick="saveTouristEdit()">
+                                <i data-lucide="check"></i> SALVA MODIFICHE
+                            </button>
+                            <button class="btn-editor btn-close" onclick="switchView('users'); switchUserTab('fiche');" title="Esci senza salvare">
+                                <i data-lucide="x"></i>
+                            </button>
+                        </div>
+                    </header>
+                    <div class="db-section" style="padding:2rem;">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                            <div class="input-group"><span class="label">NOME</span><input type="text" id="et-firstName" class="f-input"></div>
+                            <div class="input-group"><span class="label">COGNOME</span><input type="text" id="et-lastName" class="f-input"></div>
+                            <div class="input-group"><span class="label">EMAIL</span><input type="text" id="et-email" class="f-input"></div>
+                            <div class="input-group"><span class="label">TELEFONO</span><input type="text" id="et-phone" class="f-input"></div>
+                            <div class="input-group full" style="grid-column: span 2;"><span class="label">INDIRIZZO</span><input type="text" id="et-address" class="f-input"></div>
+                             <div class="input-group"><span class="label">CITTÀ DI RESIDENZA</span><input type="text" id="et-city" class="f-input"></div>
+                             <div class="input-group"><span class="label">NAZIONE DI RESIDENZA</span><input type="text" id="et-country" class="f-input"></div>
+                             <div class="input-group"><span class="label">NAZIONALITÀ</span><input type="text" id="et-nationality" class="f-input" placeholder="Es: ITALIANA"></div>
+                             <div class="input-group"><span class="label">CAP</span><input type="text" id="et-postalCode" class="f-input"></div>
+                            <div class="input-group"><span class="label">N. REPERTORIO</span><input type="text" id="et-repertorio" class="f-input"></div>
+                            <div class="input-group"><span class="label">SCADENZA PASS</span><input type="date" id="et-expiry" class="f-input"></div>
+                            <div class="input-group"><span class="label">DATA DI NASCITA</span><input type="date" id="et-dob" class="f-input"></div>
+                            <div class="input-group"><span class="label">PASSWORD</span><input type="text" id="et-password" class="f-input"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-map" class="view-pane">
+                <div class="map-editor-grid">
+                    
+                    <div class="map-viewport" id="map-vp" onclick="handleMapClick(event)">
+                        <div class="map-inner" id="map-inner">
+                            <img id="map-img-bg" src="../assets/library/MAPS/Etosha map 02.jpg" style="height:80vh; width:auto; display:block; border-radius:15px;" ondragstart="return false">
+                            <div id="marker-layer"></div>
+                        </div>
+                    </div>
+
+                    <div class="db-sidebar">
+                        
+                        <div class="db-section">
+                            <div class="section-header"><span>MAPS</span> <i data-lucide="map"></i></div>
+                            <div class="list-scroll" id="map-list-area"></div>
+                            <label class="btn-plus-s">
+                                <i data-lucide="plus-circle" style="width:14px;"></i> CARICA NUOVA MAPPA BASE
+                                <input type="file" style="display:none;" onchange="uploadMap(event)">
+                            </label>
+                        </div>
+
+                        <div class="db-section">
+                            <div class="section-header"><span>MARKERS</span> <i data-lucide="pin"></i></div>
+                            <div class="tab-grid">
+                                <button class="t-btn active" id="t-alert" onclick="switchX('alert')">ALERT</button>
+                                <button class="t-btn" id="t-must_see" onclick="switchX('must_see')">MUST SEE</button>
+                                <button class="t-btn" id="t-com" onclick="switchX('com')">COM</button>
+                                <button class="t-btn" id="t-iti" onclick="switchX('iti')">ITI</button>
+                                <button class="t-btn" id="t-anim" onclick="switchX('anim')">ANIM</button>
+                                <button class="t-btn" id="t-pts" onclick="switchX('pts')">PUNTI</button>
+                            </div>
+                            <div class="list-scroll marker-list" id="marker-list-area"></div>
+                            <label class="btn-plus-s" id="add-marker-container">
+                                <i data-lucide="image" style="width:14px;"></i> AGGIUNGI ICONA A <span id="cur-cat">POS</span>
+                                <input type="file" style="display:none;" onchange="uploadIcon(event)">
+                            </label>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        var library = { categories: [], map_markers: [], available_icons: {alert:[], must_see:[], com:[], iti:[], anim:[], pts:[]}, available_maps: [], active_map_id: null };
+        var visitNamibia = { categories: [] };
+        var kidsDrawings = [];
+        var kidsPuzzles = [];
+        var kidsMemory = [];
+        var kidsQuiz = [];
+        var curSection = 'library'; // 'library' or 'visit'
+        var activeTab = 'alert';
+        var selectedIconId = null;
+        var draggingMarker = null;
+        var users = [{ id: 'u_super', name: 'SUPER ADMIN', role: 'SUPER_ADMIN', password: 'ADMIN', permissions: 'TOTALE' }];
+        var tourists = [];
+        var curDrag = null; // {type, cIdx, sIdx, iIdx}
+        var curEditItem = null;
+        var curEditContext = null;
+        var homeContent = { title: 'ETOSHA', tagline: 'National Park · Namibia', description: '' };
+        var gallery = [];
+
+        function switchView(v) { 
+            document.querySelectorAll('.view-pane, .nav-btn').forEach(el => el.classList.remove('active')); 
+            var view = document.getElementById('view-' + v);
+            if(view) view.classList.add('active');
+            var nav = document.getElementById('nav-' + v);
+            if(nav) nav.classList.add('active');
+            if(v==='map') renderUI(); 
+            if(v==='dashboard') {
+                initDashboardMap();
+            }
+            if(v==='users') {
+                switchUserTab('sys');
+                renderUsers();
+            }
+            if(v==='library') { curSection = 'library'; renderLib(); }
+            if(v==='visit') { curSection = 'visit'; renderLib(); }
+            if(v==='kids') renderKids();
+            if(v==='mustsee') { renderMustSeePro(); }
+            if(v==='home') renderHome();
+            if(window.lucide) lucide.createIcons();
+        }
+
+        function renderHome() {
+            document.getElementById('home-title').value = homeContent.title || 'ETOSHA';
+            document.getElementById('home-tagline').value = homeContent.tagline || '';
+            document.getElementById('home-description').value = homeContent.description || '';
+            renderGallery();
+        }
+
+        function renderGallery() {
+            const container = document.getElementById('gallery-grid');
+            if(!container) return;
+            container.innerHTML = gallery.map((src, idx) => `
+                <div class="photo-box">
+                    <img src="${src}">
+                    <button class="photo-del" onclick="delGalleryPhoto(${idx})">×</button>
+                </div>
+            `).join('');
+        }
+
+        function uploadGallery(e) {
+            var files = Array.from(e.target.files);
+            var loaded = 0;
+            files.forEach(f => {
+                var r = new FileReader();
+                r.onload = function(ev) {
+                    gallery.push(ev.target.result);
+                    loaded++;
+                    if(loaded === files.length) renderGallery();
+                };
+                r.readAsDataURL(f);
+            });
+        }
+
+        function delGalleryPhoto(idx) {
+            if(confirm("Eliminare questa foto dalla gallery?")) {
+                gallery.splice(idx, 1);
+                renderGallery();
+            }
+        }
+
+        function saveHomeAll() {
+            homeContent.title = document.getElementById('home-title').value.toUpperCase();
+            homeContent.tagline = document.getElementById('home-tagline').value;
+            homeContent.description = document.getElementById('home-description').value;
+            
+            window.PARKS_DB.save('parks_home_content', homeContent);
+            window.PARKS_DB.save('parks_gallery', gallery, function() {
+                alert("Home salvata con successo!");
+            });
+        }
+
+        var activeUserTab = 'sys';
+        function switchUserTab(t) {
+            activeUserTab = t;
+            document.querySelectorAll('#view-users .t-btn').forEach(b => b.classList.remove('active'));
+            var targetTab = (t === 'sys') ? 'sys-users' : (t === 'tourist' ? 'tourists' : 'fiches');
+            document.getElementById('tab-' + targetTab).classList.add('active');
+            
+            document.getElementById('users-container').style.display = (t === 'sys' ? 'grid' : 'none');
+            document.getElementById('tourists-container').style.display = (t === 'tourist' ? 'flex' : 'none');
+            document.getElementById('fiches-container').style.display = (t === 'fiche' ? 'flex' : 'none');
+
+            document.getElementById('user-ops-btn').innerHTML = (t === 'sys') ? 
+                '<button class="btn-plus-s" onclick="addUser()">+ NUOVO UTENTE SISTEMA</button>' : 
+                '<button class="btn-plus-s" onclick="exportTouristsToExcel()">+ ESPORTA DATABASE EXCEL</button>';
+            
+            if(t === 'tourist') renderTourists();
+            else if(t === 'fiche') renderFiches();
+            else renderUsers();
+        }
+
+        var tourists = [];
+        function renderTourists() {
+            var list = document.getElementById('tourists-list');
+            if(!list) return;
+            if(tourists.length === 0) { list.innerHTML = '<tr><td colspan="7" style="padding:3rem; text-align:center; opacity:0.3; font-size:12px;">NESSUN TURISTA REGISTRATO</td></tr>'; return; }
+
+            list.innerHTML = tourists.map(t => `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05); font-size:12px; font-weight:700;">
+                    <td style="padding:15px; color:var(--accent); font-family:monospace; font-size:14px; width:40px;">${t.tNumber || '-'}</td>
+                    <td style="padding:15px; color:white;">${t.firstName} ${t.lastName} <br> <span style="font-size:9px; opacity:0.4;">NAZIONE: ${t.country}</span></td>
+                    <td style="padding:15px; color:var(--accent);">${t.email} <br> <span style="font-size:10px; color:white; opacity:0.5;">${t.phone || '-'}</span></td>
+                    <td style="padding:15px; color:white; font-family:monospace; letter-spacing:1px;">${t.password}</td>
+                    <td style="padding:15px;">
+                        <input type="text" maxlength="9" value="${t.repertorio || ''}" onchange="updateTouristRepertorio('${t.id}', this.value)" style="width:90px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:var(--accent); padding:5px; border-radius:5px; font-size:11px; font-weight:900; font-family:monospace; outline:none;">
+                    </td>
+                    <td style="padding:15px;">
+                        <span style="background:${t.passActive ? 'var(--primary-green)' : '#444'}; color:white; padding:4px 8px; border-radius:5px; font-size:9px;">
+                            ${t.passActive ? 'ATTIVO' : 'SOSPÈSO'}
+                        </span>
+                    </td>
+                    <td style="padding:15px; display:flex; gap:10px;">
+                        <button onclick="toggleTouristPass('${t.id}')" title="Attiva/Sospendi" style="background:none; border:none; color:var(--accent); cursor:pointer;"><i data-lucide="${t.passActive ? 'lock' : 'unlock'}" style="width:16px;"></i></button>
+                        <button onclick="delTourist('${t.id}')" title="Elimina Turista" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i data-lucide="trash-2" style="width:16px;"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderFiches() {
+            var list = document.getElementById('fiches-list');
+            if(!list) return;
+            
+            var fName = (document.getElementById('filter-name').value || '').toUpperCase();
+            var fContact = (document.getElementById('filter-contact').value || '').toUpperCase();
+            var fCountry = (document.getElementById('filter-country').value || '').toUpperCase();
+            var fRep = (document.getElementById('filter-rep').value || '').toUpperCase();
+
+            var filtered = tourists.filter(t => {
+                var nameMatch = (t.firstName + ' ' + t.lastName).toUpperCase().includes(fName);
+                var contactMatch = (t.email + ' ' + (t.phone || '')).toUpperCase().includes(fContact);
+                var countryMatch = ((t.city || '') + ' ' + (t.country || '')).toUpperCase().includes(fCountry);
+                var repMatch = (t.repertorio || '').toUpperCase().includes(fRep);
+                return nameMatch && contactMatch && countryMatch && repMatch;
+            });
+
+            if(filtered.length === 0) {
+                list.innerHTML = '<tr><td colspan="5" style="padding:3rem; text-align:center; opacity:0.3; font-size:12px;">NESSUN TURISTA TROVATO</td></tr>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(t => `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05); font-size:12px; font-weight:700;">
+                    <td style="padding:12px 15px; color:white; opacity:0.4; font-family:monospace;">${t.tNumber || '-'}</td>
+                    <td style="padding:12px 15px; color:var(--accent);">${t.firstName} ${t.lastName}</td>
+                    <td style="padding:12px 15px; color:white; opacity:0.7;">${t.email} <br> <span style="font-size:10px;">${t.phone || '-'}</span></td>
+                    <td style="padding:12px 15px; color:white;">${t.city || '-'} (${t.country || '-'})</td>
+                    <td style="padding:12px 15px; color:white; opacity:0.5;">${t.repertorio || '-'}</td>
+                    <td style="padding:12px 15px; text-align:right;">
+                        <button class="btn-plus-s" style="margin:0; font-size:9px; padding:6px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);" onclick="editTourist('${t.id}')">MODIFICA SCHEDA</button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        var curEditTourist = null;
+        function editTourist(id) {
+            curEditTourist = tourists.find(x => x.id === id);
+            if(!curEditTourist) return;
+
+            document.getElementById('et-firstName').value = curEditTourist.firstName || '';
+            document.getElementById('et-lastName').value = curEditTourist.lastName || '';
+            document.getElementById('et-email').value = curEditTourist.email || '';
+            document.getElementById('et-phone').value = curEditTourist.phone || '';
+            document.getElementById('et-address').value = curEditTourist.address || '';
+            document.getElementById('et-city').value = curEditTourist.city || '';
+            document.getElementById('et-country').value = curEditTourist.country || '';
+            document.getElementById('et-nationality').value = curEditTourist.nationality || '';
+            document.getElementById('et-postalCode').value = curEditTourist.postalCode || '';
+            document.getElementById('et-repertorio').value = curEditTourist.repertorio || '';
+            document.getElementById('et-expiry').value = curEditTourist.expiry || '';
+            document.getElementById('et-dob').value = curEditTourist.dob || '';
+            document.getElementById('et-password').value = curEditTourist.password || '';
+
+            switchView('tourist-editor');
+        }
+
+        function saveTouristEdit() {
+            if(!curEditTourist) return;
+            
+            curEditTourist.firstName = document.getElementById('et-firstName').value.toUpperCase();
+            curEditTourist.lastName = document.getElementById('et-lastName').value.toUpperCase();
+            curEditTourist.email = document.getElementById('et-email').value.toLowerCase();
+            curEditTourist.phone = document.getElementById('et-phone').value;
+            curEditTourist.address = document.getElementById('et-address').value;
+            curEditTourist.city = document.getElementById('et-city').value;
+            curEditTourist.country = document.getElementById('et-country').value;
+            curEditTourist.nationality = document.getElementById('et-nationality').value.toUpperCase();
+            curEditTourist.postalCode = document.getElementById('et-postalCode').value;
+            curEditTourist.repertorio = document.getElementById('et-repertorio').value;
+            curEditTourist.expiry = document.getElementById('et-expiry').value;
+            curEditTourist.dob = document.getElementById('et-dob').value;
+            curEditTourist.password = document.getElementById('et-password').value;
+
+            saveTourists();
+            switchView('users');
+            switchUserTab('fiche');
+        }
+
+        function toggleTouristPass(id) {
+            var t = tourists.find(x => x.id === id);
+            if(t) {
+                t.passActive = !t.passActive;
+                saveTourists();
+            }
+        }
+
+        function updateTouristExpiry(id, val) {
+            var t = tourists.find(x => x.id === id);
+            if(t) {
+                t.expiry = val;
+                saveTourists();
+            }
+        }
+
+        function delTourist(id) {
+            if(confirm("Eliminare definitivamente questo turista?")) {
+                tourists = tourists.filter(t => t.id !== id);
+                saveTourists();
+            }
+        }
+
+        function saveTourists() {
+            window.PARKS_DB.save('parks_tourists', tourists, function() {
+                if(activeUserTab === 'tourist') renderTourists();
+                if(activeUserTab === 'fiche') renderFiches();
+            });
+        }
+
+        function exportTouristsToExcel() {
+            if(!tourists || tourists.length === 0) { alert("Nessun dato da esportare."); return; }
+            
+            try {
+                // Preparazione dati per Excel
+                const data = tourists.map(t => ({
+                    'NOME': t.firstName || '',
+                    'COGNOME': t.lastName || '',
+                    'EMAIL': t.email || '',
+                    'TELEFONO': t.phone || '',
+                    'INDIRIZZO': t.address || '',
+                    'CAP': t.postalCode || '',
+                    'CITTÀ': t.city || '',
+                    'NAZIONE RESIDENZA': t.country || '',
+                    'NAZIONALITÀ': t.nationality || '',
+                    'DATA NASCITA': t.dob || '',
+                    'REPERTORIO': t.repertorio || '',
+                    'SCADENZA PASS': t.expiry || '',
+                    'DATA REGISTRAZIONE': t.regDate ? new Date(t.regDate).toLocaleDateString() : '',
+                    'STATO PASS': t.passActive ? 'ATTIVO' : 'SOSPESO'
+                }));
+
+                const worksheet = XLSX.utils.json_to_sheet(data);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Database Turisti");
+                
+                const filename = `PARKS_DB_TOURISTS_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(workbook, filename);
+            } catch(e) {
+                console.error("Export Error:", e);
+                alert("Errore durante l'esportazione: " + e.message);
+            }
+        }
+
+        function switchX(t) { activeTab = t; document.querySelectorAll('.t-btn').forEach(b => b.classList.remove('active')); document.getElementById('t-' + t).classList.add('active'); document.getElementById('cur-cat').innerText = t.toUpperCase(); document.getElementById('add-marker-container').style.display = (t === 'pts') ? 'none' : 'flex'; selectedIconId = null; renderUI(); }
+
+        function uploadMap(e) { var r = new FileReader(); r.onload = function(ev) { var n = prompt("Nome Mappa:"); if(!n) return; var id = Date.now(); library.available_maps.push({ id, name: n.toUpperCase(), url: ev.target.result }); library.active_map_id = id; save(); }; r.readAsDataURL(e.target.files[0]); }
+        function uploadIcon(e) { var r = new FileReader(); r.onload = function(ev) { var n = prompt("Nome Icona:"); if(n) library.available_icons[activeTab].push({ id: Date.now(), name: n.toUpperCase(), url: ev.target.result }); save(); }; r.readAsDataURL(e.target.files[0]); }
+
+        function renderUI() {
+            var mapArea = document.getElementById('map-list-area');
+            mapArea.innerHTML = (library.available_maps || []).map((m, idx) => `
+                <div class="row-item ${library.active_map_id == m.id ? 'selected' : ''}" 
+                     draggable="true"
+                     ondragstart="handleMapOrderDragStart(event, ${idx})"
+                     ondragover="handleMapOrderDragOver(event)"
+                     ondrop="handleMapOrderDrop(event, ${idx})"
+                     onclick="activateMap(${m.id})">
+                    <i data-lucide="image" style="width:20px; color:var(--accent);"></i>
+                    <input type="text" class="row-input" value="${m.name}" onchange="renMap(${m.id}, this.value)" onclick="event.stopPropagation()">
+                    <button onclick="delMap(${m.id}, event)" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i data-lucide="trash-2" style="width:14px;"></i></button>
+                </div>`).join('') || '<div style="opacity:0.2; font-size:10px; text-align:center; padding:10px;">NESSUNA MAPPA</div>';
+            
+            var mArea = document.getElementById('marker-list-area');
+            var filteredMarkers = (library.map_markers || []).filter(m => m.mapId == library.active_map_id);
+            if(activeTab === 'pts') { mArea.innerHTML = filteredMarkers.map(m => `<div class="row-item"><img src="${m.icon}" class="thumb"><span style="flex:1; font-weight:800; font-size:11px;">${m.title}</span><button onclick="delPt(${m.id})" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i data-lucide="trash-2" style="width:14px;"></i></button></div>`).join('') || '<div style="opacity:0.2; font-size:10px; text-align:center;">NESSUN PUNTO</div>'; }
+            else { 
+                var icons = library.available_icons[activeTab] || []; 
+                mArea.innerHTML = icons.map((i, idx) => `
+                    <div class="row-item ${selectedIconId == i.id ? 'selected' : ''}" 
+                         draggable="true"
+                         ondragstart="handleIconDragStart(event, ${idx})"
+                         ondragover="handleIconDragOver(event)"
+                         ondrop="handleIconDrop(event, ${idx})"
+                         onclick="selectedIconId=${i.id}; renderUI();">
+                        <img src="${i.url}" class="thumb">
+                        <input type="text" class="row-input" value="${i.name}" onchange="renIcon(${i.id}, this.value)" onclick="event.stopPropagation()" ${activeTab === 'anim' ? 'readonly' : ''}>
+                        ${activeTab === 'anim' ? '' : `<button onclick="editIconDesc(${i.id}, event)" style="background:none; border:none; color:var(--accent); cursor:pointer;"><i data-lucide="edit"></i></button>`}
+                        <button onclick="delIcon(${i.id}, event)" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i data-lucide="trash-2" style="width:14px;"></i></button>
+                    </div>`).join(''); 
+            }
+            lucide.createIcons();
+            renderMapLayer();
+        }
+
+        function activateMap(id) { 
+            library.active_map_id = id; 
+            renderUI();
+            setTimeout(() => { window.PARKS_DB.save('parks_library_v2', library); }, 10);
+        }
+        function renMap(id, v) { library.available_maps.find(m=>m.id===id).name=v.toUpperCase(); save(); }
+        function delMap(id, e) { e.stopPropagation(); if(confirm("Cancellare Mappa?")) { library.available_maps=library.available_maps.filter(m=>m.id!==id); if(library.active_map_id === id) library.active_map_id = null; save(); } }
+        function renIcon(id, v) { library.available_icons[activeTab].find(i=>i.id==id).name=v.toUpperCase(); save(); }
+        
+        var curEditIconId = null;
+        function editIconDesc(id, e) {
+            e.stopPropagation();
+            var icon = library.available_icons[activeTab].find(i=>i.id==id);
+            if(!icon) return;
+            curEditIconId = id;
+            var html = `
+                <div id="icon-editor-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);">
+                    <div class="db-section" style="width:500px; padding:35px; border:1px solid var(--accent); box-shadow: 0 20px 50px rgba(0,0,0,0.5); display:flex; flex-direction:column; gap:20px;">
+                        <h2 style="color:var(--accent); margin-top:0; margin-bottom:0; font-size:1.4rem; letter-spacing:2px; font-weight:900; text-transform:uppercase;">SCHEDA ALERT: ${icon.name}</h2>
+                        
+                        <div style="text-align:center; margin-bottom:10px;">
+                            <img src="${icon.url}" style="width:100px; height:100px; object-fit:contain; filter:drop-shadow(0 5px 15px rgba(0,0,0,0.5)); border:2px solid rgba(255,255,255,0.1); border-radius:15px; padding:10px; background:rgba(0,0,0,0.5);">
+                        </div>
+
+                        <div class="input-group" style="margin:0;">
+                            <span class="label">DESCRIZIONE DELLA SCHEDA</span>
+                            <textarea id="ie-desc" class="f-input f-area" style="height:150px; font-size:13px;" placeholder="Inserisci una descrizione che l'utente vedrà cliccando l'icona...">${icon.description || ''}</textarea>
+                        </div>
+
+                        <div style="display:flex; gap:15px; margin-top:10px;">
+                            <button class="btn-plus-s" style="flex:2; background:var(--accent); color:#000; font-weight:900; height:45px;" onclick="saveIconDesc()">SALVA SCHEDA</button>
+                            <button class="btn-plus-s" style="flex:1; background:rgba(255,255,255,0.05); height:45px;" onclick="closeIconDesc()">ANNULLA</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function closeIconDesc() {
+            var el = document.getElementById('icon-editor-modal');
+            if(el) el.remove();
+            curEditIconId = null;
+        }
+
+        function saveIconDesc() {
+            if(curEditIconId !== null) {
+                var icon = library.available_icons[activeTab].find(i=>i.id==curEditIconId);
+                if(icon) {
+                    icon.description = document.getElementById('ie-desc').value;
+                    save(false);
+                }
+            }
+            closeIconDesc();
+        }
+
+        function delIcon(id, e) { e.stopPropagation(); if(confirm("Cancellare Icona?")) { library.available_icons[activeTab]=library.available_icons[activeTab].filter(i=>i.id!=id); if(selectedIconId == id) selectedIconId = null; save(); } }
+        function delPt(id, e) { 
+            if(e) e.stopPropagation(); 
+            if(confirm("RIMUOVERE PUNTO?")) { 
+                library.map_markers = library.map_markers.filter(m=>m.id!=id); 
+                draggingMarker = null; 
+                renderMapLayer();
+                save(false); 
+                closeMarkerEditor();
+            } 
+        }
+
+        var curMapOrderIdx = null;
+        function handleMapOrderDragStart(e, idx) { curMapOrderIdx = idx; e.dataTransfer.effectAllowed = 'move'; }
+        function handleMapOrderDragOver(e) { e.preventDefault(); }
+        function handleMapOrderDrop(e, targetIdx) { e.preventDefault(); if(curMapOrderIdx === null || curMapOrderIdx === targetIdx) return; var item = library.available_maps.splice(curMapOrderIdx, 1)[0]; library.available_maps.splice(targetIdx, 0, item); curMapOrderIdx = null; save(); }
+
+        var curIconDragIdx = null;
+        function handleIconDragStart(e, idx) { curIconDragIdx = idx; e.dataTransfer.effectAllowed = 'move'; }
+        function handleIconDragOver(e) { e.preventDefault(); }
+        function handleIconDrop(e, targetIdx) { e.preventDefault(); if(curIconDragIdx === null || curIconDragIdx === targetIdx) return; var icons = library.available_icons[activeTab]; var item = icons.splice(curIconDragIdx, 1)[0]; icons.splice(targetIdx, 0, item); curIconDragIdx = null; save(); }
+
+        function handleMapClick(e) {
+            if(!library.active_map_id) { alert("CARICA O SELEZIONA UNA MAPPA PRIMA DI AGGIUNGERE MARKER."); return; }
+            if(!selectedIconId) { alert("SELEZIONA UN'ICONA DALL'ELENCO MARKERS (A DESTRA) PRIMA DI CLICCARE SULLA MAPPA."); return; }
+            
+            var rect = document.getElementById('map-inner').getBoundingClientRect();
+            if(rect.width === 0 || rect.height === 0) { console.warn("Map not ready or image missing."); return; }
+            
+            var x = ((e.clientX - rect.left) / rect.width) * 100;
+            var y = ((e.clientY - rect.top) / rect.height) * 100;
+            
+            if(x < 0 || x > 100 || y < 0 || y > 100) return;
+            
+            var catIcons = library.available_icons[activeTab];
+            if(!catIcons) { console.error("Category missing:", activeTab); return; }
+            
+            var meta = catIcons.find(i => i.id == selectedIconId);
+            if(!meta) { alert("Errore: Icona non trovata. Riprova a selezionarla."); selectedIconId = null; renderUI(); return; }
+            
+            const newMarker = { 
+                id: Date.now(), 
+                mapId: library.active_map_id, 
+                x, y, 
+                icon: meta.url, 
+                title: meta.name,
+                type: activeTab
+            };
+
+            // AUTO-LINK: se il nome dell'icona coincide con un item in libreria, collegalo automaticamente
+            library.categories.forEach(c => {
+                c.subcategories.forEach(s => {
+                    const found = s.items.find(it => it.name.toUpperCase() === meta.name.toUpperCase());
+                    if(found) newMarker.ficheId = found.id;
+                });
+            });
+
+            library.map_markers.push(newMarker);
+            console.log("Marker added at:", x, y, "MapId:", library.active_map_id);
+            
+            // OPTIMISTIC UI: Render immediately, then save in background
+            renderMapLayer(); 
+            setTimeout(() => {
+                window.PARKS_DB.save('parks_library_v2', library); 
+            }, 10);
+        }
+
+        function renderMapLayer() {
+            var mActive = library.available_maps.find(m => m.id == library.active_map_id);
+            if(mActive) document.getElementById('map-img-bg').src = mActive.url;
+            var filtered = (library.map_markers || []).filter(m => m.mapId == library.active_map_id);
+            document.getElementById('marker-layer').innerHTML = filtered.map(m => {
+                let isLinked = !!m.ficheId;
+                const mTitle = (m.title || "").trim().toUpperCase();
+                
+                let isAlertWithCard = false;
+                if (m.type === 'alert') {
+                    const iconDef = (library.available_icons && library.available_icons.alert ? library.available_icons.alert : []).find(i => i.url === m.icon || i.name === mTitle);
+                    if (iconDef && iconDef.description) isAlertWithCard = true;
+                }
+
+                let imgContainerStyle = "";
+                if (isAlertWithCard) {
+                    imgContainerStyle = "border: 2px solid #ff5252; border-radius: 6px; background: rgba(0,0,0,0.5); padding: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.5);";
+                } else if (isLinked) {
+                    imgContainerStyle = "border: 2px solid #ffeb3b; border-radius: 6px; background: rgba(0,0,0,0.5); padding: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.5);";
+                } else {
+                    imgContainerStyle = "padding: 2px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));";
+                }
+
+                let labelStyle = "background:rgba(0,0,0,0.7); color:white; border:1px solid rgba(255,255,255,0.2);";
+                if (m.type === 'alert') labelStyle = "background:rgba(0,0,0,0.7); color:white; border:1px solid #ff5252;";
+                if (m.type === 'must_see') labelStyle = "background:rgba(0,0,0,0.7); color:white; border:1px solid #4caf50;";
+
+                return `<div class="marker-wrapper" style="left:${m.x}%; top:${m.y}%; display:flex; flex-direction:column; align-items:center;" onmousedown="startDrag(event, ${m.id})" onclick="handleMarkerClick(event, ${m.id})">
+                    <div style="${imgContainerStyle} display:flex; align-items:center; justify-content:center;">
+                        <img src="${m.icon}" style="width:28px; height:28px; object-fit:contain; pointer-events:none;">
+                    </div>
+                    <div class="marker-label" style="${labelStyle} padding:2px 6px; border-radius:3px; font-size:9px; font-weight:900; margin-top:3px; white-space:nowrap; text-transform:uppercase; pointer-events:none; display:flex; align-items:center;">${m.title}</div>
+                </div>`;
+            }).join('');
+        }
+
+        var dragStartX, dragStartY, initialX, initialY, dragThresholdMet = false;
+        function startDrag(e, id) { e.preventDefault(); e.stopPropagation(); draggingMarker = library.map_markers.find(m => m.id == id); dragStartX = e.clientX; dragStartY = e.clientY; initialX = draggingMarker.x; initialY = draggingMarker.y; dragThresholdMet = false; window.addEventListener('mousemove', moveDrag); window.addEventListener('mouseup', endDrag); }
+        function moveDrag(e) { if(!draggingMarker) return; var rect = document.getElementById('map-inner').getBoundingClientRect(); var dx = ((e.clientX - dragStartX) / rect.width) * 100, dy = ((e.clientY - dragStartY) / rect.height) * 100; if(Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) dragThresholdMet = true; if(dragThresholdMet) { draggingMarker.x = initialX + dx; draggingMarker.y = initialY + dy; renderMapLayer(); } }
+        function endDrag() { 
+            window.removeEventListener('mousemove', moveDrag); 
+            window.removeEventListener('mouseup', endDrag); 
+            if(dragThresholdMet) save(false); 
+            draggingMarker = null; 
+        }
+        function handleMarkerClick(e, id) { 
+            e.stopPropagation(); 
+            if(!dragThresholdMet) {
+                openMarkerEditor(id);
+            } 
+        }
+
+        function openMarkerEditor(id) {
+            const marker = library.map_markers.find(m => m.id == id);
+            if(!marker) return;
+
+            const allItems = [];
+            // Raccogli item da Libreria
+            (library.categories || []).forEach(c => {
+                (c.subcategories || []).forEach(s => {
+                    (s.items || []).forEach(it => {
+                        allItems.push({ id: it.id, name: it.name, section: 'LIBRERIA' });
+                    });
+                });
+            });
+            // Raccogli item da Visit Namibia
+            (visitNamibia.categories || []).forEach(c => {
+                (c.subcategories || []).forEach(s => {
+                    (s.items || []).forEach(it => {
+                        allItems.push({ id: it.id, name: it.name, section: 'NAMIBIA' });
+                    });
+                });
+            });
+
+            const currentFiche = marker.ficheId || '';
+            const isAnim = marker.type === 'anim';
+            
+            const html = `
+                <div id="marker-editor-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);">
+                    <div class="db-section" style="width:450px; padding:35px; border:1px solid var(--accent); box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+                        <h2 style="color:var(--accent); margin-top:0; font-size:1.4rem; letter-spacing:2px; font-weight:900; text-transform:uppercase;">Proprietà Marker</h2>
+                        
+                        ${isAnim ? `
+                        <div style="background:rgba(255,171,64,0.1); border:1px solid rgba(255,171,64,0.3); padding:15px; border-radius:10px; margin-top:20px; font-size:12px; color:var(--accent);">
+                            <i data-lucide="info" style="width:16px; margin-bottom:5px;"></i><br>
+                            Le icone degli animali sono gestite automaticamente. La scheda informativa si aprirà direttamente lato utente al clic sull'icona.
+                        </div>
+                        ` : `
+                        <div class="input-group" style="margin-top:20px;">
+                            <span class="label">TITOLO VISIBILE SULLA MAPPA</span>
+                            <input type="text" id="me-title" class="f-input" value="${marker.title || ''}" style="text-transform:uppercase;">
+                        </div>
+
+                        <div class="input-group">
+                            <span class="label">COLLEGA A SCHEDA INFORMATIVA</span>
+                            <select id="me-fiche" class="f-input" style="cursor:pointer;">
+                                <option value="">-- NESSUN COLLEGAMENTO --</option>
+                                ${allItems.map(it => `<option value="${it.id}" ${it.id == currentFiche ? 'selected' : ''}>[${it.section}] ${it.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        `}
+
+                        <div style="display:flex; gap:15px; margin-top:40px;">
+                            ${!isAnim ? `<button class="btn-plus-s" style="flex:1; background:var(--accent); color:#000; font-weight:900; height:50px;" onclick="saveMarkerProps(${id})">SALVA</button>` : ''}
+                            <button class="btn-plus-s" style="flex:1; background:rgba(255,82,82,0.1); color:#ff5252; border:1px solid #ff5252; height:50px;" onclick="delPt(${id})">ELIMINA</button>
+                            <button class="btn-plus-s" style="flex:1; background:rgba(255,255,255,0.05); height:50px;" onclick="closeMarkerEditor()">ANNULLA</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', html);
+            lucide.createIcons();
+        }
+
+        function closeMarkerEditor() {
+            const el = document.getElementById('marker-editor-overlay');
+            if(el) el.remove();
+        }
+
+        function saveMarkerProps(id) {
+            const marker = library.map_markers.find(m => m.id == id);
+            if(marker) {
+                marker.title = document.getElementById('me-title').value.toUpperCase();
+                marker.ficheId = document.getElementById('me-fiche').value;
+                save(false);
+                renderMapLayer();
+                closeMarkerEditor();
+            }
+        }
+
+        function save(refreshLib = true) { 
+            // Salva sempre la libreria principale perché contiene i marker e le icone
+            window.PARKS_DB.save('parks_library_v2', library, () => {
+                if(refreshLib && curSection === 'library') renderLib();
+                if(refreshLib) renderUI();
+            });
+
+            // Se siamo nella sezione Visit Namibia, salva anche quella
+            if(curSection === 'visit') {
+                window.PARKS_DB.save('parks_visit_namibia_v1', visitNamibia, () => {
+                    if(refreshLib) renderLib();
+                });
+            }
+        }
+        
+        function renderLib() {
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            var containerId = (curSection === 'visit') ? 'visit-container' : 'lib-container';
+            var container = document.getElementById(containerId);
+            if(!container) return;
+            if(!data.categories || data.categories.length === 0) {
+                container.innerHTML = `<div style="opacity:0.3; text-align:center; padding:5rem;">${curSection === 'visit' ? 'Sezione Visit Namibia vuota.' : 'Libreria vuota.'} Inizia a popolare l'archivio.</div>`;
+                return;
+            }
+
+            container.innerHTML = (data.categories || []).map((cat, cIdx) => `
+                <div class="row-cat" draggable="true" 
+                     ondragstart="handleLibDragStart(event, {type:'cat', cIdx:${cIdx}})" 
+                     ondragover="handleLibDragOver(event)" 
+                     ondrop="handleLibDrop(event, {type:'cat', cIdx:${cIdx}})" 
+                     style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:1.5rem; transition:0.3s; position:relative;">
+                    
+                    <div style="display:flex; align-items:center; gap:20px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:15px; margin-bottom:15px;">
+                        <i data-lucide="grip-vertical" style="width:20px; opacity:0.4; cursor:grab;"></i>
+                        <div style="position:relative; width:65px; height:65px; border-radius:12px; overflow:hidden; background:rgba(0,0,0,0.5); border:1px solid var(--accent); cursor:pointer;">
+                            <img src="${cat.image || 'https://images.unsplash.com/photo-1543946207-39bd91e70ca7?q=20&w=150'}" style="width:100%; height:100%; object-fit:cover;">
+                            <input type="file" style="position:absolute; inset:0; opacity:0; cursor:pointer;" onchange="uploadThumb('cat', '${cat.id}', event)">
+                        </div>
+                        <div style="flex:1;">
+                            <input type="text" value="${cat.name}" onchange="renameCat('${cat.id}', this.value)" 
+                                   style="background:none; border:none; color:var(--accent); font-weight:900; font-size:1.6rem; outline:none; letter-spacing:3px; width:100%;">
+                        </div>
+                        <button onclick="addSub('${cat.id}')" style="background:none; border:2px solid var(--primary-green); color:white; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:900; font-size:11px;">+ NUOVA SOTTO-CAT</button>
+                        <button onclick="delCat('${cat.id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; opacity:0.4;"><i data-lucide="trash-2" style="width:18px;"></i></button>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:12px; padding-left:40px;">
+                        ${(cat.subcategories || []).map((sub, sIdx) => `
+                            <div draggable="true" 
+                                 ondragstart="handleLibDragStart(event, {type:'sub', cIdx:${cIdx}, sIdx:${sIdx}})" 
+                                 ondragover="handleLibDragOver(event)" 
+                                 ondrop="handleLibDrop(event, {type:'sub', cIdx:${cIdx}, sIdx:${sIdx}})"
+                                 style="background:rgba(255,255,255,0.04); padding:1rem; border-radius:15px; border:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; gap:12px;">
+                                
+                                <div style="display:flex; align-items:center; gap:15px;">
+                                    <i data-lucide="more-vertical" style="width:14px; opacity:0.3; cursor:grab;"></i>
+                                    <div style="position:relative; width:45px; height:45px; border-radius:8px; overflow:hidden; background:#111; border:1px solid rgba(255,255,255,0.2);">
+                                        <img src="${sub.image || 'https://images.unsplash.com/photo-1543326168-54cc8939c36c?q=20&w=150'}" style="width:100%; height:100%; object-fit:cover;">
+                                        <input type="file" style="position:absolute; inset:0; opacity:0; cursor:pointer;" onchange="uploadThumb('sub', '${cat.id}|${sub.id}', event)">
+                                    </div>
+                                    <input type="text" value="${sub.name}" onchange="renameSub('${cat.id}', '${sub.id}', this.value)" 
+                                           style="background:none; border:none; color:white; font-weight:800; font-size:13px; flex:1; outline:none; opacity:0.9;">
+                                    <button onclick="addItem('${cat.id}', '${sub.id}')" style="background:var(--primary-green); color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:10px; font-weight:900;">+ NUOVO ELEMENTO</button>
+                                    <button onclick="delSub('${cat.id}','${sub.id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; opacity:0.3;"><i data-lucide="x" style="width:16px;"></i></button>
+                                </div>
+
+                                <div style="display:flex; flex-direction:column; gap:5px; padding-left:60px;">
+                                    ${(sub.items || []).map((it, iIdx) => `
+                                        <div draggable="true" 
+                                             ondragstart="handleLibDragStart(event, {type:'item', cIdx:${cIdx}, sIdx:${sIdx}, iIdx:${iIdx}})" 
+                                             ondragover="handleLibDragOver(event)" 
+                                             ondrop="handleLibDrop(event, {type:'item', cIdx:${cIdx}, sIdx:${sIdx}, iIdx:${iIdx}})"
+                                             style="background:rgba(255,171,64,0.05); padding:8px 15px; border-radius:10px; display:flex; align-items:center; gap:10px; border:1px solid rgba(255,171,64,0.1); cursor:pointer;"
+                                             onclick="editItem('${cat.id}','${sub.id}','${it.id}')">
+                                            <i data-lucide="move" style="width:12px; opacity:0.2;"></i>
+                                            <span style="flex:1; font-weight:900; font-size:11px; color:var(--accent); letter-spacing:1px;">${it.name}</span>
+                                            
+                                            <div style="display:flex; gap:8px;">
+                                                <button onclick="event.stopPropagation(); event.preventDefault(); toggleListMustSee('${cat.id}','${sub.id}','${it.id}')" style="background:none; border:none; color:${it.isMustSee ? '#ffeb3b' : '#666'}; cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border-radius:5px;" title="Must See">
+                                                    <i data-lucide="star" style="width:12px; height:12px; fill:${it.isMustSee ? '#ffeb3b' : 'none'};"></i>
+                                                </button>
+                                                <button onclick="event.stopPropagation(); event.preventDefault(); toggleVisibility('${cat.id}','${sub.id}','${it.id}')" style="background:none; border:none; color:${it.isVisible !== false ? '#4caf50' : '#ff5252'}; cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border-radius:5px;" title="Visibile allo User">
+                                                    <i data-lucide="${it.isVisible !== false ? 'eye' : 'eye-off'}" style="width:12px; height:12px;"></i>
+                                                </button>
+                                            </div>
+
+                                            <i data-lucide="chevron-right" style="width:12px; opacity:0.5; margin-left:5px;"></i>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function handleLibDragStart(e, info) { curDrag = info; e.dataTransfer.effectAllowed = 'move'; e.stopPropagation(); }
+        function handleLibDragOver(e) { e.preventDefault(); e.stopPropagation(); }
+        function handleLibDrop(e, target) { 
+            e.preventDefault(); e.stopPropagation();
+            if(!curDrag || target.type !== curDrag.type) return; 
+
+            var data = (curSection === 'visit') ? visitNamibia : library;
+
+            if(curDrag.type === 'cat') {
+                var item = data.categories.splice(curDrag.cIdx, 1)[0];
+                data.categories.splice(target.cIdx, 0, item);
+            } else if(curDrag.type === 'sub') {
+                if(curDrag.cIdx !== target.cIdx) return;
+                var subs = data.categories[target.cIdx].subcategories;
+                var item = subs.splice(curDrag.sIdx, 1)[0];
+                subs.splice(target.sIdx, 0, item);
+            } else if(curDrag.type === 'item') {
+                if(curDrag.cIdx !== target.cIdx || curDrag.sIdx !== target.sIdx) return;
+                var its = data.categories[target.cIdx].subcategories[target.sIdx].items;
+                var item = its.splice(curDrag.iIdx, 1)[0];
+                its.splice(target.iIdx, 0, item);
+            }
+            curDrag = null;
+            save();
+        }
+
+        function uploadThumb(type, idString, e) {
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            var r = new FileReader(); 
+            r.onload = function(ev) {
+                if(type === 'cat') data.categories.find(c => c.id === idString).image = ev.target.result;
+                else {
+                    var parts = idString.split('|');
+                    var c = data.categories.find(x => x.id === parts[0]);
+                    c.subcategories.find(s => s.id === parts[1]).image = ev.target.result;
+                }
+                save();
+            };
+            r.readAsDataURL(e.target.files[0]);
+        }
+
+        function addCategory() { 
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            var n = prompt("Titolo Macro-Categoria:"); if(n) { data.categories.push({ id:'cat_'+Date.now(), name:n.toUpperCase(), subcategories:[], image:'' }); save(); } 
+        }
+        function renameCat(id, val) { 
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            data.categories.find(c => c.id === id).name = val.toUpperCase(); save(); 
+        }
+        function delCat(id) { 
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            if(confirm("ELIMINARE CATEGORIA E TUTTI I CONTENUTI?")) { data.categories = data.categories.filter(c=>c.id!==id); save(); } 
+        }
+        function addSub(cId) { 
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            var n = prompt("Titolo Sottocategoria:"); if(n) { var c = data.categories.find(x=>x.id===cId); c.subcategories.push({ id:'sub_'+Date.now(), name:n.toUpperCase(), items:[], image:'' }); save(); } 
+        }
+        function renameSub(cId, sId, val) { 
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            var c = data.categories.find(x=>x.id===cId); c.subcategories.find(s=>s.id===sId).name = val.toUpperCase(); save(); 
+        }
+        function delSub(cId, sId) { 
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            if(confirm("ELIMINARE SOTTOCATEGORIA?")) { var c = data.categories.find(x=>x.id===cId); c.subcategories = c.subcategories.filter(s=>s.id!==sId); save(); } 
+        }
+        function addItem(cId, sId) { 
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            var n = prompt("Nome Elemento:"); if(n) { var c = data.categories.find(x=>x.id===cId); var s = c.subcategories.find(x=>x.id===sId); s.items.push({ id:'it_'+Date.now(), name:n.toUpperCase(), photos:[], description:'', facts:{} }); save(); } 
+        }
+
+        function editItem(cId, sId, iId) { 
+            curEditContext = { cId, sId, iId, section: curSection };
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            var c = data.categories.find(x=>x.id===cId); 
+            var s = c.subcategories.find(x=>x.id===sId); 
+            curEditItem = s.items.find(x=>x.id===iId);
+            document.getElementById('edit-header').innerText = curEditItem.name;
+            document.getElementById('f-title').value = curEditItem.name;
+            document.getElementById('f-desc').value = curEditItem.description || "";
+            document.getElementById('f-weight').value = (curEditItem.facts && curEditItem.facts.weight) || "";
+            document.getElementById('f-size').value = (curEditItem.facts && curEditItem.facts.size) || "";
+            document.getElementById('f-life').value = (curEditItem.facts && curEditItem.facts.life) || "";
+            
+            // Update star color
+            var star = document.getElementById('f-star');
+            if(star) {
+                star.style.color = curEditItem.isMustSee ? '#ffeb3b' : '#666';
+                const icon = star.querySelector('i');
+                if(icon) icon.style.fill = curEditItem.isMustSee ? '#ffeb3b' : 'none';
+                star.title = curEditItem.isMustSee ? "Elemento nei MUST SEE (Clicca per rimuovere)" : "Aggiungi ai MUST SEE";
+            }
+
+            // Default labels based on section
+            var defL1 = (curSection === 'visit') ? "POPOLAZIONE" : "PESO";
+            var defL2 = (curSection === 'visit') ? "SUPERFICIE" : "DIMENSIONI";
+            var defL3 = (curSection === 'visit') ? "REGIONE" : "LONGEVITÀ";
+
+            document.getElementById('f-label1').value = (curEditItem.facts && curEditItem.facts.label1) || defL1;
+            document.getElementById('f-label2').value = (curEditItem.facts && curEditItem.facts.label2) || defL2;
+            document.getElementById('f-label3').value = (curEditItem.facts && curEditItem.facts.label3) || defL3;
+            renderEditPhotos();
+            switchView('fiche-editor');
+        }
+
+        function renderEditPhotos() {
+            var container = document.getElementById('f-photos');
+            container.innerHTML = (curEditItem.photos || []).map((p, idx) => {
+                var url = typeof p === 'object' ? p.url : p;
+                var name = typeof p === 'object' ? p.name : '';
+                var isPdf = (typeof p === 'object' && p.type === 'application/pdf') || (typeof p === 'string' && p.startsWith('data:application/pdf'));
+                var isVideo = (typeof p === 'object' && p.type === 'video/mp4') || (typeof p === 'string' && p.startsWith('data:video/mp4'));
+                var isPpt = (typeof p === 'object' && (p.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || p.type === 'application/vnd.ms-powerpoint')) || (typeof p === 'string' && (p.startsWith('data:application/vnd.openxmlformats-officedocument.presentationml.presentation') || p.startsWith('data:application/vnd.ms-powerpoint')));
+                
+                return `
+                    <div class="photo-box" title="${name || (isPdf ? 'PDF' : (isVideo ? 'VIDEO' : (isPpt ? 'PPTX' : 'IMG')))}" 
+                         onclick="${(isPdf || isVideo || isPpt) ? `openDoc('${url}', '${name}')` : ''}" 
+                         style="${(isPdf || isVideo || isPpt) ? 'cursor:pointer;' : ''}">
+                        ${isPdf ? 
+                            `<div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(255,171,64,0.1); color:var(--accent); border:2px solid var(--accent);">
+                                <i data-lucide="file-text" style="width:32px; height:32px;"></i>
+                                <span style="font-size:8px; font-weight:900; margin-top:5px; text-align:center; padding: 0 4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%;">${name || 'PDF DOC'}</span>
+                            </div>` : 
+                            (isVideo ? 
+                                `<div style="width:100%; height:100%; background:#000; position:relative;">
+                                    <video src="${url}" controls loop muted style="width:100%; height:100%; object-fit:cover;"></video>
+                                    <div style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.5); font-size:7px; color:white; padding:2px; text-align:center; pointer-events:none;">${name || 'VIDEO'}</div>
+                                </div>` :
+                                (isPpt ? 
+                                    `<div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(255,171,64,0.1); color:var(--accent); border:2px solid #eb5a28; border-color: #eb5a28;">
+                                        <i data-lucide="monitor-play" style="width:32px; height:32px; color:#eb5a28;"></i>
+                                        <span style="font-size:8px; font-weight:900; margin-top:5px; text-align:center; padding: 0 4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; color:#eb5a28;">${name || 'PPTX'}</span>
+                                    </div>` :
+                                    `<img src="${url}">`
+                                )
+                            )
+                        }
+                        <button class="photo-del" onclick="event.stopPropagation(); delPhoto(${idx})">×</button>
+                    </div>
+                `;
+            }).join('');
+            if(window.lucide) lucide.createIcons();
+        }
+
+        function openDoc(dataUrl, name) {
+            var arr = dataUrl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+            var blob = new Blob([u8arr], {type:mime});
+            var url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }
+
+        function uploadItemPhotos(e) {
+            var files = Array.from(e.target.files);
+            var loaded = 0;
+            files.forEach(f => {
+                // Size Check (approx 30MB)
+                if (f.size > 30 * 1024 * 1024) {
+                    if (!confirm(`ATTENZIONE: Il file "${f.name}" è più grande di 30MB. Potrebbe rallentare l'app. Procedere comunque?`)) {
+                        loaded++; return;
+                    }
+                }
+
+                var r = new FileReader();
+                r.onload = ev => { 
+                    if(!curEditItem.photos) curEditItem.photos = []; 
+                    curEditItem.photos.push({
+                        url: ev.target.result,
+                        name: f.name.toUpperCase(),
+                        type: f.type
+                    }); 
+                    loaded++;
+                    if(loaded === files.length) renderEditPhotos(); 
+                };
+                r.readAsDataURL(f);
+            });
+        }
+
+        function delPhoto(idx) { if(confirm("Eliminare foto?")) { curEditItem.photos.splice(idx,1); renderEditPhotos(); } }
+
+        function saveFiche() {
+            if(!curEditItem) return;
+            curEditItem.name = document.getElementById('f-title').value.toUpperCase();
+            curEditItem.description = document.getElementById('f-desc').value;
+            curEditItem.facts = { 
+                weight: document.getElementById('f-weight').value, 
+                size: document.getElementById('f-size').value, 
+                life: document.getElementById('f-life').value,
+                label1: document.getElementById('f-label1').value.toUpperCase(),
+                label2: document.getElementById('f-label2').value.toUpperCase(),
+                label3: document.getElementById('f-label3').value.toUpperCase()
+            };
+            
+            // If in Visit Namibia, update the section name
+            var section = (curEditContext && curEditContext.section) ? curEditContext.section : 'library';
+            var previousSection = curSection;
+            curSection = section; 
+            save();
+            curSection = previousSection; // Restore
+            switchView(section);
+        }
+
+        function deleteItem() {
+            if(!confirm("ELIMINARE DEFINITIVAMENTE QUESTO ELEMENTO?")) return;
+            var ctx = curEditContext;
+            var data = (ctx.section === 'visit') ? visitNamibia : library;
+            var c = data.categories.find(x=>x.id===ctx.cId);
+            var s = c.subcategories.find(x=>x.id===ctx.sId);
+            s.items = s.items.filter(i=>i.id!==ctx.iId);
+            
+            var previousSection = curSection;
+            curSection = ctx.section;
+            save();
+            curSection = previousSection;
+            switchView(ctx.section);
+        }
+        function toggleListMustSee(cId, sId, iId) {
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            var cat = data.categories.find(x => x.id === cId);
+            var sub = cat.subcategories.find(x => x.id === sId);
+            var it = sub.items.find(x => x.id === iId);
+            it.isMustSee = !it.isMustSee;
+            save(true); // Force re-render
+        }
+
+        function toggleVisibility(cId, sId, iId) {
+            var data = (curSection === 'visit') ? visitNamibia : library;
+            var cat = data.categories.find(x => x.id === cId);
+            var sub = cat.subcategories.find(x => x.id === sId);
+            var it = sub.items.find(x => x.id === iId);
+            it.isVisible = (it.isVisible === false) ? true : false;
+            save(true); // Force re-render
+        }
+
+        function toggleMustSee() {
+            if(!curEditItem) return;
+            curEditItem.isMustSee = !curEditItem.isMustSee;
+            var star = document.getElementById('f-star');
+            if (star) {
+                star.style.color = curEditItem.isMustSee ? '#ffeb3b' : '#666';
+                const icon = star.querySelector('i');
+                if (icon) icon.style.fill = curEditItem.isMustSee ? '#ffeb3b' : 'none';
+                star.title = curEditItem.isMustSee ? "Elemento nei MUST SEE (Clicca per rimuovere)" : "Aggiungi ai MUST SEE";
+            }
+            save(false);
+        }
+
+
+        function renderUsers() {
+            var container = document.getElementById('users-container');
+            if(!container) return;
+            container.innerHTML = users.map(u => `
+                <div class="db-section" style="padding:1.5rem; position:relative; background: ${u.role === 'SUPER_ADMIN' ? 'rgba(255,171,64,0.08)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${u.role === 'SUPER_ADMIN' ? 'var(--accent)' : 'rgba(255,171,64,0.2)'};">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:1.5rem;">
+                        <div style="width:40px; height:40px; border-radius:10px; background:${u.role === 'SUPER_ADMIN' ? 'var(--accent)' : (u.role === 'ADMIN' ? 'var(--primary-green)' : '#666')}; display:flex; align-items:center; justify-content:center; color:#000;">
+                            <i data-lucide="${u.role === 'SUPER_ADMIN' ? 'shield-alert' : (u.role === 'ADMIN' ? 'shield-check' : 'user')}" style="width:20px;"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <input type="text" value="${u.name}" onchange="updateUser('${u.id}', 'name', this.value)" style="background:none; border:none; color:white; font-weight:900; font-size:14px; width:100%; outline:none;" ${u.role === 'SUPER_ADMIN' ? 'readonly' : ''}>
+                            <div style="font-size:9px; font-weight:900; color:var(--accent); letter-spacing:1px; margin-top:2px;">${u.role.replace('_', ' ')}</div>
+                        </div>
+                        ${u.role !== 'SUPER_ADMIN' ? `<button onclick="delUser('${u.id}')" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i data-lucide="trash-2" style="width:16px;"></i></button>` : ''}
+                    </div>
+                    <div class="input-group">
+                        <span class="label">PASSWORD ACCESSO</span>
+                        <input type="text" value="${u.password}" onchange="updateUser('${u.id}', 'password', this.value)" class="f-input" style="padding:8px 12px; font-size:11px; font-family:monospace; letter-spacing:2px; font-weight:900;">
+                    </div>
+                    <div class="input-group">
+                        <span class="label">TIPO ACCESSO / PERMESSI</span>
+                        <select onchange="updateUser('${u.id}', 'permissions', this.value)" class="f-input" style="padding:8px 12px; font-size:11px; font-weight:800; cursor:pointer;" ${u.role === 'SUPER_ADMIN' ? 'disabled' : ''}>
+                            <option value="MODIFICA" ${u.permissions === 'MODIFICA' ? 'selected' : ''}>MODIFICA COMPLETA</option>
+                            <option value="SOLO VISTA" ${u.permissions === 'SOLO VISTA' ? 'selected' : ''}>SOLO VISUALIZZAZIONE</option>
+                            <option value="RESTRETTO" ${u.permissions === 'RESTRETTO' ? 'selected' : ''}>ACCESSO LIMITATO</option>
+                            ${u.role === 'SUPER_ADMIN' ? '<option value="TOTALE" selected>CONTROLLO TOTALE</option>' : ''}
+                        </select>
+                    </div>
+                    <div class="input-group" style="margin-bottom:0;">
+                        <span class="label">SCADENZA ACCESSO</span>
+                        ${u.role === 'SUPER_ADMIN' ? 
+                            '<div style="font-size:11px; font-weight:900; color:var(--primary-green); padding:10px 0;">ACCESSO ILLIMITATO</div>' : 
+                            `<input type="date" value="${u.expiry || ''}" onchange="updateUser('${u.id}', 'expiry', this.value)" class="f-input" style="padding:8px 12px; font-size:11px; font-weight:800; cursor:pointer;">`
+                        }
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function addUser() {
+            var name = prompt("Nome Utente:");
+            if(!name) return;
+            var role = prompt("Ruolo (ADMIN o USER):");
+            if(!role || (role.toUpperCase() !== 'ADMIN' && role.toUpperCase() !== 'USER')) { alert("Ruolo non valido."); return; }
+            users.push({ id: 'u_' + Date.now(), name: name.toUpperCase(), role: role.toUpperCase(), password: Math.random().toString(36).slice(-6).toUpperCase(), permissions: role.toUpperCase() === 'ADMIN' ? 'MODIFICA' : 'SOLO VISTA' });
+            saveUsers();
+        }
+
+        function updateUser(id, key, val) { 
+            var u = users.find(x => x.id === id); 
+            if(u) { 
+                u[key] = (key === 'expiry') ? val : val.toUpperCase(); 
+                window.PARKS_DB.save('parks_users', users); // Silent save to avoid re-render focus loss
+            } 
+        }
+        function delUser(id) { if(confirm("Eliminare utente?")) { users = users.filter(u => u.id !== id); saveUsers(); } }
+        function saveUsers() { window.PARKS_DB.save('parks_users', users, renderUsers); }
+
+        function updateTouristExpiry(id, val) {
+            var t = tourists.find(x => x.id === id);
+            if(t) {
+                t.expiry = val;
+                window.PARKS_DB.save('parks_tourists', tourists); // Silent save
+            }
+        }
+
+        function updateTouristRepertorio(id, val) {
+            var t = tourists.find(x => x.id === id);
+            if(t) {
+                t.repertorio = val;
+                window.PARKS_DB.save('parks_tourists', tourists);
+            }
+        }
+
+        function genRepertorio(id) {
+            var t = tourists.find(x => x.id === id);
+            if(t) {
+                t.repertorio = Math.floor(100000000 + Math.random() * 900000000).toString();
+                renderTourists();
+                window.PARKS_DB.save('parks_tourists', tourists);
+            }
+        }
+
+        // ============================================================
+        // BACKUP & RESTORE SYSTEM
+        // ============================================================
+        function exportBackup() {
+            var backup = { _version: 1, _date: new Date().toISOString(), _app: 'PARKS_ADMIN' };
+            var keys = ['parks_library_v2', 'parks_users', 'parks_tourists', 'parks_session', 'parks_home_content', 'parks_gallery', 'parks_visit_namibia_v1', 'parks_kids_drawings', 'parks_kids_puzzles'];
+            var loaded = 0;
+            keys.forEach(function(key) {
+                window.PARKS_DB.get(key, null, function(val) {
+                    backup[key] = val;
+                    loaded++;
+                    if(loaded === keys.length) {
+                        var json = JSON.stringify(backup);
+                        var blob = new Blob([json], { type: 'application/json' });
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        var dateStr = new Date().toISOString().slice(0,10);
+                        a.download = 'PARKS_backup_' + dateStr + '.json';
+                        a.href = url;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        // Visual feedback
+                        var btn = event.currentTarget;
+                        var orig = btn.innerHTML;
+                        btn.innerHTML = '<i data-lucide="check" style="width:14px;"></i> SALVATO!';
+                        btn.style.background = 'rgba(45,122,77,0.8)';
+                        setTimeout(function() { btn.innerHTML = orig; btn.style.background = 'rgba(45,122,77,0.3)'; lucide.createIcons(); }, 2000);
+                        lucide.createIcons();
+                        console.log('✅ PARKS Backup exported:', Object.keys(backup).length, 'keys,', (json.length/1024/1024).toFixed(2), 'MB');
+                    }
+                });
+            });
+        }
+
+        function importBackup(e) {
+            var file = e.target.files[0];
+            if(!file) return;
+            if(!confirm('⚠️ ATTENZIONE: Il ripristino sovrascriverà TUTTI i dati attuali con quelli del backup. Procedere?')) {
+                e.target.value = '';
+                return;
+            }
+            var r = new FileReader();
+            r.onload = function(ev) {
+                try {
+                    var backup = JSON.parse(ev.target.result);
+                    if(!backup._app || backup._app !== 'PARKS_ADMIN') {
+                        alert('❌ File non valido. Usa solo backup creati da questa applicazione.');
+                        return;
+                    }
+                    var keys = ['parks_library_v2', 'parks_users', 'parks_tourists', 'parks_session', 'parks_home_content', 'parks_gallery', 'parks_visit_namibia_v1', 'parks_kids_drawings', 'parks_kids_puzzles'];
+                    var saved = 0;
+                    keys.forEach(function(key) {
+                        if(backup[key] !== undefined && backup[key] !== null) {
+                            window.PARKS_DB.save(key, backup[key], function() {
+                                saved++;
+                                if(saved === keys.filter(k => backup[k] != null).length) {
+                                    alert('✅ Backup ripristinato con successo! La pagina verrà ricaricata.');
+                                    location.reload();
+                                }
+                            });
+                        } else { saved++; }
+                    });
+                } catch(err) {
+                    alert('❌ Errore durante il ripristino: ' + err.message);
+                }
+            };
+            r.readAsText(file);
+        }
+        // ============================================================
+        
+        let backupTriggered = false;
+
+        function exitAndBackup() {
+            exportBackup();
+            setTimeout(() => {
+                backupTriggered = true;
+                window.location.href = '../user/homepage.html';
+            }, 1000);
+        }
+
+        // Avvisa l'admin se sta chiudendo la scheda senza aver fatto il backup
+        window.addEventListener('beforeunload', function (e) {
+            if (!backupTriggered) {
+                e.preventDefault();
+                e.returnValue = "Ricordati di scaricare il BACKUP prima di uscire! Vuoi annullare per scaricarlo?";
+                return e.returnValue;
+            }
+        });
+
+        window.PARKS_APP.init(() => { 
+            window.PARKS_DB.get('parks_library_v2', null, function(data) { 
+                if(data) library = data;
+                else save();
+                
+                window.PARKS_DB.get('parks_visit_namibia_v1', null, function(vData) {
+                    if(vData) visitNamibia = vData;
+                    else {
+                        visitNamibia = { categories: [] };
+                        window.PARKS_DB.save('parks_visit_namibia_v1', visitNamibia);
+                    }
+                    
+                    if(!library.available_icons)library.available_icons={alert:[], com:[], iti:[], anim:[]}; 
+                    if(!library.available_maps)library.available_maps=[]; 
+                    if(!library.map_markers)library.map_markers=[]; 
+                    if(!library.categories)library.categories=[]; 
+                    
+                    // MIGRATION: Unify POS/NEG into ALERT
+                    if(library.available_icons.pos || library.available_icons.neg) {
+                        library.available_icons.alert = (library.available_icons.alert || [])
+                            .concat(library.available_icons.pos || [])
+                            .concat(library.available_icons.neg || []);
+                        delete library.available_icons.pos;
+                        delete library.available_icons.neg;
+                        save();
+                    }
+                    if(!library.available_icons.alert) library.available_icons.alert = [];
+                    if(!library.available_icons.must_see) library.available_icons.must_see = [];
+                    if(!library.available_icons.pts) library.available_icons.pts = [];
+                    renderUI(); 
+                    renderLib(); 
+                    
+                    window.PARKS_DB.get('parks_kids_drawings', [], function(data) { if(data) kidsDrawings = data; });
+                    window.PARKS_DB.get('parks_kids_puzzles', [], function(data) { if(data) kidsPuzzles = data; });
+                    window.PARKS_DB.get('parks_kids_memory', [], function(data) { if(data) kidsMemory = data; });
+                    window.PARKS_DB.get('parks_kids_quiz', [], function(data) { if(data) kidsQuiz = data; });
+                    switchView('dashboard');
+                });
+            });
+            window.PARKS_DB.get('parks_tourists', null, function(data) { 
+                if(data) {
+                    tourists = data;
+                    // MIGRATION: Assicura numerazione per turisti esistenti
+                    let migrated = false;
+                    tourists.forEach((t, idx) => { if(!t.tNumber) { t.tNumber = idx + 1; migrated = true; } });
+                    if(migrated) window.PARKS_DB.save('parks_tourists', tourists);
+                    renderTourists(); 
+                }
+            });
+            window.PARKS_DB.get('parks_home_content', null, function(data) { if(data) homeContent = data; });
+            window.PARKS_DB.get('parks_gallery', null, function(data) { if(data) gallery = data; });
+            window.PARKS_DB.get('parks_users', null, function(data) { if(data) users = data; });
+        });
+        var dashMap = null;
+        var alertMarkersLayer = null;
+
+        function initDashboardMap() {
+            if(dashMap) {
+                setTimeout(() => dashMap.invalidateSize(), 100);
+                return;
+            }
+            
+            dashMap = L.map('dashboard-map', {
+                scrollWheelZoom: true,
+                zoomControl: true
+            }).setView([-18.75, 15.5], 9);
+
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri'
+            }).addTo(dashMap);
+
+            // Usa MarkerClusterGroup per gestire marker sovrapposti
+            alertMarkersLayer = L.markerClusterGroup({
+                showCoverageOnHover: false,
+                spiderfyOnMaxZoom: true,
+                disableClusteringAtZoom: 16
+            }).addTo(dashMap);
+
+            refreshMonitorData();
+            setInterval(refreshMonitorData, 5000);
+        }
+
+        function refreshMonitorData() {
+            if(!dashMap || !alertMarkersLayer) return;
+
+            window.PARKS_DB.get('parks_library_v2', {}, function(data) {
+                if(!data || !data.map_markers) return;
+
+                const alerts = data.map_markers.filter(m => m.type === 'alert');
+                const mustSees = data.map_markers.filter(m => m.type === 'must_see');
+                
+                // Aggiorna widget statistiche
+                document.getElementById('stat-tourists').innerText = tourists.length;
+                document.getElementById('stat-devices').innerText = tourists.filter(t => t.passActive).length;
+                document.getElementById('stat-alerts').innerText = alerts.length + mustSees.length;
+                document.getElementById('stat-alerts').style.color = alerts.length > 0 ? '#ff5252' : 'var(--accent)';
+
+                // Aggiorna Log Testuale (unificando entrambi ma con colori diversi)
+                const log = document.getElementById('alerts-log');
+                const allRecent = [...alerts, ...mustSees].sort((a,b) => b.timestamp - a.timestamp);
+                
+                if(allRecent.length === 0) {
+                    log.innerHTML = '<div style="opacity:0.3; text-align:center; padding:10px;">Nessuna segnalazione recente</div>';
+                } else {
+                    log.innerHTML = allRecent.map(a => `
+                        <div style="background:rgba(255,255,255,0.05); padding:8px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; border-left:3px solid ${a.type === 'alert' ? '#ff5252' : '#4caf50'}; margin-bottom:5px;">
+                            <div style="flex:1;">
+                                <div style="font-weight:900; color:var(--accent);">${a.title}</div>
+                                <div style="opacity:0.5; font-size:9px;">${a.type.toUpperCase()} • T. N. ${a.touristNumber || '?'} • ${new Date(a.timestamp).toLocaleTimeString()}</div>
+                            </div>
+                            <div style="display:flex; gap:5px;">
+                                <button onclick="goToAlert(${a.lat}, ${a.lng})" title="Centra sulla mappa" style="background:rgba(255,171,64,0.1); border:none; color:var(--accent); padding:5px; border-radius:5px; cursor:pointer;"><i data-lucide="search" style="width:14px;"></i></button>
+                                <button onclick="deleteAlert(${a.id})" title="Elimina" style="background:rgba(255,82,82,0.1); border:none; color:#ff5252; padding:5px; border-radius:5px; cursor:pointer;"><i data-lucide="trash-2" style="width:14px;"></i></button>
+                            </div>
+                        </div>
+                    `).join('');
+                    if(window.lucide) lucide.createIcons();
+                }
+
+                // Aggiorna Mappa
+                alertMarkersLayer.clearLayers();
+                
+                const markers = [];
+                [...alerts, ...mustSees].forEach((alert) => {
+                    const lat = parseFloat(alert.lat);
+                    const lng = parseFloat(alert.lng);
+                    if(isNaN(lat) || isNaN(lng)) return;
+
+                    const isAlert = alert.type === 'alert';
+                    const color = isAlert ? '#ff5252' : '#4caf50';
+
+                    const icon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `
+                            <div style="display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.8); padding:5px 12px; border-radius:20px; border:2px solid ${color}; box-shadow:0 0 15px ${isAlert ? 'rgba(255,0,0,0.3)' : 'rgba(0,255,0,0.3)'}; white-space:nowrap;">
+                                <img src="${alert.icon}" style="width:24px; height:24px; border-radius:50%;">
+                                <div style="color:white; font-size:10px; font-weight:900; line-height:1.1;">
+                                    ${alert.title}<br>
+                                    <span style="font-size:7px; color:${isAlert ? '#ffab40' : '#81c784'};">${isAlert ? 'ALERT' : 'MUST SEE'} N. ${alert.touristNumber || '?'}</span>
+                                </div>
+                            </div>
+                        `,
+                        iconSize: [180, 40],
+                        iconAnchor: [15, 20]
+                    });
+
+                    const m = L.marker([lat, lng], { icon: icon })
+                        .bindPopup(`
+                            <div style="min-width:180px;">
+                                <strong style="color:${color};">${isAlert ? 'ALLERTA RANGERS' : 'PUNTO DI INTERESSE'}</strong><br>
+                                <div style="margin:5px 0; font-weight:800;">${alert.title}</div>
+                                <div style="font-size:10px; margin-bottom:5px;">Inviato da: <strong>Turista N. ${alert.touristNumber || '?'}</strong></div>
+                                <span style="font-size:9px; opacity:0.5;">Inviato: ${new Date(alert.timestamp).toLocaleString()}</span>
+                                <hr style="border:none; border-top:1px solid rgba(0,0,0,0.1); margin:10px 0;">
+                                <button onclick="deleteAlert(${alert.id})" style="width:100%; background:${color}; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:900; cursor:pointer;">CHIUDI SEGNALAZIONE</button>
+                            </div>
+                        `);
+                    markers.push(m);
+                });
+
+                if(markers.length > 0) {
+                    if(alertMarkersLayer.addLayers) alertMarkersLayer.addLayers(markers);
+                    else markers.forEach(m => m.addTo(alertMarkersLayer));
+                }
+            });
+        }
+
+        function goToAlert(lat, lng) {
+            if(!dashMap) return;
+            dashMap.setView([lat, lng], 15);
+        }
+
+        function deleteAlert(id) {
+            if(!confirm("Vuoi segnare questa segnalazione come conclusa e rimuoverla dal monitor?")) return;
+            
+            window.PARKS_DB.get('parks_library_v2', {}, function(data) {
+                if(!data || !data.map_markers) return;
+                data.map_markers = data.map_markers.filter(m => m.id !== id);
+                window.PARKS_DB.save('parks_library_v2', data, function() {
+                    refreshMonitorData();
+                });
+            });
+        }
+        function switchKidsTab(tab) {
+            // Hide all zones
+            document.getElementById('kids-coloring-zone').style.display = 'none';
+            document.getElementById('kids-memory-zone').style.display = 'none';
+            document.getElementById('kids-puzzle-zone').style.display = 'none';
+            document.getElementById('kids-quiz-zone').style.display = 'none';
+            
+            // Show target zone
+            document.getElementById(`kids-${tab}-zone`).style.display = 'block';
+            if(tab === 'coloring') renderKids();
+            if(tab === 'puzzle') renderKidsPuzzles();
+            if(tab === 'memory') renderKidsMemory();
+            if(tab === 'quiz') renderKidsQuiz();
+            
+            // Update Tab buttons
+            document.querySelectorAll('.kid-tab').forEach(t => {
+                t.style.background = 'transparent';
+                t.style.color = 'white';
+                t.style.opacity = '0.4';
+            });
+            
+            const activeTab = document.getElementById(`tab-kids-${tab}`);
+            activeTab.style.background = 'var(--accent)';
+            activeTab.style.color = 'black';
+            activeTab.style.opacity = '1';
+            
+            lucide.createIcons();
+        }
+
+        // KIDS CORNER ADMIN FUNCTIONS
+        function renderKids() {
+            const list = document.getElementById('kids-list');
+            if(!list) return;
+            if(kidsDrawings.length === 0) {
+                list.innerHTML = '<div style="grid-column: 1/-1; padding:3rem; text-align:center; opacity:0.3; font-weight:700;">NESSUN DISEGNO CARICATO</div>';
+                return;
+            }
+            list.innerHTML = kidsDrawings.map((k, i) => `
+                <div class="lib-card" style="padding:15px;">
+                    <div style="background:white; border-radius:10px; height:150px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:10px;">
+                        <img src="${k.image}" style="max-width:100%; max-height:100%;">
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:900; font-size:12px; color:var(--accent);">${k.name.toUpperCase()}</span>
+                        <button onclick="delKidDrawing(${i})" style="background:none; border:none; color:#ff5252; cursor:pointer;"><i data-lucide="trash-2" style="width:16px;"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderKidsPuzzles() {
+            const list = document.getElementById('puzzles-list');
+            if(!list) return;
+            if(kidsPuzzles.length === 0) {
+                list.innerHTML = '<div style="grid-column: 1/-1; padding:3rem; text-align:center; opacity:0.3; font-weight:700;">NESSUN PUZZLE CARICATO</div>';
+                return;
+            }
+            list.innerHTML = kidsPuzzles.map((k, i) => `
+                <div class="lib-card" style="padding:15px;">
+                    <div style="background:#000; border-radius:10px; height:150px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:10px; border:1px solid rgba(255,255,255,0.1);">
+                        <img src="${k.image}" style="max-width:100%; max-height:100%; object-fit:cover;">
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:900; font-size:12px; color:#4cc9f0;">${k.name.toUpperCase()}</span>
+                        <button onclick="delKidPuzzle(${i})" style="background:none; border:none; color:#ff5252; cursor:pointer;"><i data-lucide="trash-2" style="width:16px;"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        let currentKidEditorMode = 'coloring';
+
+        function openKidEditor() {
+            currentKidEditorMode = 'coloring';
+            document.getElementById('kid-editor-modal').style.display = 'flex';
+            document.getElementById('kid-modal-title').innerText = "NUOVO DISEGNO";
+            document.getElementById('kid-modal-hint').innerText = "CARICA UN'IMMAGINE IN BIANCO E NERO DA FAR COLORARE AI BIMBI";
+            resetKidEditor();
+        }
+
+        function openPuzzleEditor() {
+            currentKidEditorMode = 'puzzle';
+            document.getElementById('kid-editor-modal').style.display = 'flex';
+            document.getElementById('kid-modal-title').innerText = "NUOVO PUZZLE";
+            document.getElementById('kid-modal-hint').innerText = "CARICA UN'IMMAGINE A COLORI CHE VERRÀ SCOMPOSTA IN 3x3 E 4x4";
+            resetKidEditor();
+        }
+
+        function resetKidEditor() {
+            document.getElementById('kid-name').value = '';
+            document.getElementById('kid-file').value = '';
+            document.getElementById('kid-preview-container').style.display = 'none';
+            document.getElementById('kid-upload-placeholder').style.display = 'block';
+        }
+
+        function closeKidEditor() {
+            document.getElementById('kid-editor-modal').style.display = 'none';
+        }
+
+        function previewKidImage(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('kid-preview').src = e.target.result;
+                document.getElementById('kid-preview-container').style.display = 'block';
+                document.getElementById('kid-upload-placeholder').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveKidDrawing() {
+            const name = document.getElementById('kid-name').value;
+            const img = document.getElementById('kid-preview').src;
+            if(!name || !img || img.includes('upload-placeholder')) {
+                alert("Inserisci nome e carica immagine!");
+                return;
+            }
+
+            if(currentKidEditorMode === 'coloring') {
+                kidsDrawings.push({ id: Date.now(), name, image: img });
+                window.PARKS_DB.save('parks_kids_drawings', kidsDrawings, function() {
+                    closeKidEditor();
+                    renderKids();
+                });
+            } else if(currentKidEditorMode === 'memory') {
+                if(currentMemoryIdx === -1) {
+                    kidsMemory.push({ id: Date.now(), name, image: img });
+                } else {
+                    kidsMemory[currentMemoryIdx].name = name;
+                    kidsMemory[currentMemoryIdx].image = img;
+                }
+                window.PARKS_DB.save('parks_kids_memory', kidsMemory, function() {
+                    closeKidEditor();
+                    renderKidsMemory();
+                });
+            } else if(currentKidEditorMode === 'puzzle') {
+                kidsPuzzles.push({ id: Date.now(), name, image: img });
+                window.PARKS_DB.save('parks_kids_puzzles', kidsPuzzles, function() {
+                    closeKidEditor();
+                    renderKidsPuzzles();
+                });
+            }
+        }
+
+        let currentMemoryIdx = -1;
+
+        function renderKidsMemory() {
+            const list = document.getElementById('memory-list');
+            if(!list) return;
+            if(kidsMemory.length === 0) {
+                list.innerHTML = '<div style="grid-column: 1/-1; padding:3rem; text-align:center; opacity:0.3; font-weight:700;">NESSUNA TESSERA CARICATA</div>';
+                return;
+            }
+
+            let html = '';
+            
+            // GAME 1 (0-7)
+            const game1 = kidsMemory.slice(0, 8);
+            html += `<div style="grid-column: 1/-1; margin-top:20px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; color:#ffd700; font-weight:900; letter-spacing:3px; font-size:0.8rem;">GIOCO 1 - I CLASSICI</div>`;
+            html += `<div style="grid-column: 1/-1; display:grid; grid-template-columns: repeat(8, 1fr); gap:10px; margin-bottom:40px;">`;
+            html += game1.map((k, i) => renderMemoryCard(k, i)).join('');
+            html += `</div>`;
+
+            // GAME 2 (8-15)
+            const game2 = kidsMemory.slice(8, 16);
+            if(game2.length > 0) {
+                html += `<div style="grid-column: 1/-1; margin-top:20px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; color:#4caf50; font-weight:900; letter-spacing:3px; font-size:0.8rem;">GIOCO 2 - GLI ESPLORATORI</div>`;
+                html += `<div style="grid-column: 1/-1; display:grid; grid-template-columns: repeat(8, 1fr); gap:10px; margin-bottom:40px;">`;
+                html += game2.map((k, i) => renderMemoryCard(k, i + 8)).join('');
+                html += `</div>`;
+            }
+
+            // EXTRA (16+)
+            if(kidsMemory.length > 16) {
+                html += `<div style="grid-column: 1/-1; margin-top:20px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; opacity:0.5; font-weight:900; letter-spacing:3px; font-size:0.8rem;">ALTRE TESSERE</div>`;
+                html += `<div style="grid-column: 1/-1; display:grid; grid-template-columns: repeat(8, 1fr); gap:10px; margin-bottom:40px;">`;
+                html += kidsMemory.slice(16).map((k, i) => renderMemoryCard(k, i + 16)).join('');
+                html += `</div>`;
+            }
+
+            list.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function renderMemoryCard(k, i) {
+            return `
+                <div class="lib-card" style="padding:10px; margin:0;">
+                    <div style="background:#fff; border-radius:10px; height:80px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid rgba(255,255,255,0.1);">
+                        <img src="${k.image}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:900; font-size:9px; color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;">${k.name.toUpperCase()}</span>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="openMemoryEditor(${i})" style="background:none; border:none; color:white; cursor:pointer; opacity:0.5; padding:0;"><i data-lucide="edit-3" style="width:12px;"></i></button>
+                            <button onclick="delKidMemory(${i})" style="background:none; border:none; color:#ff5252; cursor:pointer; padding:0;"><i data-lucide="trash-2" style="width:12px;"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openMemoryEditor(idx = -1) {
+            currentKidEditorMode = 'memory';
+            currentMemoryIdx = idx;
+            document.getElementById('kid-editor-modal').style.display = 'flex';
+            document.getElementById('kid-modal-title').innerText = idx === -1 ? "NUOVA TESSERA MEMORY" : "MODIFICA TESSERA";
+            document.getElementById('kid-modal-hint').innerText = "CARICA UN'IMMAGINE QUADRATA PER LA TESSERA DEL GIOCO";
+            resetKidEditor();
+
+            if(idx !== -1) {
+                const k = kidsMemory[idx];
+                document.getElementById('kid-name').value = k.name;
+                document.getElementById('kid-preview').src = k.image;
+                document.getElementById('kid-preview-container').style.display = 'block';
+                document.getElementById('kid-upload-placeholder').style.display = 'none';
+            }
+        }
+
+        function delKidMemory(idx) {
+            if(confirm("Eliminare questa tessera?")) {
+                kidsMemory.splice(idx, 1);
+                window.PARKS_DB.save('parks_kids_memory', kidsMemory, renderKidsMemory);
+            }
+        }
+
+        // QUIZ MANAGEMENT
+        function renderKidsQuiz() {
+            renderQuizList();
+            renderLevelIcons();
+        }
+
+        function renderLevelIcons() {
+            const container = document.getElementById('quiz-level-icons');
+            if(!container) return;
+            window.PARKS_DB.get('parks_kids_quiz_level_images', {}, function(data) {
+                let html = '';
+                for(let i=1; i<=5; i++) {
+                    const img = data[i] || '../assets/kids/memory_meerkat.png';
+                    html += `
+                        <div style="text-align:center;">
+                            <div style="font-size:9px; opacity:0.5; margin-bottom:5px;">LIVELLO ${i}</div>
+                            <div onclick="changeLevelIcon(${i})" style="width:100%; aspect-ratio:1/1; background:#000; border-radius:15px; border:1px solid rgba(255,255,255,0.1); cursor:pointer; overflow:hidden; position:relative;" onmouseover="this.querySelector('.overlay-edit').style.opacity=1" onmouseout="this.querySelector('.overlay-edit').style.opacity=0">
+                                <img src="${img}" style="width:100%; height:100%; object-fit:contain;">
+                                <div class="overlay-edit" style="position:absolute; inset:0; background:rgba(156, 39, 176, 0.8); display:flex; align-items:center; justify-content:center; opacity:0; transition:0.3s; pointer-events:none;">
+                                    <i data-lucide="edit-3" style="color:white; width:20px;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+                lucide.createIcons();
+            });
+        }
+
+        function changeLevelIcon(lv) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if(!file) return;
+
+                // Validation: max 2MB for animal icons to keep DB light
+                if(file.size > 2 * 1024 * 1024) {
+                    alert("L'immagine è troppo grande! Massimo 2MB.");
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onerror = function() {
+                    alert("Errore nel caricamento del file.");
+                };
+                reader.onload = function(event) {
+                    const base64 = event.target.result;
+                    window.PARKS_DB.get('parks_kids_quiz_level_images', {}, function(data) {
+                        // Ensure data is a valid object
+                        if(!data || typeof data !== 'object') data = {};
+                        
+                        data[lv] = base64;
+                        window.PARKS_DB.save('parks_kids_quiz_level_images', data, function(success) {
+                            if(success) {
+                                renderLevelIcons();
+                                renderQuizList(); 
+                                if(typeof showToast === 'function') showToast("Icona Livello " + lv + " aggiornata!");
+                                else console.log("Icona Livello " + lv + " aggiornata!");
+                            } else {
+                                alert("Errore durante il salvataggio nel database.");
+                            }
+                        });
+                    });
+                };
+                reader.readAsDataURL(file);
+            };
+            input.style.display = 'none';
+            document.body.appendChild(input);
+            input.click();
+            setTimeout(() => document.body.removeChild(input), 100);
+        }
+
+        function renderQuizList() {
+            const list = document.getElementById('quiz-list');
+            if(!list) return;
+
+            if(!kidsQuiz || kidsQuiz.length === 0) {
+                list.innerHTML = '<div style="padding:3rem; text-align:center; opacity:0.3; font-weight:700;">NESSUNA DOMANDA CARICATA</div>';
+                return;
+            }
+
+            // Group by level
+            const grouped = {};
+            for(let i=1; i<=5; i++) grouped[i] = kidsQuiz.filter(q => (q.level || 1) == i);
+
+            window.PARKS_DB.get('parks_kids_quiz_level_images', {}, function(levelImages) {
+                let html = '';
+                for(let level=1; level<=5; level++) {
+                    if(grouped[level].length === 0 && level > 1) continue;
+                    const levelImg = levelImages[level] || '../assets/kids/memory_meerkat.png';
+                    
+                    html += `
+                        <div style="margin-top:30px; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px; display:flex; align-items:center; gap:15px;">
+                            <img src="${levelImg}" style="width:30px; height:30px; border-radius:8px; background:#000; object-fit:contain;">
+                            <div>
+                                <span style="font-weight:900; letter-spacing:2px; font-size:12px; color:var(--accent);">LIVELLO ${level}</span>
+                                <span style="opacity:0.4; font-size:10px; margin-left:10px;">(${grouped[level].length} DOMANDE)</span>
+                            </div>
+                        </div>
+                    `;
+
+                    if(grouped[level].length === 0) {
+                        html += '<div style="padding:20px; opacity:0.2; font-size:11px;">Nessuna domanda per questo livello.</div>';
+                    } else {
+                        html += grouped[level].map((q, qIdx) => {
+                            const originalIdx = kidsQuiz.indexOf(q);
+                            return `
+                                <div class="row-item" style="padding:20px; flex-direction:column; align-items:stretch; gap:15px; margin-bottom:10px;">
+                                    <div style="display:flex; gap:20px; align-items:center;">
+                                        <div style="width:60px; height:60px; border-radius:10px; overflow:hidden; background:#000;">
+                                            <img src="../assets/kids/quiz_success.png" style="width:100%; height:100%; object-fit:contain; opacity:0.6;">
+                                        </div>
+                                        <div style="flex:1;">
+                                            <div style="font-weight:900; font-size:13px; color:white; margin-bottom:5px;">${q.question}</div>
+                                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                                                ${q.options.map((opt, oIdx) => `
+                                                    <div style="font-size:11px; opacity:0.7; color:${oIdx === q.correct ? '#4caf50' : 'white'}; font-weight:${oIdx === q.correct ? '900' : '400'}">
+                                                        ${String.fromCharCode(65 + oIdx)}) ${opt} ${oIdx === q.correct ? '✓' : ''}
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                        <div style="display:flex; gap:10px;">
+                                            <button onclick="openQuizEditor(${originalIdx})" style="background:none; border:none; color:white; cursor:pointer; opacity:0.5;"><i data-lucide="edit-3" style="width:18px;"></i></button>
+                                            <button onclick="delKidQuiz(${originalIdx})" style="background:none; border:none; color:#ff5252; cursor:pointer;"><i data-lucide="trash-2" style="width:20px;"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+                list.innerHTML = html;
+                lucide.createIcons();
+            });
+        }
+
+        let currentQuizIdx = -1;
+
+        function openQuizEditor(idx = -1) {
+            currentQuizIdx = idx;
+            document.getElementById('quiz-editor-modal').style.display = 'flex';
+            resetQuizEditor();
+
+            if(idx !== -1) {
+                const q = kidsQuiz[idx];
+                document.getElementById('quiz-q').value = q.question;
+                document.getElementById('quiz-o0').value = q.options[0];
+                document.getElementById('quiz-o1').value = q.options[1];
+                document.getElementById('quiz-o2').value = q.options[2];
+                document.getElementById('quiz-o3').value = q.options[3];
+                document.getElementById('quiz-level').value = q.level || 1;
+                document.querySelector(`input[name="quiz-correct"][value="${q.correct}"]`).checked = true;
+                if(q.image) {
+                    document.getElementById('quiz-preview').src = q.image;
+                    document.getElementById('quiz-preview-container').style.display = 'block';
+                    document.getElementById('quiz-upload-placeholder').style.display = 'none';
+                }
+            }
+        }
+
+        function closeQuizEditor() {
+            document.getElementById('quiz-editor-modal').style.display = 'none';
+        }
+
+        function resetQuizEditor() {
+            document.getElementById('quiz-q').value = '';
+            document.getElementById('quiz-o0').value = '';
+            document.getElementById('quiz-o1').value = '';
+            document.getElementById('quiz-o2').value = '';
+            document.getElementById('quiz-o3').value = '';
+            document.getElementById('quiz-level').value = '1';
+            document.querySelectorAll('input[name="quiz-correct"]').forEach(r => r.checked = false);
+            document.getElementById('quiz-preview').src = '';
+            document.getElementById('quiz-preview-container').style.display = 'none';
+            document.getElementById('quiz-upload-placeholder').style.display = 'block';
+        }
+
+        function previewQuizImage(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('quiz-preview').src = e.target.result;
+                document.getElementById('quiz-preview-container').style.display = 'block';
+                document.getElementById('quiz-upload-placeholder').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveKidQuiz() {
+            const q = document.getElementById('quiz-q').value;
+            const o0 = document.getElementById('quiz-o0').value;
+            const o1 = document.getElementById('quiz-o1').value;
+            const o2 = document.getElementById('quiz-o2').value;
+            const o3 = document.getElementById('quiz-o3').value;
+            const level = document.getElementById('quiz-level').value;
+            const correctRadio = document.querySelector('input[name="quiz-correct"]:checked');
+            const img = document.getElementById('quiz-preview').src;
+
+            if(!q || !o0 || !o1 || !o2 || !o3 || !correctRadio) {
+                alert("Completa tutti i campi e seleziona la risposta corretta!");
+                return;
+            }
+
+            const newQ = {
+                id: Date.now(),
+                question: q,
+                options: [o0, o1, o2, o3],
+                correct: parseInt(correctRadio.value),
+                level: parseInt(level),
+                image: img
+            };
+
+            if(currentQuizIdx === -1) {
+                kidsQuiz.push(newQ);
+            } else {
+                kidsQuiz[currentQuizIdx] = { ...newQ, id: kidsQuiz[currentQuizIdx].id };
+            }
+
+            window.PARKS_DB.save('parks_kids_quiz', kidsQuiz, function() {
+                closeQuizEditor();
+                renderKidsQuiz();
+            });
+        }
+
+        function delKidQuiz(idx) {
+            if(confirm("Eliminare questa domanda?")) {
+                kidsQuiz.splice(idx, 1);
+                window.PARKS_DB.save('parks_kids_quiz', kidsQuiz, renderKidsQuiz);
+            }
+        }
+
+        function seedQuizQuestions() {
+            if(kidsQuiz.length > 0) {
+                if(!confirm("Sono già presenti delle domande. Vuoi aggiungere quelle predefinite a quelle esistenti?")) return;
+            }
+
+            const defaultQuestions = [
+                // LIVELLO 1
+                { question: "Qual è il 'Re della Savana'?", options: ["Elefante", "Leone", "Zebra", "Giraffa"], correct: 1, level: 1 },
+                { question: "Quale animale ha il collo lunghissimo?", options: ["Ippopotamo", "Giraffa", "Gazzella", "Rinoceronte"], correct: 1, level: 1 },
+                { question: "Chi ha la pelle a strisce bianche e nere?", options: ["Leone", "Zebra", "Tigre", "Ghepardo"], correct: 1, level: 1 },
+                { question: "Qual è l'animale terrestre più grande?", options: ["Rinoceronte", "Elefante", "Ippopotamo", "Giraffa"], correct: 1, level: 1 },
+                { question: "Quale di questi animali vive molto tempo in acqua?", options: ["Leone", "Ippopotamo", "Zebra", "Giraffa"], correct: 1, level: 1 },
+
+                // LIVELLO 2
+                { question: "Qual è l'animale più veloce della savana?", options: ["Leone", "Ghepardo", "Struzzo", "Gazzella"], correct: 1, level: 2 },
+                { question: "Dove dorme solitamente il Suricato?", options: ["Sugli alberi", "In una tana sottoterra", "In acqua", "In piedi"], correct: 1, level: 2 },
+                { question: "Cosa mangia principalmente la Zebra?", options: ["Carne", "Erba", "Pesce", "Insetti"], correct: 1, level: 2 },
+                { question: "Quale animale ha un grande corno sul naso?", options: ["Elefante", "Rinoceronte", "Facocero", "Bufalo"], correct: 1, level: 2 },
+                { question: "Come si chiama il cucciolo del Leone?", options: ["Lupacchiotto", "Leoncino", "Vitello", "Gattino"], correct: 1, level: 2 },
+
+                // LIVELLO 3
+                { question: "Quanto può pesare un Elefante africano adulto?", options: ["500 kg", "6.000 kg", "100.000 kg", "10 kg"], correct: 1, level: 3 },
+                { question: "Per quante ore può dormire un Leone ogni giorno?", options: ["2 ore", "20 ore", "8 ore", "Non dorme mai"], correct: 1, level: 3 },
+                { question: "Perché le Zebre hanno le strisce?", options: ["Per bellezza", "Per confondere i predatori", "Per sentire meno caldo", "Perché sono nate così"], correct: 1, level: 3 },
+                { question: "La Giraffa come riesce a dormire?", options: ["Sempre sdraiata", "Spesso in piedi", "Appesa a un ramo", "Sott'acqua"], correct: 1, level: 3 },
+                { question: "Il Rinoceronte ha una vista molto buona?", options: ["Sì, vede benissimo", "No, vede molto male", "Vede solo di notte", "Vede a colori"], correct: 1, level: 3 },
+
+                // LIVELLO 4
+                { question: "Qual è il mammifero terrestre più grande del mondo?", options: ["Balena", "Elefante Africano", "Giraffa", "Orso Polare"], correct: 1, level: 4 },
+                { question: "Quale animale è famoso per il verso simile a una risata?", options: ["Leone", "Iena", "Gorilla", "Scimpanzé"], correct: 1, level: 4 },
+                { question: "Come bevono le giraffe?", options: ["Con una cannuccia", "Allargando le zampe anteriori", "Sdraiandosi completamente", "Usando la lingua"], correct: 1, level: 4 },
+                { question: "Quanto può saltare in alto un Caracal?", options: ["50 cm", "3 metri", "10 metri", "Non salta"], correct: 1, level: 4 },
+                { question: "Chi è il 'Segretario' della savana?", options: ["Un tipo di leone", "Un uccello rapace", "Una scimmia", "Un serpente"], correct: 1, level: 4 },
+
+                // LIVELLO 5
+                { question: "Quante vertebre ha il collo di una giraffa?", options: ["20", "7", "50", "15"], correct: 1, level: 5 },
+                { question: "Quale di questi NON fa parte dei 'Big Five'?", options: ["Bufalo", "Ghepardo", "Leopardo", "Rinoceronte"], correct: 1, level: 5 },
+                { question: "Cosa significa letteralmente il nome 'Rinoceronte'?", options: ["Pelle dura", "Naso-corno", "Grande corridore", "Amico del fango"], correct: 1, level: 5 },
+                { question: "Qual è l'animale africano più pericoloso per l'uomo?", options: ["Leone", "Ippopotamo", "Coccodrillo", "Leopardo"], correct: 1, level: 5 },
+                { question: "Quanto può essere lungo l'intestino di un elefante?", options: ["5 metri", "30 metri", "100 metri", "2 metri"], correct: 1, level: 5 }
+            ];
+
+            // Only add questions that don't already exist (by text)
+            const existingTexts = new Set(kidsQuiz.map(q => q.question.trim().toLowerCase()));
+            const newQuestions = defaultQuestions.filter(q => !existingTexts.has(q.question.trim().toLowerCase()));
+            
+            if(newQuestions.length === 0) {
+                alert("Tutte le domande predefinite sono già presenti nel database.");
+                return;
+            }
+
+            kidsQuiz = [...kidsQuiz, ...newQuestions.map(q => ({ ...q, id: Date.now() + Math.random() }))];
+            window.PARKS_DB.save('parks_kids_quiz', kidsQuiz, function() {
+                alert(`${newQuestions.length} nuove domande predefinite caricate con successo!`);
+                renderKidsQuiz();
+            });
+        }
+
+        function seedDefaultPuzzles() {
+            if(kidsPuzzles.length > 0) {
+                if(!confirm("Sono già presenti dei puzzle. Vuoi aggiungere quelli predefiniti a quelle esistenti?")) return;
+            }
+
+            const defaultPuzzles = [
+                { id: Date.now(), name: 'LEONE', image: '../assets/kids/puzzle_lion.png' },
+                { id: Date.now() + 1, name: 'ELEFANTE', image: '../assets/kids/puzzle_elephant.png' }
+            ];
+
+            kidsPuzzles = [...kidsPuzzles, ...defaultPuzzles];
+            window.PARKS_DB.save('parks_kids_puzzles', kidsPuzzles, function() {
+                alert("Puzzle predefiniti caricati con successo!");
+                renderKidsPuzzles();
+            });
+        }
+
+        function seedAllMemory() {
+            if(!confirm("Questo cancellerà tutte le tessere attuali e caricherà i due set predefiniti (16 tessere in totale). Procedere?")) return;
+
+            const theme1 = [
+                { name: 'Leone', image: '../assets/kids/memory_lion.png' },
+                { name: 'Zebra', image: '../assets/kids/memory_zebra.png' },
+                { name: 'Elefante', image: '../assets/kids/memory_elephant.png' },
+                { name: 'Giraffa', image: '../assets/kids/memory_giraffe.png' },
+                { name: 'Ippopotamo', image: '../assets/kids/memory_hippo.png' },
+                { name: 'Rinoceronte', image: '../assets/kids/memory_rhino.png' },
+                { name: 'Ghepardo', image: '../assets/kids/memory_cheetah.png' },
+                { name: 'Suricato', image: '../assets/kids/memory_meerkat.png' }
+            ];
+
+            const theme2 = [
+                { name: 'Iena', image: '../assets/kids/savanna_hyena.png' },
+                { name: 'Caracal', image: '../assets/kids/savanna_caracal.png' },
+                { name: 'Segretario', image: '../assets/kids/savanna_secretary.png' },
+                { name: 'Bufalo', image: '../assets/kids/savanna_buffalo.png' },
+                { name: 'Leopardo', image: '../assets/kids/savanna_leopard.png' },
+                { name: 'Coccodrillo', image: '../assets/kids/savanna_crocodile.png' },
+                { name: 'Facocero', image: '../assets/kids/savanna_warthog.png' },
+                { name: 'Struzzo', image: '../assets/kids/savanna_ostrich.png' }
+            ];
+
+            kidsMemory = [...theme1, ...theme2];
+            window.PARKS_DB.save('parks_kids_memory', kidsMemory, function() {
+                alert("Tutte le tessere predefinite sono state caricate correttamente!");
+                renderKidsMemory();
+            });
+        }
+
+        function delKidDrawing(idx) {
+            if(confirm("Eliminare questo disegno?")) {
+                kidsDrawings.splice(idx, 1);
+                window.PARKS_DB.save('parks_kids_drawings', kidsDrawings, renderKids);
+            }
+        }
+
+        function delKidPuzzle(idx) {
+            if(confirm("Eliminare questa immagine puzzle?")) {
+                kidsPuzzles.splice(idx, 1);
+                window.PARKS_DB.save('parks_kids_puzzles', kidsPuzzles, renderKidsPuzzles);
+            }
+        }
+    </script>
+    <script>
+        setTimeout(() => {
+            if(window.PARKS_DB) {
+                window.PARKS_DB.get('parks_visit_namibia_v1', {categories:[]}, (dataVisit) => {
+                    let found = false;
+                    for(let c of dataVisit.categories) {
+                        if(!c.subcategories) continue;
+                        for(let s of c.subcategories) {
+                            if(!s.items) continue;
+                            for(let i of s.items) {
+                                if(i.name && i.name.toUpperCase().includes('WINDHOE')) {
+                                    if(!i.facts || !i.facts.weight) { // Solo se non è già aggiornato
+                                        i.facts = { label1: "POPOLAZIONE", label2: "SUPERFICIE", label3: "REGIONE", weight: "430.000 ab.", size: "5.133 km²", life: "Khomas" };
+                                        found = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if(found) {
+                        window.visitNamibia = dataVisit;
+                        window.PARKS_DB.save('parks_visit_namibia_v1', dataVisit, () => {
+                            console.log("Windhoek aggiornato con successo in Visit Namibia!");
+                        });
+                    } else {
+                        window.PARKS_DB.get('parks_library_v2', {categories:[]}, (dataLib) => {
+                            let foundLib = false;
+                            for(let c of dataLib.categories) {
+                                if(!c.subcategories) continue;
+                                for(let s of c.subcategories) {
+                                    if(!s.items) continue;
+                                    for(let i of s.items) {
+                                        if(i.name && i.name.toUpperCase().includes('WINDHOE')) {
+                                            if(!i.facts || !i.facts.weight) {
+                                                i.facts = { label1: "POPOLAZIONE", label2: "SUPERFICIE", label3: "REGIONE", weight: "430.000 ab.", size: "5.133 km²", life: "Khomas" };
+                                                foundLib = true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if(foundLib) {
+                                window.library = dataLib;
+                                window.PARKS_DB.save('parks_library_v2', dataLib, () => {
+                                    console.log("Windhoek aggiornato con successo in Libreria!");
+                                    switchView(curSection); // Forza aggiornamento visivo
+                                });
+                            }
+                        });
+                    }
+                    if(found) {
+                        switchView(curSection); // Forza aggiornamento visivo
+                    }
+                });
+            }
+        }, 1500);
+    </script>
+</body>
+</html>

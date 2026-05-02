@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETOSHA | Kid's Corner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../shared/db.js"></script>
+    <script src="../shared/app.js"></script>
+    <style>
+        :root { 
+            --primary: #2d7a4d; 
+            --accent: #ffab40; 
+            --dark-bg: #0d1e1a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --sidebar-width: 300px;
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Outfit', sans-serif; background: var(--dark-bg); color: white;
+            overflow: hidden;
+        }
+
+        .layout { display: flex; height: 100vh; width: 100vw; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .sidebar-logo { width: 260px; margin-bottom: 30px; }
+        .sidebar-logo img { width: 100%; height: auto; display: block; }
+
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        .sidebar-menu li {
+            padding: 15px 20px;
+            margin-bottom: 8px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 600;
+            transition: 0.3s;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+        .sidebar-menu li:hover, .sidebar-menu li.active { background: var(--glass); color: var(--accent); }
+        .sidebar-menu li.active { background: rgba(255, 171, 64, 0.1); border: 1px solid rgba(255, 171, 64, 0.2); }
+
+        .logout-btn {
+            margin-top: auto;
+            background: rgba(255, 82, 82, 0.1);
+            color: #ff5252;
+            border: 1px solid rgba(255, 82, 82, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 700;
+            transition: 0.3s;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: radial-gradient(circle at center, #1a3c34, var(--dark-bg));
+            overflow: hidden;
+        }
+
+        .kids-home {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn-play {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 10px 30px rgba(255, 171, 64, 0.4);
+            transition: 0.3s;
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .btn-play:hover { transform: scale(1.05); background: #ffbd66; }
+
+        /* COLORING GAME */
+        .game-overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--dark-bg);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .game-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            cursor: crosshair;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+
+        .palette {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .color-bubble {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid rgba(255,255,255,0.2);
+            transition: 0.2s;
+        }
+        .color-bubble:hover { transform: scale(1.2); }
+        .color-bubble.active { border-color: white; transform: scale(1.1); box-shadow: 0 0 15px rgba(255,255,255,0.5); }
+
+        .animal-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            justify-content: center;
+            overflow-x: auto;
+            max-width: 600px;
+            padding: 10px;
+        }
+
+        .animal-thumb {
+            min-width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            cursor: pointer;
+            padding: 10px;
+            transition: 0.2s;
+            border: 2px solid transparent;
+        }
+        .animal-thumb:hover { background: rgba(255,255,255,0.2); }
+        .animal-thumb.active { border-color: var(--accent); background: rgba(255,171,64,0.1); }
+        .animal-thumb img { width: 100%; height: 100%; object-fit: contain; }
+
+        .game-tools {
+            display: flex;
+            gap: 15px;
+        }
+        .tool-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+        }
+        .tool-btn:hover { background: rgba(255,255,255,0.2); }
+
+        /* PUZZLE GAME */
+        .puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(var(--grid-size, 3), 1fr);
+            grid-template-rows: repeat(var(--grid-size, 3), 1fr);
+            gap: 10px;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            width: fit-content;
+        }
+
+        .puzzle-tile {
+            width: var(--tile-size, 150px);
+            height: var(--tile-size, 150px);
+            background-size: calc(var(--tile-size, 150px) * var(--grid-size, 3)) calc(var(--tile-size, 150px) * var(--grid-size, 3));
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            user-select: none;
+        }
+        .puzzle-tile:hover { transform: scale(1.02); box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
+        .puzzle-tile.empty {
+            background: rgba(255,255,255,0.05) !important;
+            cursor: default;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            border: 1px dashed rgba(255,255,255,0.2);
+        }
+        .puzzle-tile.dragging { opacity: 0.5; transform: scale(0.9); }
+        .puzzle-tile.drag-over { background: rgba(76, 201, 240, 0.2) !important; border-color: #4cc9f0; }
+
+        .level-btn {
+            background: rgba(76, 201, 240, 0.1);
+            border: 1px solid rgba(76, 201, 240, 0.3);
+            color: #4cc9f0;
+            padding: 15px 25px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: 0.3s;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            text-align: center;
+        }
+        .level-btn:hover { background: rgba(76, 201, 240, 0.2); }
+        .level-btn.active { background: #4cc9f0; color: black; border-color: #4cc9f0; box-shadow: 0 0 20px rgba(76, 201, 240, 0.4); }
+
+        .puzzle-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-left: 40px;
+            width: 220px;
+        }
+
+        .puzzle-thumb {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: 0.3s;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .puzzle-thumb:hover { transform: scale(1.05); background: rgba(255,255,255,0.1); }
+        .puzzle-thumb.active { border-color: #4cc9f0; background: rgba(76, 201, 240, 0.1); }
+        .puzzle-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .puzzle-thumb .thumb-label {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 7px;
+            font-weight: 900;
+            padding: 3px;
+            text-align: center;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .win-message {
+            background: #4cc9f0;
+            color: black;
+            padding: 20px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: 900;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(76, 201, 240, 0.4);
+            margin-top: 20px;
+            display: none;
+            animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateY(20px) scale(0.8); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        /* MEMORY GAME */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 600px;
+            width: 100%;
+            margin: 20px auto;
+        }
+
+        .memory-card {
+            aspect-ratio: 1;
+            position: relative;
+            cursor: pointer;
+            perspective: 1000px;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .memory-card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .memory-card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .memory-card-front {
+            background: linear-gradient(135deg, #2d7a4d, #1a3c34);
+            color: var(--accent);
+        }
+
+        .memory-card-front::after {
+            content: '?';
+            font-size: 3rem;
+            font-weight: 900;
+            opacity: 0.2;
+        }
+
+        .memory-card-back {
+            background: white;
+            transform: rotateY(180deg);
+            padding: 10px;
+        }
+
+        .memory-card-back img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .memory-stats {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .memory-stat-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="../shared/parks_logo_combined_white.svg" alt="PARKS">
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li onclick="window.location.href='homepage.html'">
+                    <i data-lucide="home"></i> <span>Home</span>
+                </li>
+                <li onclick="window.location.href='map.html'">
+                    <i data-lucide="map"></i> <span>Mappa Interattiva</span>
+                </li>
+                <li onclick="window.location.href='itineraries.html'">
+                    <i data-lucide="milestone"></i> <span>Itinerari</span>
+                </li>
+                <li onclick="window.location.href='alerts.html'">
+                    <i data-lucide="bell"></i> <span>Inserisci un ALERT</span>
+                </li>
+                <li onclick="window.location.href='library.html'">
+                    <i data-lucide="book-open"></i> <span>Libreria</span>
+                </li>
+                <li onclick="window.location.href='library.html?view=mustsee'">
+                    <i data-lucide="star"></i> <span>Must See</span>
+                </li>
+                <li class="active" onclick="window.location.href='kids_corner.html'">
+                    <i data-lucide="baby"></i> <span>Kid's Corner</span>
+                </li>
+                <li onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
+                <li onclick="window.location.href='memory2/index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
+            </ul>
+
+            <button class="logout-btn" onclick="logout()">
+                <i data-lucide="log-out"></i> <span>Logout</span>
+            </button>
+        </aside>
+
+        <main class="main-content">
+            <div class="kids-home" id="kids-home">
+                <h1>Kid's Corner</h1>
+                <p style="font-size: 1.2rem; letter-spacing: 5px; text-transform: uppercase; opacity: 0.6;">Divertimento per i piccoli esploratori</p>
+                
+                <div id="home-icons-container" style="font-size: 8rem; margin: 40px 0; display: flex; gap: 30px; filter: drop-shadow(0 0 20px var(--accent));">
+                    <div style="animation: bounce 2s infinite ease-in-out;">🦁</div>
+                    <div style="animation: bounce 2s infinite ease-in-out; animation-delay: 0.5s;">🦓</div>
+                    <div style="animation: bounce 2s infinite ease-in-out; animation-delay: 1s;">🐘</div>
+                </div>
+
+                <button class="btn-play" onclick="startColoring()">
+                    <i data-lucide="palette" style="width:32px; height:32px;"></i>
+                    MAGICO COLORA!
+                </button>
+
+                <button class="btn-play" onclick="startPuzzle()" style="background: #4cc9f0; box-shadow: 0 10px 30px rgba(76, 201, 240, 0.4);">
+                    <i data-lucide="grid" style="width:32px; height:32px;"></i>
+                    PUZZLE ANIMALE
+                </button>
+
+                <button class="btn-play" onclick="openMemory()" style="background: #ff7043; box-shadow: 0 10px 30px rgba(255, 112, 67, 0.4);">
+                    <i data-lucide="brain" style="width:32px; height:32px;"></i>
+                    MEMORY AFRICA
+                </button>
+
+                <button class="btn-play" onclick="startQuiz()" style="background: #9c27b0; box-shadow: 0 10px 30px rgba(156, 39, 176, 0.4);">
+                    <i data-lucide="help-circle" style="width:32px; height:32px;"></i>
+                    SAFARI QUIZ
+                </button>
+            </div>
+
+            <!-- GAME OVERLAY -->
+            <div id="game-overlay" class="game-overlay" style="display:none; position:fixed; inset:0; background:var(--dark-bg); z-index:2000; flex-direction:column; align-items:center; padding:20px;">
+                <div style="width:100%; max-width:1100px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <button onclick="closeGame()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:12px 25px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:10px;">
+                        <i data-lucide="chevron-left"></i> ESCI
+                    </button>
+                    
+                    <h2 id="drawing-name" style="margin:0; letter-spacing:8px; color:var(--accent); font-size:1.5rem; text-transform:uppercase;">MAGICO COLORA!</h2>
+
+                    <div style="display:flex; gap:12px;">
+                        <button type="button" onclick="undo()" id="undo-btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; padding:12px 20px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px; opacity:0.5; cursor:not-allowed;">
+                            <i data-lucide="undo-2"></i> ANNULLA
+                        </button>
+                        <button type="button" onclick="clearCanvas()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; padding:12px 20px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px;">
+                            <i data-lucide="rotate-ccw"></i> RESET
+                        </button>
+                        <button type="button" onclick="saveAsPDF(event)" style="background:var(--accent); border:none; color:black; padding:12px 25px; border-radius:15px; cursor:pointer; font-weight:900; display:flex; align-items:center; gap:10px; box-shadow: 0 10px 30px rgba(255,171,64,0.3);">
+                            <i data-lucide="file-down"></i> SALVA PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="canvas-container" style="background:white; border-radius:30px; box-shadow:0 30px 60px rgba(0,0,0,0.6); overflow:hidden; display:flex; align-items:center; justify-content:center; width:1000px; height:700px; border:8px solid #222;">
+                    <canvas id="coloring-canvas" width="1000" height="700" style="cursor:crosshair;"></canvas>
+                </div>
+
+                <!-- Animal Selection List with Navigation Arrows -->
+                <div style="position:relative; width:100%; max-width:1000px; display:flex; align-items:center; margin-top:15px;">
+                    <button type="button" onclick="scrollSelector(-1)" style="background:rgba(255,255,255,0.1); border:none; color:white; width:40px; height:40px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.3s; margin-right:10px;">
+                        <i data-lucide="chevron-left"></i>
+                    </button>
+
+                    <div id="animal-selector" style="flex:1; display:flex; gap:15px; overflow-x:auto; padding:10px; scrollbar-width:none; scroll-behavior:smooth;">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <button type="button" onclick="scrollSelector(1)" style="background:rgba(255,255,255,0.1); border:none; color:white; width:40px; height:40px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.3s; margin-left:10px;">
+                        <i data-lucide="chevron-right"></i>
+                    </button>
+                </div>
+
+                <div class="palette" id="palette" style="margin-top:10px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:1000px;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- PUZZLE OVERLAY -->
+            <div id="puzzle-overlay" class="game-overlay" style="display:none; position:fixed; inset:0; background:var(--dark-bg); z-index:2000; flex-direction:column; align-items:center; padding:20px;">
+                <div style="width:100%; max-width:1100px; display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                    <button onclick="closePuzzle()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:12px 25px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:10px;">
+                        <i data-lucide="chevron-left"></i> ESCI
+                    </button>
+                    
+                    <h2 id="puzzle-title" style="margin:0; letter-spacing:8px; color:#4cc9f0; font-size:1.5rem; text-transform:uppercase;">PUZZLE ANIMALE</h2>
+
+                    <div style="display:flex; gap:12px;">
+                        <button type="button" onclick="solvePuzzle()" style="background:rgba(76, 201, 240, 0.1); border:1px solid rgba(76, 201, 240, 0.3); color:#4cc9f0; padding:12px 20px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px;">
+                            <i data-lucide="eye"></i> SOLUZIONE
+                        </button>
+                        <button type="button" onclick="initPuzzle()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; padding:12px 20px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px;">
+                            <i data-lucide="rotate-ccw"></i> RESET
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Image Selector for Puzzles -->
+                <div id="puzzle-image-selector" style="display:flex; gap:15px; overflow-x:auto; padding:10px; margin-bottom:20px; width:100%; max-width:800px; scrollbar-width:none; justify-content:center;">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div id="puzzle-container" style="position:relative; display:flex; align-items:center; justify-content:center; flex:1;">
+                    <div id="puzzle-grid" class="puzzle-grid">
+                        <!-- Tiles generated by JS -->
+                    </div>
+
+                    <div class="puzzle-sidebar">
+                        <div style="color: #4cc9f0; font-weight: 900; letter-spacing: 2px; font-size: 0.8rem; margin-bottom: 5px; text-transform: uppercase;">Scegli Livello</div>
+                        <div id="level-selector" style="display:flex; flex-direction:column; gap:12px; width: 100%;">
+                            <button id="btn-size-3" class="level-btn active" onclick="changeLevel(null, 3)">3x3 (Facile)</button>
+                            <button id="btn-size-4" class="level-btn" onclick="changeLevel(null, 4)">4x4 (Difficile)</button>
+                        </div>
+                        
+                        <div style="margin-top: 40px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; font-size: 0.85rem; line-height: 1.5; color: rgba(255,255,255,0.5);">
+                            <i data-lucide="info" style="width:16px; height:16px; margin-bottom:10px; color:#4cc9f0;"></i><br>
+                            Trascina i pezzi o clicca per spostarli verso lo spazio vuoto!
+                        </div>
+
+                        <div id="win-message" class="win-message">
+                            BRAVISSIMO!<br>PUZZLE COMPLETATO<br>🎉🦒🐘🦁🎉
+                        </div>
+                    </div>
+                </div>
+
+                </div>
+            </div>
+
+            <!-- MEMORY OVERLAY -->
+            <div id="memory-overlay" class="game-overlay" style="display:none; position:fixed; inset:0; background:var(--dark-bg); z-index:2000; flex-direction:column; align-items:center; padding:20px;">
+                <div style="width:100%; max-width:1100px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <button onclick="closeMemory()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:12px 25px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:10px;">
+                        <i data-lucide="chevron-left"></i> ESCI
+                    </button>
+                    
+                    <h2 style="margin:0; letter-spacing:8px; color:#ff7043; font-size:1.5rem; text-transform:uppercase;">MEMORY AFRICA</h2>
+
+                    <div style="display:flex; gap:12px;">
+                        <button type="button" onclick="initMemory()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; padding:12px 20px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px;">
+                            <i data-lucide="rotate-ccw"></i> RESET
+                        </button>
+                    </div>
+                </div>
+
+                <div class="memory-stats">
+                    <div class="memory-stat-item">MOSSE: <span id="memory-moves">0</span></div>
+                    <div class="memory-stat-item">COPPIE: <span id="memory-matches">0</span>/8</div>
+                </div>
+
+                <div id="memory-selection" style="width:100%; max-width:900px; display:flex; flex-direction:column; align-items:center;">
+                    <h3 style="letter-spacing:5px; opacity:0.6; margin-bottom:40px; font-size:1rem; font-weight:900;">SCEGLI LA TUA AVVENTURA</h3>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px; width:100%;">
+                        <div onclick="startMemory(1)" class="card-option" style="background:rgba(255,215,0,0.1); border:2px solid #ffd700; padding:40px; border-radius:30px; text-align:center; cursor:pointer; transition:0.3s;">
+                            <div style="font-size:3.5rem; margin-bottom:15px;">🦁</div>
+                            <div style="font-weight:900; letter-spacing:2px; font-size:1.2rem;">GIOCO 1</div>
+                            <div style="font-size:0.8rem; opacity:0.5; margin-top:10px; font-weight:700;">I CLASSICI DELLA SAVANA</div>
+                        </div>
+                        <div onclick="startMemory(2)" class="card-option" style="background:rgba(76,175,80,0.1); border:2px solid #4caf50; padding:40px; border-radius:30px; text-align:center; cursor:pointer; transition:0.3s;">
+                            <div style="font-size:3.5rem; margin-bottom:15px;">🐊</div>
+                            <div style="font-weight:900; letter-spacing:2px; font-size:1.2rem;">GIOCO 2</div>
+                            <div style="font-size:0.8rem; opacity:0.5; margin-top:10px; font-weight:700;">GLI ESPLORATORI</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="memory-grid" class="memory-grid" style="display:none;">
+                    <!-- Cards generated by JS -->
+                </div>
+
+                <div id="memory-win-message" class="win-message" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.9); padding:50px; border-radius:30px; border:4px solid #ff7043; text-align:center; z-index:3000; box-shadow:0 0 100px rgba(255,112,67,0.5);">
+                    <h2 style="font-size:3rem; margin-bottom:20px; color:#ff7043;">FENOMENALE!</h2>
+                    <p style="font-size:1.5rem; opacity:0.8;">HAI TROVATO TUTTE LE COPPIE!</p>
+                    <button onclick="initMemory()" style="margin-top:30px; background:#ff7043; color:white; border:none; padding:15px 40px; border-radius:20px; font-weight:900; cursor:pointer;">GIOCA ANCORA</button>
+                </div>
+            </div>
+
+            <!-- QUIZ OVERLAY -->
+            <div id="quiz-overlay" class="game-overlay" style="display:none; position:fixed; inset:0; background:var(--dark-bg); z-index:2000; flex-direction:column; align-items:center; padding:20px; overflow-y:auto;">
+                <div style="width:100%; max-width:1100px; display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                    <button onclick="closeQuiz()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:12px 25px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:10px;">
+                        <i data-lucide="chevron-left"></i> ESCI
+                    </button>
+                    <h2 style="margin:0; letter-spacing:8px; color:#9c27b0; font-size:1.5rem; text-transform:uppercase;">SAFARI QUIZ</h2>
+                    <div style="width:100px;"></div>
+                </div>
+
+                <div style="width:100%; max-width:1100px; display:flex; flex-direction:column; align-items:center; gap:20px; padding-bottom:100px;">
+                    <!-- CENTER CONTENT AREA -->
+                    <div style="width:100%; display:flex; flex-direction:column; align-items:center;">
+
+                <div id="quiz-level-selection" style="width:100%; max-width:900px; display:flex; flex-direction:column; align-items:center;">
+                    <h3 style="letter-spacing:5px; opacity:0.6; margin-bottom:40px; font-size:1rem; font-weight:900;">SCEGLI IL TUO LIVELLO</h3>
+                    <div id="quiz-levels-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:15px; width:100%;">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+
+                <div id="quiz-container" style="display:none; width:100%; max-width:800px; background:rgba(255,255,255,0.03); border-radius:30px; padding:40px; border:1px solid rgba(255,255,255,0.1); flex-direction:column; align-items:center;">
+                    <div id="quiz-image-container" style="width:300px; height:200px; background:#000; border-radius:20px; overflow:hidden; margin-bottom:30px; border:2px solid #9c27b0; display:none;">
+                        <img id="quiz-img" style="width:100%; height:100%; object-fit:cover;">
+                    </div>
+                    <h3 id="quiz-question" style="font-size:1.8rem; text-align:center; margin-bottom:40px; line-height:1.4;">Caricamento...</h3>
+                    <div id="quiz-options" style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; width:100%;">
+                        <!-- Options generated by JS -->
+                    </div>
+                </div>
+
+                <div id="quiz-result" style="display:none; text-align:center;">
+                    <div id="quiz-result-image" style="width:250px; height:250px; margin:0 auto 20px; border-radius:50%; overflow:hidden; border:5px solid #9c27b0; background:white;">
+                        <img id="quiz-result-img" src="" style="width:100%; height:100%; object-fit:cover;">
+                    </div>
+                    <h2 id="quiz-result-title" style="font-size:3.5rem; color:#9c27b0; margin-bottom:10px;">QUIZ COMPLETATO!</h2>
+                    <p style="font-size:1.5rem; opacity:0.6;">IL TUO PUNTEGGIO È: <span id="quiz-final-score">0</span></p>
+                    <div id="quiz-pass-msg" style="margin:10px 0; font-size:1rem; opacity:0.8;">Devi indovinare almeno il 60% delle domande (3 su 5) per sbloccare il prossimo livello!</div>
+                    <div id="quiz-unlock-msg" style="margin:20px 0; color:#4caf50; font-weight:900; display:none;">NUOVO LIVELLO SBLOCCATO! 🔓</div>
+                    <div style="display:flex; gap:15px; justify-content:center; margin-top:30px;">
+                        <button onclick="showQuizLevels()" style="background:rgba(255,255,255,0.1); color:white; border:none; padding:15px 30px; border-radius:20px; font-weight:900; cursor:pointer;">TORNA AI LIVELLI</button>
+                        <button id="btn-next-level" onclick="nextQuizLevel()" style="display:none; background:#4caf50; color:white; border:none; padding:15px 40px; border-radius:20px; font-weight:900; cursor:pointer;">LIVELLO SUCCESSIVO</button>
+                        <button id="btn-retry-quiz" onclick="startQuizLevel(currentQuizLevel)" style="background:#9c27b0; color:white; border:none; padding:15px 40px; border-radius:20px; font-weight:900; cursor:pointer;">RIPROVA</button>
+                    </div>
+                </div>
+                </div>
+
+                <!-- CURRENT ROUND PROGRESS (Prominent between game and scoreboard) -->
+                <div id="quiz-current-progress-container" style="background:rgba(156, 39, 176, 0.1); padding:10px 30px; border-radius:30px; border:1px solid rgba(156, 39, 176, 0.3); color:white; font-weight:900; font-size:0.9rem; letter-spacing:2px; margin-top:10px;">
+                    SFIDA ATTUALE: <span id="quiz-current-progress" style="color:#9c27b0; font-size:1.2rem;">0/0</span>
+                </div>
+
+                <!-- BOTTOM CENTER SCOREBOARD -->
+                <div id="quiz-scoreboard" style="background:rgba(255,255,255,0.05); padding:20px; border-radius:30px; border:2px solid #9c27b0; min-width:400px; box-shadow: 0 10px 40px rgba(156, 39, 176, 0.2); margin-top:10px;">
+                    <h4 style="margin:0 0 15px 0; font-size:0.8rem; letter-spacing:3px; color:#9c27b0; text-align:center; font-weight:900;">RIEPILOGO PUNTEGGI SAFARI</h4>
+                    <div id="quiz-scoreboard-body" style="display:flex; justify-content:space-between; gap:20px; width:100%;">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        </main>
+    </div>
+
+    <style>
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+    </style>
+
+    <script>
+        lucide.createIcons();
+
+        const colors = [
+            '#ff5252', '#ff4081', '#e040fb', '#7c4dff', '#536dfe', '#448aff', 
+            '#40c4ff', '#18ffff', '#64ffda', '#69f0ae', '#b2ff59', '#eeff41', 
+            '#ffff00', '#ffd740', '#ffab40', '#ff6e40', '#8d6e63', '#90a4ae',
+            '#ffffff', '#000000'
+        ];
+
+        let kidsDrawings = [];
+        let selectedColor = '#ff5252';
+        let currentDrawingIdx = 0;
+        let canvas, ctx, originalOutline;
+        let history = [];
+
+        function startColoring() {
+            if(kidsDrawings.length === 0) {
+                alert("Nessun disegno disponibile. Chiedi all'amministratore di caricarne alcuni!");
+                return;
+            }
+            document.getElementById('kids-home').style.display = 'none';
+            document.getElementById('game-overlay').style.display = 'flex';
+            initGame();
+        }
+
+        function closeGame() {
+            document.getElementById('kids-home').style.display = 'flex';
+            document.getElementById('game-overlay').style.display = 'none';
+        }
+
+        function initGame() {
+            canvas = document.getElementById('coloring-canvas');
+            ctx = canvas.getContext('2d', { willReadFrequently: true });
+            
+            // Setup Palette
+            const palette = document.getElementById('palette');
+            palette.innerHTML = colors.map(c => `
+                <div class="color-bubble ${c === selectedColor ? 'active' : ''}" 
+                     style="background:${c}" 
+                     onclick="setColor('${c}', this)"></div>
+            `).join('');
+
+            // Setup Animal Selector
+            const selector = document.getElementById('animal-selector');
+            selector.innerHTML = kidsDrawings.map((k, i) => `
+                <div class="animal-thumb" onclick="setDrawing(${i})" 
+                     style="flex-shrink:0; width:90px; height:90px; background:white; border-radius:18px; border:4px solid ${i === currentDrawingIdx ? 'var(--accent)' : 'transparent'}; cursor:pointer; overflow:hidden; transition:0.3s; display:flex; align-items:center; justify-content:center; padding:5px; box-shadow:0 5px 15px rgba(0,0,0,0.2);">
+                    <img src="${k.image}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                </div>
+            `).join('');
+
+            loadDrawing(kidsDrawings[currentDrawingIdx]);
+        }
+
+        function scrollSelector(dir) {
+            const selector = document.getElementById('animal-selector');
+            if(!selector) return;
+            const scrollAmount = 250;
+            selector.scrollLeft += (dir * scrollAmount);
+        }
+
+        function setColor(c, el) {
+            selectedColor = c;
+            document.querySelectorAll('.color-bubble').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function setDrawing(idx) {
+            currentDrawingIdx = idx;
+            document.querySelectorAll('.animal-thumb').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.animal-thumb')[idx].classList.add('active');
+            loadDrawing(kidsDrawings[idx]);
+        }
+
+        function loadDrawing(drawing) {
+            document.getElementById('drawing-name').innerText = drawing.name.toUpperCase();
+            history = [];
+            updateUndoButton();
+            
+            // Highlight selected thumb
+            const thumbs = document.querySelectorAll('.animal-thumb');
+            thumbs.forEach((t, i) => {
+                t.style.borderColor = (i === currentDrawingIdx) ? 'var(--accent)' : 'transparent';
+                t.style.opacity = (i === currentDrawingIdx) ? '1' : '0.5';
+            });
+
+            const img = new Image();
+            img.src = drawing.image;
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const ratio = Math.min(canvas.width / img.width, canvas.height / img.height) * 0.9;
+                const w = img.width * ratio;
+                const h = img.height * ratio;
+                const x = (canvas.width - w) / 2;
+                const y = (canvas.height - h) / 2;
+                
+                ctx.drawImage(img, x, y, w, h);
+                originalOutline = img;
+                
+                canvas.onclick = (e) => {
+                    saveState();
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / rect.width;
+                    const scaleY = canvas.height / rect.height;
+                    const clickX = Math.round((e.clientX - rect.left) * scaleX);
+                    const clickY = Math.round((e.clientY - rect.top) * scaleY);
+                    floodFill(clickX, clickY, hexToRgb(selectedColor));
+                };
+            };
+        }
+
+        function floodFill(startX, startY, fillRGB) {
+            const width = canvas.width;
+            const height = canvas.height;
+            if (startX < 0 || startX >= width || startY < 0 || startY >= height) return;
+
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            
+            const startIdx = (startY * width + startX) * 4;
+            const startR = data[startIdx];
+            const startG = data[startIdx+1];
+            const startB = data[startIdx+2];
+
+            if (isBlack(startR, startG, startB) || (startR === fillRGB.r && startG === fillRGB.g && startB === fillRGB.b)) return;
+
+            const stack = [[startX, startY]];
+            const visited = new Uint8Array(width * height);
+            
+            while (stack.length > 0) {
+                const [px, py] = stack.pop();
+                const pos = py * width + px;
+                const idx = pos * 4;
+                
+                if (visited[pos]) continue;
+                visited[pos] = 1;
+
+                if (Math.abs(data[idx] - startR) < 60 && Math.abs(data[idx+1] - startG) < 60 && Math.abs(data[idx+2] - startB) < 60) {
+                    data[idx] = fillRGB.r;
+                    data[idx+1] = fillRGB.g;
+                    data[idx+2] = fillRGB.b;
+                    data[idx+3] = 255;
+
+                    if (px > 0) stack.push([px - 1, py]);
+                    if (px < width - 1) stack.push([px + 1, py]);
+                    if (py > 0) stack.push([px, py - 1]);
+                    if (py < height - 1) stack.push([px, py + 1]);
+                }
+            }
+            
+            ctx.putImageData(imgData, 0, 0);
+            
+            if(originalOutline) {
+                const ratio = Math.min(canvas.width / originalOutline.width, canvas.height / originalOutline.height) * 0.9;
+                const w = originalOutline.width * ratio;
+                const h = originalOutline.height * ratio;
+                const x = (canvas.width - w) / 2;
+                const y = (canvas.height - h) / 2;
+                ctx.globalCompositeOperation = 'multiply';
+                ctx.drawImage(originalOutline, x, y, w, h);
+                ctx.globalCompositeOperation = 'source-over';
+            }
+        }
+
+        function saveAsPDF(e) {
+            if(e) { e.preventDefault(); e.stopPropagation(); }
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                if(!jsPDF) { alert("Moduli PDF in caricamento..."); return false; }
+                
+                // Use pixel units and original canvas size for maximum quality
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: [1000, 700]
+                });
+                
+                // Get high-quality JPEG (quality 1.0 = 100%)
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                doc.addImage(imgData, 'JPEG', 0, 0, 1000, 700, undefined, 'FAST');
+                
+                const rawName = document.getElementById('drawing-name').innerText || "DISEGNO";
+                const safeName = rawName.replace(/[^a-z0-9]/gi, '_').toUpperCase();
+                const fileName = `ETOSHA_KIDS_${safeName}.pdf`;
+
+                // MANUAL BLOB DOWNLOAD (Avoids opening new windows/error pages)
+                const blob = doc.output('blob');
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                
+                // Cleanup
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 100);
+
+            } catch(err) {
+                console.error("PDF Export Error:", err);
+                alert("Errore durante il salvataggio. Riprova.");
+            }
+            return false;
+        }
+
+        function saveState() {
+            history.push(canvas.toDataURL());
+            if (history.length > 20) history.shift();
+            updateUndoButton();
+        }
+
+        function undo() {
+            if (history.length > 0) {
+                const lastState = history.pop();
+                const img = new Image();
+                img.src = lastState;
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+                updateUndoButton();
+            }
+        }
+
+        function updateUndoButton() {
+            const btn = document.getElementById('undo-btn');
+            if (!btn) return;
+            if (history.length > 0) {
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+        }
+
+        function clearCanvas() {
+            if(confirm("Vuoi cancellare tutto e ricominciare questo disegno?")) {
+                loadDrawing(kidsDrawings[currentDrawingIdx]);
+            }
+        }
+
+        function isBlack(r, g, b) {
+            return r < 140 && g < 140 && b < 140;
+        }
+
+        function hexToRgb(hex) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return { r, g, b };
+        }
+
+        /* PUZZLE LOGIC */
+        let puzzleTiles = [];
+        let kidsPuzzles = [];
+        let puzzleSize = 3;
+        let puzzleImg = ''; 
+        let puzzleName = '';
+        let draggedTileIdx = null;
+
+        function startPuzzle() {
+            if(kidsPuzzles.length === 0) {
+                alert("Nessun puzzle disponibile. Caricali dall'area Admin!");
+                return;
+            }
+            document.getElementById('kids-home').style.display = 'none';
+            document.getElementById('puzzle-overlay').style.display = 'flex';
+            
+            // Default to first puzzle if none selected
+            if(!puzzleImg) {
+                puzzleImg = kidsPuzzles[0].image;
+                puzzleName = kidsPuzzles[0].name;
+                document.getElementById('puzzle-title').innerText = `PUZZLE ${puzzleName.toUpperCase()}`;
+            }
+
+            renderPuzzleSelector();
+            initPuzzle();
+        }
+
+        function closePuzzle() {
+            document.getElementById('kids-home').style.display = 'flex';
+            document.getElementById('puzzle-overlay').style.display = 'none';
+        }
+
+        function renderPuzzleSelector() {
+            const container = document.getElementById('puzzle-image-selector');
+            if(!container) return;
+            
+            container.innerHTML = kidsPuzzles.map(p => `
+                <div class="puzzle-thumb ${puzzleImg === p.image ? 'active' : ''}" 
+                     onclick="selectPuzzleImage('${p.image}', '${p.name}')">
+                    <img src="${p.image}">
+                    <div class="thumb-label">${p.name.toUpperCase()}</div>
+                </div>
+            `).join('');
+            
+            // Update Size Buttons active state
+            document.getElementById('btn-size-3').classList.toggle('active', puzzleSize === 3);
+            document.getElementById('btn-size-4').classList.toggle('active', puzzleSize === 4);
+        }
+
+        function selectPuzzleImage(img, name) {
+            puzzleImg = img;
+            puzzleName = name;
+            document.getElementById('puzzle-title').innerText = `PUZZLE ${name.toUpperCase()}`;
+            initPuzzle();
+            renderPuzzleSelector();
+        }
+
+        function changeLevel(animalSlug, size) {
+            // animalSlug is ignored as we now use dynamic selection
+            puzzleSize = size;
+            
+            // Adjust grid CSS variables
+            const grid = document.getElementById('puzzle-grid');
+            if(grid) {
+                grid.style.setProperty('--grid-size', size);
+                grid.style.setProperty('--tile-size', size === 3 ? '150px' : '120px');
+            }
+            
+            initPuzzle();
+            renderPuzzleSelector();
+        }
+
+        function initPuzzle() {
+            puzzleTiles = Array.from({length: puzzleSize * puzzleSize}, (_, i) => i);
+            document.getElementById('win-message').style.display = 'none';
+            shufflePuzzle();
+            renderPuzzle();
+        }
+
+        function solvePuzzle() {
+            if(confirm("Vuoi vedere la soluzione del puzzle?")) {
+                puzzleTiles = Array.from({length: puzzleSize * puzzleSize}, (_, i) => i);
+                renderPuzzle();
+                checkWin();
+            }
+        }
+
+        function shufflePuzzle() {
+            let emptyIdx = puzzleTiles.indexOf(puzzleSize * puzzleSize - 1);
+            for(let i = 0; i < 300; i++) {
+                const neighbors = getNeighbors(emptyIdx);
+                const moveIdx = neighbors[Math.floor(Math.random() * neighbors.length)];
+                [puzzleTiles[emptyIdx], puzzleTiles[moveIdx]] = [puzzleTiles[moveIdx], puzzleTiles[emptyIdx]];
+                emptyIdx = moveIdx;
+            }
+        }
+
+        function getNeighbors(idx) {
+            const neighbors = [];
+            const row = Math.floor(idx / puzzleSize);
+            const col = idx % puzzleSize;
+
+            if (row > 0) neighbors.push(idx - puzzleSize);
+            if (row < puzzleSize - 1) neighbors.push(idx + puzzleSize);
+            if (col > 0) neighbors.push(idx - 1);
+            if (col < puzzleSize - 1) neighbors.push(idx + 1);
+            return neighbors;
+        }
+
+        function renderPuzzle() {
+            const grid = document.getElementById('puzzle-grid');
+            grid.innerHTML = '';
+            
+            const tileSize = puzzleSize === 3 ? 150 : 120;
+            
+            puzzleTiles.forEach((tileValue, i) => {
+                const tile = document.createElement('div');
+                tile.className = 'puzzle-tile';
+                tile.setAttribute('data-index', i);
+                
+                if (tileValue === puzzleSize * puzzleSize - 1) {
+                    tile.classList.add('empty');
+                    // Drop target for drag & drop
+                    tile.ondragover = (e) => {
+                        e.preventDefault();
+                        if (getNeighbors(i).includes(draggedTileIdx)) {
+                            tile.classList.add('drag-over');
+                        }
+                    };
+                    tile.ondragleave = () => tile.classList.remove('drag-over');
+                    tile.ondrop = (e) => {
+                        e.preventDefault();
+                        tile.classList.remove('drag-over');
+                        if (draggedTileIdx !== null) {
+                            handleMove(draggedTileIdx);
+                        }
+                    };
+                } else {
+                    const row = Math.floor(tileValue / puzzleSize);
+                    const col = tileValue % puzzleSize;
+                    tile.style.backgroundImage = `url(${puzzleImg})`;
+                    tile.style.backgroundPosition = `-${col * tileSize}px -${row * tileSize}px`;
+                    tile.onclick = () => handleMove(i);
+                    
+                    // Drag source
+                    tile.draggable = true;
+                    tile.ondragstart = () => {
+                        draggedTileIdx = i;
+                        tile.classList.add('dragging');
+                    };
+                    tile.ondragend = () => {
+                        tile.classList.remove('dragging');
+                        draggedTileIdx = null;
+                    };
+                }
+                grid.appendChild(tile);
+            });
+            lucide.createIcons();
+        }
+
+        function handleMove(idx) {
+            const emptyIdx = puzzleTiles.indexOf(puzzleSize * puzzleSize - 1);
+            const neighbors = getNeighbors(idx);
+
+            if (neighbors.includes(emptyIdx)) {
+                [puzzleTiles[idx], puzzleTiles[emptyIdx]] = [puzzleTiles[emptyIdx], puzzleTiles[idx]];
+                renderPuzzle();
+                checkWin();
+            }
+        }
+
+        function checkWin() {
+            const isWin = puzzleTiles.every((val, i) => val === i);
+            if (isWin) {
+                document.getElementById('win-message').style.display = 'block';
+                const emptyTile = document.querySelector('.puzzle-tile.empty');
+                if(emptyTile) {
+                    emptyTile.classList.remove('empty');
+                    const row = puzzleSize - 1;
+                    const col = puzzleSize - 1;
+                    const tileSize = puzzleSize === 3 ? 150 : 120;
+                    emptyTile.style.backgroundImage = `url(${puzzleImg})`;
+                    emptyTile.style.backgroundPosition = `-${col * tileSize}px -${row * tileSize}px`;
+                }
+            }
+        }
+
+        /* MEMORY LOGIC */
+        let memoryAnimals = []; // Will be loaded from DB
+        let memoryCards = [];
+        let flippedCards = [];
+        let memoryMoves = 0;
+        let memoryMatches = 0;
+        let lockBoard = false;
+
+         function openMemory() {
+            document.getElementById('kids-home').style.display = 'none';
+            document.getElementById('memory-overlay').style.display = 'flex';
+            document.getElementById('memory-selection').style.display = 'flex';
+            document.getElementById('memory-grid').style.display = 'none';
+            document.getElementById('memory-win-message').style.display = 'none';
+        }
+
+        function startMemory(version) {
+            window.PARKS_DB.get('parks_kids_memory', [], function(data) {
+                let cardsToUse = [];
+                
+                if(data && data.length > 0) {
+                    if(version === 1) {
+                        cardsToUse = data.slice(0, 8);
+                    } else {
+                        cardsToUse = data.length > 8 ? data.slice(8, 16) : data;
+                    }
+                }
+                
+                if(cardsToUse.length === 0) {
+                    // Fallback
+                    const fallbackClassics = [
+                        { name: 'Lion', image: '../DB_ASSETS/KIDS_GAMES/memory_lion.png' },
+                        { name: 'Zebra', image: '../DB_ASSETS/KIDS_GAMES/memory_zebra.png' },
+                        { name: 'Elephant', image: '../DB_ASSETS/KIDS_GAMES/memory_elephant.png' },
+                        { name: 'Giraffe', image: '../DB_ASSETS/KIDS_GAMES/memory_giraffe.png' },
+                        { name: 'Hippo', image: '../DB_ASSETS/KIDS_GAMES/memory_hippo.png' },
+                        { name: 'Rhino', image: '../DB_ASSETS/KIDS_GAMES/memory_rhino.png' },
+                        { name: 'Cheetah', image: '../DB_ASSETS/KIDS_GAMES/memory_cheetah.png' },
+                        { name: 'Meerkat', image: '../DB_ASSETS/KIDS_GAMES/memory_meerkat.png' }
+                    ];
+                    const fallbackExplorers = [
+                        { name: 'Hyena', image: '../DB_ASSETS/KIDS_GAMES/savanna_hyena.png' },
+                        { name: 'Caracal', image: '../DB_ASSETS/KIDS_GAMES/savanna_caracal.png' },
+                        { name: 'Secretary', image: '../DB_ASSETS/KIDS_GAMES/savanna_secretary.png' },
+                        { name: 'Buffalo', image: '../DB_ASSETS/KIDS_GAMES/savanna_buffalo.png' },
+                        { name: 'Leopard', image: '../DB_ASSETS/KIDS_GAMES/savanna_leopard.png' },
+                        { name: 'Crocodile', image: '../DB_ASSETS/KIDS_GAMES/savanna_crocodile.png' },
+                        { name: 'Warthog', image: '../DB_ASSETS/KIDS_GAMES/savanna_warthog.png' },
+                        { name: 'Ostrich', image: '../DB_ASSETS/KIDS_GAMES/savanna_ostrich.png' }
+                    ];
+                    cardsToUse = (version === 1) ? fallbackClassics : fallbackExplorers;
+                }
+
+                memoryAnimals = cardsToUse; // Salva il set corrente
+                initMemory(); // Usa initMemory per far partire il gioco correttamente
+                
+                document.getElementById('memory-selection').style.display = 'none';
+                document.getElementById('memory-grid').style.display = 'grid';
+            });
+        }
+
+        function closeMemory() {
+            document.getElementById('kids-home').style.display = 'flex';
+            document.getElementById('memory-overlay').style.display = 'none';
+        }
+
+        function initMemory() {
+            memoryMoves = 0;
+            memoryMatches = 0;
+            flippedCards = [];
+            lockBoard = false;
+            document.getElementById('memory-moves').innerText = '0';
+            document.getElementById('memory-matches').innerText = '0';
+            document.getElementById('memory-win-message').style.display = 'none';
+
+            // Create pairs
+            const cardPairs = [...memoryAnimals, ...memoryAnimals];
+            // Shuffle
+            memoryCards = cardPairs.sort(() => Math.random() - 0.5);
+
+            renderMemory();
+        }
+
+        function renderMemory() {
+            const grid = document.getElementById('memory-grid');
+            grid.innerHTML = memoryCards.map((animal, i) => `
+                <div class="memory-card" data-index="${i}" data-name="${animal.name}" onclick="flipCard(this)">
+                    <div class="memory-card-face memory-card-front"></div>
+                    <div class="memory-card-face memory-card-back">
+                        <img src="${animal.image}" alt="${animal.name}">
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function flipCard(card) {
+            if (lockBoard) return;
+            if (card === flippedCards[0]) return;
+            if (card.classList.contains('flipped')) return;
+
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                memoryMoves++;
+                document.getElementById('memory-moves').innerText = memoryMoves;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            const isMatch = card1.dataset.name === card2.dataset.name;
+
+            if (isMatch) {
+                memoryMatches++;
+                document.getElementById('memory-matches').innerText = memoryMatches;
+                flippedCards = [];
+                if (memoryMatches === memoryAnimals.length) {
+                    setTimeout(() => {
+                        document.getElementById('memory-win-message').style.display = 'block';
+                    }, 500);
+                }
+            } else {
+                lockBoard = true;
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    flippedCards = [];
+                    lockBoard = false;
+                }, 1000);
+            }
+        }
+
+        // SAFARI QUIZ LOGIC
+        let quizAllData = [];
+        let quizData = [];
+        let curQuizIdx = 0;
+        let quizScore = 0;
+        let currentQuizLevel = 1;
+        let unlockedQuizLevel = 1;
+        let quizScores = { 1: -1, 2: -1, 3: -1, 4: -1, 5: -1 }; // -1 = unplayed, 0-2 = failed, 3-5 = passed
+        let sessionCorrectQuestions = []; // IDs of questions answered correctly in this session
+
+        function updateScoreboard() {
+            const body = document.getElementById('quiz-scoreboard-body');
+            if(!body) return;
+            let html = '';
+            const levels = ["PRIMO", "SECONDO", "TERZO", "QUARTO", "QUINTO"];
+            
+            for(let i=1; i<=5; i++) {
+                const score = quizScores[i];
+                let color = 'rgba(255,255,255,0.3)'; // Dimmed/Locked
+                let scoreText = '-';
+                
+                if(score >= 3) {
+                    color = '#4caf50'; // Green (Pass)
+                    scoreText = `${score}/5`;
+                } else if(score >= 0) {
+                    color = '#ff5252'; // Red (Fail)
+                    scoreText = `${score}/5`;
+                } else if(i <= Number(unlockedQuizLevel)) {
+                    color = 'white'; // Unlocked but not played
+                    scoreText = '-';
+                }
+
+                html += `
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:5px; flex:1;">
+                        <span style="font-size:0.6rem; opacity:0.6; letter-spacing:1px; font-weight:900;">${levels[i-1]}</span>
+                        <span style="font-size:1.3rem; color:${color}; font-weight:900;">${scoreText}</span>
+                    </div>
+                `;
+            }
+            body.innerHTML = html;
+        }
+
+        function startQuiz() {
+            window.PARKS_DB.get('parks_kids_quiz_progress', 1, function(lv) {
+                unlockedQuizLevel = Number(lv) || 1;
+                // Force reset scores for every new session (don't read from DB)
+                quizScores = { 1: -1, 2: -1, 3: -1, 4: -1, 5: -1 };
+                updateScoreboard();
+                
+                window.PARKS_DB.get('parks_kids_quiz', [], function(data) {
+                    quizAllData = data;
+                    document.getElementById('kids-home').style.display = 'none';
+                    document.getElementById('quiz-overlay').style.display = 'flex';
+                    showQuizLevels();
+                });
+            });
+        }
+
+        function showQuizLevels() {
+            document.getElementById('quiz-level-selection').style.display = 'flex';
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('quiz-result').style.display = 'none';
+            document.getElementById('quiz-current-progress-container').style.display = 'none';
+            
+            const grid = document.getElementById('quiz-levels-grid');
+            window.PARKS_DB.get('parks_kids_quiz_level_images', {}, function(levelImages) {
+                let html = '';
+                for(let i=1; i<=5; i++) {
+                    const isLocked = i > unlockedQuizLevel;
+                    const count = quizAllData.filter(q => (q.level || 1) == i).length;
+                    const levelImg = levelImages[i] || '../assets/kids/memory_meerkat.png';
+                    
+                    html += `
+                        <div onclick="${isLocked ? '' : `startQuizLevel(${i})`}" 
+                             style="background:${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(156, 39, 176, 0.1)'}; 
+                                    border:2px solid ${isLocked ? 'rgba(255,255,255,0.05)' : '#9c27b0'};
+                                    padding:20px; border-radius:25px; text-align:center; cursor:${isLocked ? 'default' : 'pointer'};
+                                    transition:0.3s; opacity:${isLocked ? '0.4' : '1'}; position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center; gap:10px;">
+                            ${isLocked ? '<i data-lucide="lock" style="position:absolute; top:10px; right:10px; width:16px; opacity:0.5;"></i>' : ''}
+                            <div style="width:80px; height:80px; border-radius:15px; overflow:hidden; background:rgba(0,0,0,0.2);">
+                                <img src="${levelImg}" style="width:100%; height:100%; object-fit:contain;">
+                            </div>
+                            <div>
+                                <div style="font-size:0.6rem; font-weight:900; opacity:0.6; letter-spacing:1px;">LIVELLO ${i}</div>
+                                <div style="font-size:0.7rem; margin-top:4px; opacity:0.5; font-weight:700;">${count} DOMANDE</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                grid.innerHTML = html;
+                lucide.createIcons();
+            });
+        }
+
+        function startQuizLevel(lv) {
+            currentQuizLevel = Number(lv);
+            let quizDataForLevel = quizAllData.filter(q => (q.level || 1) == currentQuizLevel);
+            
+            // Deduplicate questions by text to avoid repetitions
+            const uniqueQuestions = [];
+            const seenText = new Set();
+            quizDataForLevel.forEach(q => {
+                const text = q.question.trim().toLowerCase();
+                if(!seenText.has(text)) {
+                    seenText.add(text);
+                    uniqueQuestions.push(q);
+                }
+            });
+            quizData = uniqueQuestions;
+            
+            if(quizData.length === 0) {
+                // Fallback for demo/missing levels
+                if(lv === 1) {
+                    quizData = [
+                        { question: "Qual è l'animale più veloce della savana?", options: ["Leone", "Ghepardo", "Zebra", "Elefante"], correct: 1, image: '../assets/kids/memory_cheetah.png' },
+                        { question: "Quanti anni può vivere mediamente un elefante africano?", options: ["10 anni", "30 anni", "70 anni", "150 anni"], correct: 2, image: '../assets/kids/memory_elephant.png' },
+                        { question: "Perché la giraffa ha il collo così lungo?", options: ["Per correre meglio", "Per raggiungere le foglie alte", "Per cantare", "Per nuotare"], correct: 1, image: '../assets/kids/memory_giraffe.png' },
+                        { question: "Il Gorilla è carnivoro o erbivoro?", options: ["Carnivoro", "Erbivoro", "Onnivoro", "Mangia solo sassi"], correct: 1, image: '' },
+                        { question: "Qual è il colore della lingua della Giraffa?", options: ["Rosa", "Blu/Viola", "Rossa", "Bianca"], correct: 1, image: '' }
+                    ];
+                } else {
+                    alert("Questo livello non ha ancora domande. Caricale dall'Admin!");
+                    return;
+                }
+            }
+
+            // Professional Fisher-Yates Shuffle for true randomness
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            // Filter out questions answered correctly in this session
+            let pool = quizData.filter(q => !sessionCorrectQuestions.includes(q.question));
+            // If the pool is too small, reset it to allow full variety again
+            if(pool.length < 5) {
+                sessionCorrectQuestions = [];
+                pool = quizData;
+            }
+
+            // Shuffle the pool and pick 5
+            quizData = shuffleArray([...pool]);
+            if(quizData.length > 5) quizData = quizData.slice(0, 5); 
+            
+            // Also shuffle options for each selected question
+            quizData.forEach(q => {
+                const optionsWithMeta = q.options.map((opt, i) => ({ text: opt, isCorrect: i === q.correct }));
+                q._shuffledOptions = shuffleArray(optionsWithMeta);
+            });
+
+            curQuizIdx = 0;
+            quizScore = 0;
+            
+            document.getElementById('quiz-level-selection').style.display = 'none';
+            document.getElementById('quiz-container').style.display = 'flex';
+            document.getElementById('quiz-result').style.display = 'none';
+            document.getElementById('quiz-current-progress-container').style.display = 'block';
+            document.getElementById('quiz-current-progress').innerText = `0/${quizData.length}`;
+            renderQuizQuestion();
+        }
+
+        function closeQuiz() {
+            document.getElementById('kids-home').style.display = 'flex';
+            document.getElementById('quiz-overlay').style.display = 'none';
+        }
+
+        function renderQuizQuestion() {
+            const q = quizData[curQuizIdx];
+            document.getElementById('quiz-question').innerText = q.question;
+            const imgCont = document.getElementById('quiz-image-container');
+            const img = document.getElementById('quiz-img');
+            
+            // Use generic savanna group image to avoid spoilers (as per user request)
+            img.src = '../assets/kids/quiz_success.png'; 
+            imgCont.style.display = 'block';
+            imgCont.style.border = 'none';
+            imgCont.style.background = 'transparent';
+            img.style.objectFit = 'contain';
+
+            // Shuffle options for this specific display
+            if (!q._shuffled) {
+                const optionsWithMeta = q.options.map((opt, i) => ({ text: opt, isCorrect: i === q.correct }));
+                q._shuffledOptions = optionsWithMeta.sort(() => Math.random() - 0.5);
+                q._shuffled = true;
+            }
+
+            const optionsCont = document.getElementById('quiz-options');
+            
+            const animalIconMap = {
+                'leone': '../assets/kids/memory_lion.png',
+                'elefante': '../assets/kids/memory_elephant.png',
+                'zebra': '../assets/kids/memory_zebra.png',
+                'giraffa': '../assets/kids/memory_giraffe.png',
+                'ghepardo': '../assets/kids/memory_cheetah.png',
+                'suricato': '../assets/kids/memory_meerkat.png',
+                'ippopotamo': '../assets/kids/memory_hippo.png',
+                'rinoceronte': '../assets/kids/memory_rhino.png',
+                'bufalo': '../assets/kids/savanna_buffalo.png',
+                'leopardo': '../assets/kids/savanna_leopard.png',
+                'struzzo': '../assets/kids/savanna_ostrich.png',
+                'iena': '../assets/kids/savanna_hyena.png',
+                'coccodrillo': '../assets/kids/savanna_crocodile.png',
+                'facocero': '../assets/kids/savanna_warthog.png',
+                'caracal': '../assets/kids/savanna_caracal.png',
+                'segretario': '../assets/kids/savanna_secretary.png'
+            };
+
+            optionsCont.innerHTML = q._shuffledOptions.map((opt, i) => {
+                const optLower = opt.text.toLowerCase();
+                let icon = '../assets/kids/memory_meerkat.png'; // Default
+                for(let key in animalIconMap) {
+                    if(optLower.includes(key)) {
+                        icon = animalIconMap[key];
+                        break;
+                    }
+                }
+
+                return `
+                    <button class="btn-play" onclick="checkQuizAnswer(${i})" 
+                            style="margin:0; width:100%; font-size:1.1rem; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); box-shadow:none; display:flex; align-items:center; gap:15px; text-align:left; padding:15px 20px;">
+                        <div style="width:40px; height:40px; border-radius:10px; overflow:hidden; background:white; flex-shrink:0;">
+                            <img src="${icon}" style="width:100%; height:100%; object-fit:contain;">
+                        </div>
+                        <span>${String.fromCharCode(65 + i)}) ${opt.text}</span>
+                    </button>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function checkQuizAnswer(idx) {
+            const q = quizData[curQuizIdx];
+            const buttons = document.querySelectorAll('#quiz-options button');
+            
+            buttons.forEach(b => b.style.pointerEvents = 'none');
+
+            if(q._shuffledOptions[idx].isCorrect) {
+                buttons[idx].style.background = '#4caf50';
+                buttons[idx].style.borderColor = '#4caf50';
+                quizScore += 10;
+                sessionCorrectQuestions.push(q.question);
+            } else {
+                buttons[idx].style.background = '#ff5252';
+                buttons[idx].style.borderColor = '#ff5252';
+                const correctIdx = q._shuffledOptions.findIndex(o => o.isCorrect);
+                buttons[correctIdx].style.background = '#4caf50';
+                buttons[correctIdx].style.borderColor = '#4caf50';
+            }
+            
+            // Display current progress
+            const currentCorrect = Math.floor(quizScore / 10);
+            document.getElementById('quiz-current-progress').innerText = `${currentCorrect}/${quizData.length}`;
+
+            setTimeout(() => {
+                curQuizIdx++;
+                if(curQuizIdx < quizData.length) {
+                    renderQuizQuestion();
+                } else {
+                    showQuizResult();
+                }
+            }, 1500);
+        }
+
+        function showQuizResult() {
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('quiz-result').style.display = 'block';
+            
+            const totalQuestions = quizData.length;
+            const correctCount = Math.floor(quizScore / 10);
+            const passThreshold = Math.ceil(totalQuestions * 0.6); // 60% threshold (3 out of 5)
+            const win = correctCount >= passThreshold;
+            
+            document.getElementById('quiz-final-score').innerText = `${correctCount} su ${totalQuestions}`;
+            document.getElementById('quiz-result-title').innerText = win ? "FENOMENALE!" : "QUASI CI SEI!";
+            document.getElementById('quiz-result-title').style.color = win ? "#4caf50" : "#ff7043";
+            
+            const resultImg = document.getElementById('quiz-result-img');
+            const resultCont = document.getElementById('quiz-result-image');
+            
+            if(win) {
+                resultImg.src = '../assets/kids/quiz_success.png';
+                resultCont.style.borderColor = '#4caf50';
+            } else {
+                resultImg.src = '../assets/kids/quiz_retry.png';
+                resultCont.style.borderColor = '#ff7043';
+            }
+            
+            const passMsg = document.getElementById('quiz-pass-msg');
+            const unlockMsg = document.getElementById('quiz-unlock-msg');
+            const nextBtn = document.getElementById('btn-next-level');
+            const retryBtn = document.getElementById('btn-retry-quiz');
+            
+            // Reset visibility
+            passMsg.style.display = 'none';
+            unlockMsg.style.display = 'none';
+            nextBtn.style.display = 'none';
+            retryBtn.style.display = 'none';
+
+            if(win) {
+                if(currentQuizLevel < 5) {
+                    nextBtn.style.display = 'block';
+                    // If we just completed the highest unlocked level, unlock the next one
+                    if(currentQuizLevel >= Number(unlockedQuizLevel)) {
+                        unlockedQuizLevel = currentQuizLevel + 1;
+                        window.PARKS_DB.save('parks_kids_quiz_progress', unlockedQuizLevel);
+                        unlockMsg.style.display = 'block';
+                    }
+                } else {
+                    // Final level completed
+                    document.getElementById('quiz-result-title').innerText = "CAMPIONE DELLA SAVANA! 🏆";
+                    retryBtn.innerText = "GIOCA ANCORA";
+                    retryBtn.style.display = 'block';
+                }
+            } else {
+                passMsg.style.display = 'block';
+                retryBtn.style.display = 'block';
+            }
+
+            // Update session score (no DB saving for scores as per request for fresh start)
+            quizScores[currentQuizLevel] = correctCount;
+            updateScoreboard();
+        }
+
+        function nextQuizLevel() {
+            startQuizLevel(Number(currentQuizLevel) + 1);
+        }
+
+        function logout() {
+            // Reset quiz progress and scores for a fresh start on next login
+            window.PARKS_DB.save('parks_kids_quiz_progress', 1);
+            window.PARKS_DB.save('parks_kids_quiz_scores', { 1: -1, 2: -1, 3: -1, 4: -1, 5: -1 });
+            
+            window.PARKS_APP.setSession({ loggedIn: false }, function() {
+                window.location.href = 'index.html';
+            });
+        }
+
+        window.PARKS_APP.init(() => {
+            window.PARKS_APP.getSession(function(session) {
+                if (!session || !session.loggedIn) {
+                    window.location.href = 'index.html';
+                }
+                // FIX: Added empty array as fallback argument
+                window.PARKS_DB.get('parks_kids_drawings', [], function(data) {
+                    if(data && Array.isArray(data)) {
+                        kidsDrawings = data;
+                        console.log("Drawings loaded:", kidsDrawings.length);
+                    }
+                });
+                window.PARKS_DB.get('parks_kids_puzzles', [], function(data) {
+                    if(data && Array.isArray(data)) {
+                        kidsPuzzles = data;
+                        console.log("Puzzles loaded:", kidsPuzzles.length);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

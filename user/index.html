@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARKS | Accesso al Mondo dei Parchi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { --primary: #2d7a4d; --accent: #ffab40; --glass: rgba(255, 255, 255, 0.08); }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Outfit', sans-serif; overflow: hidden; background: #000; }
+        
+        .bg-video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.6) saturate(1.2); z-index: 0; }
+        .slideshow { position: fixed; inset: 0; z-index: 0; }
+        .bg-image { position: absolute; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.8) saturate(1.3); opacity: 0; animation: crossfade 20s infinite; }
+        .bg-1 { animation-delay: 0s; }
+        .bg-2 { animation-delay: 4s; }
+        .bg-3 { animation-delay: 8s; }
+        .bg-4 { animation-delay: 12s; }
+        .bg-5 { animation-delay: 16s; }
+        @keyframes crossfade { 0% { opacity: 0; } 5% { opacity: 1; } 20% { opacity: 1; } 25% { opacity: 0; } 100% { opacity: 0; } }
+
+        .overlay { position: absolute; inset: 0; background: radial-gradient(circle at center, transparent, rgba(0,0,0,0.5)); z-index: 1; pointer-events: none; }
+
+        .content { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; color: white; }
+        
+        .glass-card { background: rgba(0, 0, 0, 0.35); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 40px; padding: 60px 50px; width: 100%; max-width: 450px; box-shadow: 0 40px 100px rgba(0,0,0,0.8); animation: fadeIn 1s ease-out; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Branding Header (Logo + Title) */
+        .top-center-logo { position: fixed; top: 20px; left: 20px; width: 260px; z-index: 30; filter: drop-shadow(0 15px 30px rgba(0,0,0,0.9)); }
+        
+        .branding-title-container { position: fixed; top: 40px; left: 50%; transform: translateX(-50%); text-align: center; z-index: 20; }
+        .branding-title { font-size: 3.5rem; font-weight: 900; letter-spacing: 12px; margin: 0; line-height: 1; color: var(--accent); white-space: nowrap; }
+        .branding-subtitle { font-size: 14px; font-weight: 300; letter-spacing: 6px; opacity: 0.7; margin-top: 10px; text-transform: uppercase; color: white; }
+
+        /* Logo Box */
+        .logo-box { display: none; }
+        .hero-logo { width: 140px; max-width: 90%; margin: 0 auto 30px; animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1); filter: drop-shadow(0 15px 30px rgba(0,0,0,0.4)); }
+        
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        p { font-size: 1.1rem; opacity: 0.7; margin: -20px 0 60px 0; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; }
+
+        .btn-stack { display: flex; flex-direction: column; gap: 20px; width: 100%; }
+        
+        .btn { padding: 18px 30px; border-radius: 20px; font-size: 1rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: 0.4s; border: none; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 15px; }
+        
+        .btn-login { background: var(--primary); color: white; box-shadow: 0 10px 30px rgba(45,122,77,0.3); }
+        .btn-login:hover { transform: translateY(-5px); background: #3eb471; box-shadow: 0 20px 50px rgba(45,122,77,0.5); }
+
+        .btn-register { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); }
+        .btn-register:hover { background: rgba(255,255,255,0.15); transform: translateY(-5px); border-color: var(--accent); color: var(--accent); }
+
+        .footer-note { margin-top: 40px; font-size: 10px; opacity: 0.4; letter-spacing: 1px; text-transform: uppercase; }
+
+        /* ===== MOBILE ===== */
+        @media (max-width: 768px) {
+            /* Logo in alto al centro */
+            .top-center-logo { width: 180px; top: 15px; left: 50%; transform: translateX(-50%); }
+            .branding-title-container { top: 75px; width: 100%; }
+            .branding-title { font-size: 2.2rem; letter-spacing: 6px; }
+            .branding-subtitle { font-size: 10px; letter-spacing: 3px; margin-top: 5px; }
+
+            /* Nascondi logo duplicato dentro la card */
+            .hero-logo { display: none; }
+            /* Card trasparente e spinta verso il basso */
+            .content { justify-content: center; padding-top: 150px; }
+            .glass-card { padding: 35px 25px 30px; border-radius: 28px; max-width: 100%; background: rgba(0,0,0,0.15); backdrop-filter: blur(6px); }
+            p { font-size: 0.85rem; margin: 0 0 30px 0; letter-spacing: 1px; }
+            .btn { padding: 16px 20px; font-size: 0.9rem; letter-spacing: 1px; border-radius: 16px; }
+            .btn-stack { gap: 14px; }
+            .footer-note { margin-top: 25px; }
+        }
+        @media (max-width: 400px) {
+            .top-center-logo { width: 140px; }
+            .branding-title-container { top: 65px; }
+            .branding-title { font-size: 1.8rem; }
+            .glass-card { padding: 28px 16px 24px; border-radius: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slideshow">
+        <img src="../assets/bg_homepage_1.jpg" class="bg-image bg-1" alt="Slide 1">
+        <img src="../assets/bg_homepage_2.JPG" class="bg-image bg-2" alt="Slide 2">
+        <img src="../assets/bg_homepage_3.jpg" class="bg-image bg-3" alt="Slide 3">
+        <img src="../assets/bg_homepage_4.JPG" class="bg-image bg-4" alt="Slide 4">
+        <img src="../assets/bg_homepage_5.jpg" class="bg-image bg-5" alt="Slide 5">
+    </div>
+    <div class="overlay"></div>
+
+    <div class="top-center-logo">
+        <div class="parks-logo white">
+            <img src="../shared/parks_logo_combined_white.svg" alt="PARKS Logo">
+        </div>
+    </div>
+
+    <div class="branding-title-container">
+        <h2 class="branding-title">ETOSHA</h2>
+        <div class="branding-subtitle">National Park · Namibia</div>
+    </div>
+
+    <div class="content">
+        <div class="glass-card">
+            <div class="hero-logo">
+                <div class="parks-logo white">
+                    <img src="../shared/parks_logo_combined_white.svg" alt="PARKS Namibia">
+                </div>
+            </div>
+
+            <div class="btn-stack">
+                <a href="login.html" class="btn btn-login">
+                    ACCEDI ALL'APP <i data-lucide="chevron-right"></i>
+                </a>
+                <a href="register.html" class="btn btn-register">
+                    CREA IL TUO ACCOUNT <i data-lucide="user-plus"></i>
+                </a>
+            </div>
+
+            <div class="footer-note">ESCLUSIVO PER MEMBRI E TURISTI AUTORIZZATI</div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

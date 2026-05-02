@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETOSHA | Libreria</title>
+    <link rel="stylesheet" href="../shared/design.css">
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../shared/db.js"></script>
+    <script src="../shared/app.js"></script>
+    <style>
+        :root { --primary-green: #1a3c34; --darker-green: #0d1e1a; --accent: #ffab40; }
+        body { background-color: var(--darker-green); color: white; height: 100vh; margin: 0; overflow: hidden; font-family: sans-serif; display: flex; flex-direction: column; }
+        
+        header { padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .main-container { flex: 1; display: grid; grid-template-columns: 300px 1fr; overflow: hidden; }
+        
+        .sidebar { padding: 20px; border-right: 1px solid rgba(255,255,255,0.1); background: rgba(26, 60, 52, 0.4); display: flex; flex-direction: column; }
+        
+        .sidebar-logo {
+            width: 260px;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+        .sidebar-logo img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        .sidebar-menu li { padding: 0.8rem 0; font-size: 1.1rem; opacity: 0.7; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        
+        .content-area { display: flex; flex-direction: column; padding: 2rem; overflow-y: auto; }
+
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; cursor: pointer; text-align: center; transition: 0.3s; }
+        .card:hover { border-color: var(--accent); transform: scale(1.03); }
+        .card img { width: 100%; height: 180px; object-fit: cover; }
+        .card-label { padding: 1rem; font-weight: 700; background: rgba(0,0,0,0.5); text-transform: uppercase; }
+
+        /* SCHEDA DETTAGLIO */
+        .fiche-header { height: 450px; border-radius: 20px; overflow: hidden; position: relative; background: #000; margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.1); }
+        .fiche-header img { width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; }
+        .slide-btn { position: absolute; top:50%; transform:translateY(-50%); background: var(--accent); color: #000; border:none; width: 50px; height: 50px; cursor:pointer; border-radius:50%; z-index: 10; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: 0.3s; }
+        .slide-btn:hover { transform: translateY(-50%) scale(1.1); background: white; }
+        .fs-btn { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); color: var(--accent); border: 2px solid var(--accent); padding: 10px 18px; border-radius: 30px; cursor: pointer; z-index: 10; font-weight: 800; font-size: 11px; transition: 0.2s; }
+        .fs-btn:hover { background: var(--accent); color: #000; }
+
+        .btn-back { background: var(--accent); color: #000; border: none; padding: 12px 24px; border-radius: 30px; cursor: pointer; margin-bottom: 25px; font-weight: 900; font-size: 14px; box-shadow: 0 5px 15px rgba(255,171,64,0.4); display: flex; align-items: center; gap: 8px; width: max-content; transition: 0.3s; }
+        .btn-back:hover { transform: translateY(-2px) scale(1.02); background: white; }
+
+        /* FULLSCREEN LIGHTBOX */
+        #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 9999; }
+        #lightbox-img { width: 100%; height: 100%; object-fit: contain; }
+        .lb-close { position: absolute; top: 30px; right: 30px; background: white; color: black; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 24px; cursor: pointer; font-weight: bold; z-index: 10001; }
+        .lb-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); border: none; color: white; padding: 2rem; cursor: pointer; font-size: 40px; }
+
+        #fiche-desc { white-space: pre-wrap; font-family: 'Inter', sans-serif; font-weight: 300; }
+        #stats-list { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        #stats-list p { margin: 0; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
+        #stats-list p:last-child { border-bottom: none; padding-bottom: 0; }
+        #stats-list span { text-align: right; font-weight: 600; opacity: 0.9; }
+        b, strong { font-weight: 900; color: var(--accent); }
+
+        /* ===== MOBILE ===== */
+        @media (max-width: 768px) {
+            body { overflow: hidden; }
+            header { padding: 0.8rem 1rem; }
+            header > div:first-child { gap: 10px; }
+            header .parks-logo { width: 120px !important; }
+            header button[onclick*="weather"] { display: none; }
+            header #admin-btn { display: none !important; }
+            header button[onclick*="logout"] { padding: 7px 14px; font-size: 10px; }
+
+            .main-container { grid-template-columns: 1fr; padding-bottom: 70px; }
+            .sidebar { display: none; }
+
+            .content-area { padding: 1rem; }
+            .grid-4 { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+            .card img { height: 120px; }
+            .card-label { font-size: 0.75rem; padding: 0.7rem; }
+
+            .fiche-header { height: 220px; border-radius: 14px; }
+            #fiche-title { font-size: 1.8rem; margin-bottom: 0; }
+            #fiche-desc { font-size: 1rem; }
+            .btn-back { padding: 10px 18px; font-size: 12px; }
+            .slide-btn { width: 38px; height: 38px; font-size: 18px; }
+            .fs-btn { padding: 7px 12px; font-size: 10px; }
+            #stats-list { gap: 20px; }
+            #stats-list p { font-size: 0.95rem; }
+
+            /* Bottom Nav Bar */
+            .mobile-tab-bar { display: flex !important; }
+        }
+        @media (max-width: 400px) {
+            .grid-4 { grid-template-columns: 1fr; }
+            .card img { height: 140px; }
+        }
+
+        /* Bottom Tab Bar (mobile only) */
+        .mobile-tab-bar {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 65px;
+            background: rgba(13, 30, 26, 0.97);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            z-index: 500;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 10px;
+        }
+        .tab-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            color: rgba(255,255,255,0.5); background: none; border: none;
+            font-size: 9px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;
+            cursor: pointer; padding: 8px 12px; border-radius: 12px; transition: 0.2s;
+            font-family: 'Outfit', sans-serif;
+        }
+        .tab-btn:hover, .tab-btn.active { color: var(--accent); }
+        .tab-btn svg { width: 22px; height: 22px; stroke: currentColor; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display: flex; align-items: center; gap: 40px;">
+            <!-- Meteo rimosso da qui (ora in Homepage) -->
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button id="admin-btn" onclick="window.location.href='../admin/index.html'" style="display:none; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; padding: 8px 16px; border-radius: 30px; font-weight:bold; cursor:pointer; font-size:11px;">ADMIN ACCESS</button>
+            <button onclick="logout()" style="background:#ff5252; border:none; color:white; padding: 8px 20px; border-radius: 30px; font-weight:900; cursor:pointer; font-size:11px; display:flex; align-items:center; gap:8px;">LOGOUT <i data-lucide="log-out" style="width:14px;"></i></button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="../shared/parks_logo_combined_white.svg" alt="PARKS">
+            </div>
+            <h2 id="sidebar-title" style="font-size: 0.7rem; letter-spacing: 3px; opacity: 0.4; font-weight: 900; margin-bottom: 20px; text-transform: uppercase;">Menu</h2>
+            <ul class="sidebar-menu">
+                <li onclick="window.location.href='homepage.html'">
+                    <i data-lucide="home"></i> <span>Home</span>
+                </li>
+                <li onclick="window.location.href='map.html'">
+                    <i data-lucide="map"></i> <span>Mappa Interattiva</span>
+                </li>
+                <li onclick="window.location.href='itineraries.html'">
+                    <i data-lucide="milestone"></i> <span>Itinerari</span>
+                </li>
+                <li onclick="window.location.href='alerts.html'">
+                    <i data-lucide="bell"></i> <span>Inserisci un ALERT</span>
+                </li>
+                <li class="active" onclick="window.location.href='library.html'">
+                    <i data-lucide="book-open"></i> <span>Libreria</span>
+                </li>
+                <li onclick="window.location.href='library.html?view=mustsee'">
+                    <i data-lucide="star"></i> <span>Must See</span>
+                </li>
+                <li onclick="window.location.href='kids_corner.html'">
+                    <i data-lucide="baby"></i> <span>Kid's Corner</span>
+                </li>
+                <li onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
+                <li onclick="window.location.href='memory2/index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
+            </ul>
+        </aside>
+
+        <main class="content-area">
+            <h1 id="main-title" style="color:var(--accent); font-weight:900; margin-bottom:30px; text-transform:uppercase; letter-spacing:3px; font-size: 2.5rem;">Libreria</h1>
+            <button id="back-btn" class="btn-back" onclick="goBack()" style="display:none;">← INDIETRO</button>
+            <div id="grid-view" class="grid-4"></div>
+
+            <div id="fiche-view" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 20px; max-width: 1200px; flex-wrap: wrap;">
+                    <h1 id="fiche-title" style="color:var(--accent); font-size:3rem; margin:0; word-break: break-word; flex: 1; min-width: 250px;">TITOLO</h1>
+                    <div id="fiche-stats" style="background:rgba(255,255,255,0.05); padding:20px 30px; border-radius:15px; border:1px solid rgba(255,255,255,0.05); min-width: 300px; flex-shrink: 0;">
+                        <h4 style="color:var(--accent); margin-top:0; margin-bottom:15px; letter-spacing:2px; font-weight:900; font-size: 0.9rem;">SCHEDA TECNICA</h4>
+                        <div id="stats-list"></div>
+                    </div>
+                </div>
+                <div style="max-width: 1200px; display: flex; flex-direction: column; gap: 40px;">
+                    <div>
+                        <div class="fiche-header" style="margin-bottom: 2.5rem;">
+                            <img id="slider-img" src="" ondblclick="openFS()">
+                            <button class="slide-btn" style="left:20px;" onclick="prevSlide()">‹</button>
+                            <button class="slide-btn" style="right:20px;" onclick="nextSlide()">›</button>
+                            <button class="fs-btn" onclick="openFS()"><i data-lucide="maximize" style="width:20px;"></i> FULL SCREEN</button>
+                        </div>
+                        <div id="fiche-desc" style="font-size:1.3rem; line-height:1.7; opacity:0.9; margin-bottom: 3rem;"></div>
+                        <div id="fiche-extras" style="display: flex; flex-direction: column; gap: 20px;"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- BOTTOM TAB BAR (mobile only) -->
+    <nav class="mobile-tab-bar">
+        <button class="tab-btn active" onclick="navHome()">
+            <i data-lucide="home" style="width:22px;"></i>
+            HOME
+        </button>
+        <button class="tab-btn" onclick="window.location.href='map.html'">
+            <i data-lucide="map" style="width:22px;"></i>
+            MAPPA
+        </button>
+        <button class="tab-btn" onclick="window.location.href='weather_original.html'">
+            <i data-lucide="sun" style="width:22px;"></i>
+            METEO
+        </button>
+        <button class="tab-btn" onclick="logout()">
+            <i data-lucide="log-out" style="width:22px;"></i>
+            ESCI
+        </button>
+    </nav>
+
+    <!-- LIGHTBOX FULLSCREEN -->
+    <div id="lightbox">
+        <button class="lb-close" onclick="closeFS()">×</button>
+        <button class="lb-arrow" style="left:0;" onclick="prevSlide()">‹</button>
+        <button class="lb-arrow" style="right:0;" onclick="nextSlide()">›</button>
+        <img id="lightbox-img" src="">
+    </div>
+
+    <script>
+        var library = { categories: [] };
+        var navState = { level: 'home', catId: null, subId: null };
+        var activeItem = null;
+        var itemImages = [];
+        var itemDocs = [];
+        var itemVideos = [];
+        var itemPresentations = [];
+        var slideIdx = 0;
+
+        function render() {
+            var grid = document.getElementById('grid-view');
+            var fiche = document.getElementById('fiche-view');
+            var back = document.getElementById('back-btn');
+            var mainTitle = document.getElementById('main-title');
+            grid.style.display = 'grid';
+            fiche.style.display = 'none';
+            back.style.display = (navState.level === 'home') ? 'none' : 'block';
+            mainTitle.style.display = 'block';
+
+            if (navState.level === 'home') {
+                document.getElementById('sidebar-title').innerText = "Libreria";
+                document.getElementById('main-title').innerText = "Libreria";
+                let catsHtml = "";
+                
+                catsHtml += (library.categories || []).map(c => `
+                    <div class="card" onclick="navToSub('${c.id}')">
+                        <img src="${c.image || 'https://images.unsplash.com/photo-1516422317518-3ee0f01192e2?q=20&w=300'}">
+                        <div class="card-label">${c.name}</div>
+                    </div>
+                `).join('');
+                grid.innerHTML = catsHtml;
+            } else if (navState.level === 'mustsee') {
+                document.getElementById('sidebar-title').innerText = "Must See";
+                document.getElementById('main-title').innerText = "Must See";
+                const allStarred = [];
+                [library, (typeof visitNamibia !== 'undefined' ? visitNamibia : {categories:[]})].forEach(db => {
+                    (db.categories || []).forEach(c => c.subcategories.forEach(s => {
+                        allStarred.push(...(s.items || []).filter(it => it.isMustSee && it.isVisible !== false));
+                    }));
+                });
+                grid.innerHTML = allStarred.map(it => {
+                    const firstImg = (it.photos || []).find(p => typeof p !== 'object' || (p.type !== 'application/pdf' && p.type !== 'video/mp4'));
+                    const thumb = firstImg ? (typeof firstImg === 'object' ? firstImg.url : firstImg) : 'https://images.unsplash.com/photo-1504173010663-125039294200?q=20&w=300';
+                    return `
+                        <div class="card" onclick="openFicheFromAnywhere('${it.id}')">
+                            <img src="${thumb}">
+                            <div class="card-label">${it.name} <i data-lucide="star" style="width:10px; fill:var(--accent); color:var(--accent); margin-left:5px;"></i></div>
+                        </div>
+                    `;
+                }).join('');
+            } else if (navState.level === 'sub') {
+                var cat = library.categories.find(x => x.id === navState.catId);
+                document.getElementById('sidebar-title').innerText = cat.name;
+                document.getElementById('main-title').innerText = cat.name;
+                grid.innerHTML = (cat.subcategories || []).map(s => `
+                    <div class="card" onclick="navToItems('${cat.id}', '${s.id}')">
+                        <img src="${s.image || 'https://images.unsplash.com/photo-1581283307431-7bcce3b06076?q=20&w=300'}">
+                        <div class="card-label">${s.name}</div>
+                    </div>
+                `).join('');
+            } else if (navState.level === 'items') {
+                var cat = library.categories.find(x => x.id === navState.catId);
+                var sub = cat.subcategories.find(x => x.id === navState.subId);
+                document.getElementById('sidebar-title').innerText = sub.name;
+                document.getElementById('main-title').innerText = sub.name;
+                grid.innerHTML = (sub.items || []).filter(it => it.isVisible !== false).map(it => {
+                    var firstImg = (it.photos || []).find(p => typeof p !== 'object' || (p.type !== 'application/pdf' && p.type !== 'video/mp4'));
+                    var thumb = firstImg ? (typeof firstImg === 'object' ? firstImg.url : firstImg) : 'https://images.unsplash.com/photo-1504173010663-125039294200?q=20&w=300';
+                    return `
+                        <div class="card" onclick="openFiche('${it.id}')">
+                            <img src="${thumb}">
+                            <div class="card-label">${it.name}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            lucide.createIcons();
+        }
+        function navToSub(id) { navState = {level: 'sub', catId: id}; render(); }
+        function navToItems(c, s) { navState = {level: 'items', catId: c, subId: s}; render(); }
+        function navToMustSee() { navState = {level: 'mustsee'}; render(); }
+        
+        function openFicheFromAnywhere(id) {
+            let found = null;
+            [library, (typeof visitNamibia !== 'undefined' ? visitNamibia : {categories:[]})].forEach(db => {
+                (db.categories || []).forEach(c => c.subcategories.forEach(s => {
+                    const it = s.items.find(x => x.id === id);
+                    if(it) found = it;
+                }));
+            });
+            if(found) {
+                activeItem = found;
+                displayFiche();
+            }
+        }
+
+        function displayFiche() {
+            var grid = document.getElementById('grid-view');
+            var fiche = document.getElementById('fiche-view');
+            var back = document.getElementById('back-btn');
+            var mainTitle = document.getElementById('main-title');
+            grid.style.display = 'none';
+            fiche.style.display = 'block';
+            back.style.display = 'block';
+            mainTitle.style.display = 'none';
+            
+            document.getElementById('fiche-title').innerText = activeItem.name;
+            document.getElementById('fiche-desc').innerText = activeItem.description || "Nessuna descrizione disponibile.";
+            
+            // Re-map images/docs
+            itemImages = (activeItem.photos || []).filter(p => {
+                var isPdf = (typeof p === 'object' && p.type === 'application/pdf') || (typeof p === 'string' && p.startsWith('data:application/pdf'));
+                return !isPdf;
+            }).map(p => typeof p === 'object' ? p.url : p);
+            
+            itemDocs = (activeItem.photos || []).filter(p => {
+                var isPdf = (typeof p === 'object' && p.type === 'application/pdf') || (typeof p === 'string' && p.startsWith('data:application/pdf'));
+                return isPdf;
+            }).map(p => typeof p === 'object' ? p : { url: p, name: 'DOCUMENTO PDF', type: 'application/pdf' });
+
+            itemVideos = (activeItem.photos || []).filter(p => {
+                var isVid = (typeof p === 'object' && p.type === 'video/mp4') || (typeof p === 'string' && p.startsWith('data:video/mp4'));
+                return isVid;
+            }).map(p => typeof p === 'object' ? p : { url: p, name: 'VIDEO', type: 'video/mp4' });
+
+            itemPresentations = (activeItem.photos || []).filter(p => {
+                var isPpt = (typeof p === 'object' && (p.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || p.type === 'application/vnd.ms-powerpoint')) || (typeof p === 'string' && (p.startsWith('data:application/vnd.openxmlformats-officedocument.presentationml.presentation') || p.startsWith('data:application/vnd.ms-powerpoint')));
+                return isPpt;
+            }).map(p => typeof p === 'object' ? p : { url: p, name: 'PPTX', type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+
+            slideIdx = 0;
+            updateSlider();
+            renderStats();
+            renderDocs();
+            renderPresentations();
+            lucide.createIcons();
+            document.querySelector('.content-area').scrollTop = 0;
+        }
+
+        function openFiche(id) {
+            var sub = library.categories.find(x => x.id === navState.catId).subcategories.find(x => x.id === navState.subId);
+            activeItem = sub.items.find(i => i.id === id);
+            
+            // Separate Images from PDFs
+            itemImages = (activeItem.photos || []).filter(p => {
+                var isPdf = (typeof p === 'object' && p.type === 'application/pdf') || (typeof p === 'string' && p.startsWith('data:application/pdf'));
+                return !isPdf;
+            }).map(p => typeof p === 'object' ? p.url : p);
+
+            itemDocs = (activeItem.photos || []).filter(p => {
+                var isPdf = (typeof p === 'object' && p.type === 'application/pdf') || (typeof p === 'string' && p.startsWith('data:application/pdf'));
+                return isPdf;
+            }).map(p => typeof p === 'object' ? p : { url: p, name: 'DOCUMENTO PDF', type: 'application/pdf' });
+
+            itemVideos = (activeItem.photos || []).filter(p => {
+                var isVid = (typeof p === 'object' && p.type === 'video/mp4') || (typeof p === 'string' && p.startsWith('data:video/mp4'));
+                return isVid;
+            }).map(p => typeof p === 'object' ? p : { url: p, name: 'VIDEO', type: 'video/mp4' });
+            
+            itemPresentations = (activeItem.photos || []).filter(p => {
+                var isPpt = (typeof p === 'object' && (p.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || p.type === 'application/vnd.ms-powerpoint')) || (typeof p === 'string' && (p.startsWith('data:application/vnd.openxmlformats-officedocument.presentationml.presentation') || p.startsWith('data:application/vnd.ms-powerpoint')));
+                return isPpt;
+            }).map(p => typeof p === 'object' ? p : { url: p, name: 'PRESENTAZIONE', type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+
+            var mainTitle = document.getElementById('main-title');
+            slideIdx = 0;
+            document.getElementById('grid-view').style.display = 'none';
+            document.getElementById('fiche-view').style.display = 'block';
+            mainTitle.style.display = 'none';
+            document.getElementById('fiche-title').innerText = activeItem.name;
+            document.getElementById('fiche-desc').innerText = activeItem.description || "In attesa di descrizione...";
+            
+            updateSlider();
+            renderStats();
+            renderDocs();
+            renderVideos();
+            renderPresentations();
+            lucide.createIcons();
+        }
+
+        function renderVideos() {
+            var extrasDiv = document.getElementById('fiche-extras');
+            var vidsHtml = "";
+            if(itemVideos.length > 0) {
+                vidsHtml = `
+                    <div id="vids-list" style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
+                        <h4 style="color:var(--accent); margin-top:0; letter-spacing:2px; font-weight:900;">GALLERY VIDEO</h4>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:15px;">
+                            ${itemVideos.map(vid => `
+                                <div style="background:#000; border-radius:15px; overflow:hidden; border:1px solid rgba(255,255,255,0.1);">
+                                    <video src="${vid.url}" controls loop onended="this.play()" style="width:100%; display:block; aspect-ratio:16/9;"></video>
+                                    <div style="padding:10px; font-size:10px; font-weight:800; color:var(--accent); text-align:center;">${vid.name}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            var existingVids = document.getElementById('vids-list');
+            if(existingVids) existingVids.remove();
+            if(vidsHtml) extrasDiv.insertAdjacentHTML('beforeend', vidsHtml);
+        }
+
+        function renderDocs() {
+            var extrasDiv = document.getElementById('fiche-extras');
+            var docsHtml = "";
+            if(itemDocs.length > 0) {
+                docsHtml = `
+                    <div id="docs-list" style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
+                        <h4 style="color:var(--accent); margin-top:0; letter-spacing:2px; font-weight:900;">DOCUMENTI PDF ALLEGATI</h4>
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            ${itemDocs.map((doc, idx) => `
+                                <div style="display:flex; align-items:center; gap:12px; background:rgba(255,171,64,0.05); padding:10px 15px; border-radius:12px; border:1px solid rgba(255,171,64,0.1);">
+                                    <i data-lucide="file-text" style="color:var(--accent); width:20px;"></i>
+                                    <span style="flex:1; font-weight:800; font-size:13px; color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${doc.name}</span>
+                                    <div style="display:flex; gap:8px;">
+                                        <button onclick="openDoc('${idx}')" style="background:var(--accent); color:black; border:none; padding:6px 14px; border-radius:30px; font-size:10px; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:4px;">APRI <i data-lucide="external-link" style="width:12px;"></i></button>
+                                        <button onclick="downloadDoc('${idx}')" style="background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.2); padding:6px 14px; border-radius:30px; font-size:10px; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:4px;">SCARICA <i data-lucide="download" style="width:12px;"></i></button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            // Check if we already added docs or need to append
+            var existingDocs = document.getElementById('docs-list');
+            if(existingDocs) existingDocs.remove();
+            if(docsHtml) extrasDiv.insertAdjacentHTML('beforeend', docsHtml);
+        }
+
+        function renderPresentations() {
+            var extrasDiv = document.getElementById('fiche-extras');
+            var presHtml = "";
+            if(itemPresentations.length > 0) {
+                presHtml = `
+                    <div id="pres-list" style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
+                        <h4 style="color:#eb5a28; margin-top:0; letter-spacing:2px; font-weight:900;">PRESENTAZIONI POWERPOINT</h4>
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            ${itemPresentations.map((pres, idx) => `
+                                <div style="display:flex; align-items:center; gap:12px; background:rgba(235,90,40,0.05); padding:10px 15px; border-radius:12px; border:1px solid rgba(235,90,40,0.2);">
+                                    <i data-lucide="monitor-play" style="color:#eb5a28; width:20px;"></i>
+                                    <span style="flex:1; font-weight:800; font-size:13px; color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${pres.name}</span>
+                                    <div style="display:flex; gap:8px;">
+                                        <button onclick="downloadPres('${idx}')" style="background:#eb5a28; color:white; border:none; padding:6px 14px; border-radius:30px; font-size:10px; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:4px;">SCARICA PER POWERPOINT <i data-lucide="download" style="width:12px;"></i></button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <p style="font-size:10px; opacity:0.5; margin-top:10px; font-style:italic;">Nota: è necessario Microsoft PowerPoint o un visualizzatore compatibile per aprire questi file.</p>
+                    </div>
+                `;
+            }
+            var existingPres = document.getElementById('pres-list');
+            if(existingPres) existingPres.remove();
+            if(presHtml) extrasDiv.insertAdjacentHTML('beforeend', presHtml);
+        }
+
+        function dataUrlToBlob(dataUrl) {
+            var arr = dataUrl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+            return new Blob([u8arr], {type:mime});
+        }
+
+        function openDoc(idx) {
+            var doc = itemDocs[idx];
+            var blob = dataUrlToBlob(doc.url);
+            var url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }
+
+        function downloadDoc(idx) {
+            var doc = itemDocs[idx];
+            var blob = dataUrlToBlob(doc.url);
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = doc.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadPres(idx) {
+            var pres = itemPresentations[idx];
+            var blob = dataUrlToBlob(pres.url);
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = pres.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function renderStats() {
+            var f = activeItem.facts || {};
+            var l1 = f.label1 || "Peso";
+            var l2 = f.label2 || "Dimens.";
+            var l3 = f.label3 || "Longev.";
+            
+            function fmt(val) {
+                if (!val || val === '-') return '-';
+                return String(val).trim()
+                    .replace(/([\d])([a-zA-Z])/g, '$1 $2')
+                    .replace(/\b(\d{4,})\b/g, m => m.replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+            }
+
+            var html = `
+                <p><b>${l1}</b> <span>${fmt(f.weight)}</span></p>
+                <p><b>${l2}</b> <span>${fmt(f.size)}</span></p>
+                <p><b>${l3}</b> <span>${fmt(f.life)}</span></p>
+            `;
+            if (f.speed) {
+                html += `<p><b>Velocità</b> <span>${fmt(f.speed)}</span></p>`;
+            }
+            document.getElementById('stats-list').innerHTML = html;
+        }
+
+        function updateSlider() {
+            var src = itemImages[slideIdx] || "";
+            document.getElementById('slider-img').src = src;
+            document.getElementById('lightbox-img').src = src;
+            
+            // Hide slider if no images
+            document.querySelector('.fiche-header').style.display = (itemImages.length > 0) ? 'block' : 'none';
+        }
+
+        function nextSlide() { if(itemImages.length === 0) return; slideIdx = (slideIdx + 1) % itemImages.length; updateSlider(); }
+        function prevSlide() { if(itemImages.length === 0) return; slideIdx = (slideIdx - 1 + itemImages.length) % itemImages.length; updateSlider(); }
+
+        function openFS() { document.getElementById('lightbox').style.display = 'block'; }
+        function closeFS() { document.getElementById('lightbox').style.display = 'none'; }
+
+        function goBack() {
+            var fiche = document.getElementById('fiche-view');
+            if (fiche && fiche.style.display === 'block') {
+                render();
+            } else {
+                if (navState.level === 'items') navState.level = 'sub';
+                else if (navState.level === 'sub') navState.level = 'home';
+                else if (navState.level === 'mustsee') navState.level = 'home';
+                render();
+            }
+        }
+
+        function navHome() { navState = { level: 'home', catId: null, subId: null }; render(); }
+
+        window.PARKS_APP.init(() => { 
+            window.PARKS_APP.getSession(function(session) {
+                // BYPASS LOGIN PER FASE DI CREAZIONE
+                /*
+                if (!session || !session.loggedIn) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                */
+                
+                if(session.role === 'SUPER_ADMIN' || session.role === 'ADMIN' || true) { // Force show admin button in dev
+                    document.getElementById('admin-btn').style.display = 'block';
+                }
+
+                window.PARKS_DB.get('parks_visit_namibia_v1', {categories:[]}, function(vData) {
+                    visitNamibia = vData;
+                    window.PARKS_DB.get('parks_library_v2', {categories:[]}, function(data) {
+                        library = data;
+                        
+                        // Check URL parameter for MUST SEE
+                        const urlParams = new URLSearchParams(window.location.search);
+                        if(urlParams.get('view') === 'mustsee') {
+                            navState = {level: 'mustsee'};
+                        }
+
+                        render();
+                    });
+                });
+            });
+        });
+
+        function logout() {
+            window.PARKS_APP.setSession({ loggedIn: false }, function() {
+                window.location.href = 'index.html';
+            });
+        }
+    </script>
+</body>
+</html>

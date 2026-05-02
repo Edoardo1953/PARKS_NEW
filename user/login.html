@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parks App | Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../shared/db.js"></script>
+    <script src="../shared/app.js"></script>
+    <style>
+        :root { --primary: #2d7a4d; --accent: #ffab40; --dark-bg: #0d1e1a; --glass: rgba(255, 255, 255, 0.05); }
+        body { margin: 0; font-family: 'Outfit', sans-serif; background: var(--dark-bg); color: white; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        
+        .slideshow { position: fixed; inset: 0; z-index: -2; }
+        .bg-image { position: absolute; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.8) saturate(1.3); opacity: 0; animation: crossfade 20s infinite; }
+        .bg-1 { animation-delay: 0s; }
+        .bg-2 { animation-delay: 4s; }
+        .bg-3 { animation-delay: 8s; }
+        .bg-4 { animation-delay: 12s; }
+        .bg-5 { animation-delay: 16s; }
+        @keyframes crossfade { 0% { opacity: 0; } 5% { opacity: 1; } 20% { opacity: 1; } 25% { opacity: 0; } 100% { opacity: 0; } }
+        .overlay { position: fixed; inset: 0; background: radial-gradient(circle at center, transparent, rgba(0,0,0,0.5)); z-index: -1; }
+        .bg-gradient { position: fixed; inset: 0; background: radial-gradient(circle at 90% 10%, rgba(45, 122, 77, 0.15) 0%, transparent 40%), radial-gradient(circle at 10% 90%, rgba(255, 171, 64, 0.1) 0%, transparent 40%); z-index: 0; pointer-events: none; }
+
+        .login-card { background: rgba(0, 0, 0, 0.35); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 40px; padding: 60px; width: 100%; max-width: 420px; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.8); animation: zoomIn 0.8s cubic-bezier(0.16, 1, 0.3, 1); position: relative; overflow: visible; }
+        
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        
+        .card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 8px; background: linear-gradient(to right, var(--primary), var(--accent)); }
+        
+        /* Branding Header (Logo + Title) */
+        .top-page-logo { position: fixed; top: 20px; left: 20px; width: 260px; z-index: 30; filter: drop-shadow(0 10px 25px rgba(0,0,0,0.8)); }
+        .top-page-logo img { width: 100%; height: auto; display: block; }
+
+        .branding-title-container { position: fixed; top: 40px; left: 50%; transform: translateX(-50%); text-align: center; z-index: 20; }
+        .branding-title { font-size: 3.5rem; font-weight: 900; letter-spacing: 12px; margin: 0; line-height: 1; color: var(--accent); white-space: nowrap; }
+        .branding-subtitle { font-size: 14px; font-weight: 300; letter-spacing: 6px; opacity: 0.7; margin-top: 10px; text-transform: uppercase; color: white; }
+
+        /* Logo piccolo dentro la card (nascosto) */
+        .logo-container { display: none; }
+        
+        h1 { font-size: 1.2rem; font-weight: 900; margin: 0 0 40px 0; letter-spacing: 5px; text-transform: uppercase; opacity: 0.4; }
+        
+        .input-group { margin-bottom: 25px; text-align: left; }
+        label { display: block; font-size: 10px; font-weight: 900; color: var(--accent); margin-bottom: 10px; letter-spacing: 2px; text-transform: uppercase; padding-left: 5px; opacity: 0.8; }
+        
+        input { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 18px 24px; border-radius: 18px; font-weight: 700; font-size: 16px; outline: none; box-sizing: border-box; transition: 0.3s; font-family: inherit; }
+        input:focus { border-color: var(--primary); background: rgba(255,255,255,0.12); box-shadow: 0 0 0 4px rgba(45,122,77,0.15); }
+
+        .password-wrapper { position: relative; display: flex; align-items: center; }
+        .toggle-password { position: absolute; right: 15px; background: none; border: none; color: rgba(255, 255, 255, 0.4); cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; transition: 0.3s; z-index: 10; }
+        .toggle-password:hover { color: var(--accent); }
+        input#password { padding-right: 55px; }
+
+        .btn-login { width: 100%; background: var(--primary); color: white; border: none; padding: 18px; border-radius: 20px; font-weight: 900; font-size: 1.1rem; cursor: pointer; margin-top: 15px; transition: 0.4s; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 10px 30px rgba(45,122,77,0.3); }
+        .btn-login:hover { transform: translateY(-5px); background: #3eb471; box-shadow: 0 20px 50px rgba(45,122,77,0.5); }
+
+        .back-link { position: absolute; top: 30px; left: 30px; color: var(--accent); text-shadow: 0 0 10px rgba(255,171,64,0.5); text-decoration: none; font-size: 14px; font-weight: 900; display: flex; align-items: center; gap: 6px; transition: 0.3s; letter-spacing: 1px; }
+        .back-link:hover { color: white; text-shadow: 0 0 15px rgba(255,255,255,0.8); transform: translateX(-5px); }
+        
+        .register-tip { display: block; margin-top: 35px; font-size: 12px; color: rgba(255,255,255,0.4); text-decoration: none; font-weight: 800; letter-spacing: 1px; }
+        .register-tip span { color: var(--accent); border-bottom: 1px solid transparent; transition: 0.3s; }
+        .register-tip:hover span { border-color: var(--accent); }
+
+        /* ===== MOBILE ===== */
+        @media (max-width: 600px) {
+            body { align-items: flex-start; padding: 20px 16px; box-sizing: border-box; overflow-y: auto; height: auto; min-height: 100vh; }
+            .top-page-logo { width: 180px; top: 15px; left: 50%; transform: translateX(-50%); }
+            .branding-title-container { top: 75px; width: 100%; }
+            .branding-title { font-size: 2.2rem; letter-spacing: 6px; }
+            .branding-subtitle { font-size: 10px; letter-spacing: 3px; margin-top: 5px; }
+
+            .login-card { padding: 35px 22px 30px; border-radius: 28px; margin-top: 200px; background: rgba(0,0,0,0.15); backdrop-filter: blur(6px); }
+            h1 { font-size: 1rem; margin-bottom: 28px; letter-spacing: 3px; }
+            input { padding: 15px 18px; font-size: 15px; border-radius: 14px; }
+            .btn-login { padding: 16px; font-size: 1rem; border-radius: 16px; }
+            .back-link { font-size: 12px; top: 18px; left: 18px; }
+        }
+        @media (max-width: 400px) {
+            .login-card { padding: 30px 16px 24px; }
+        }
+
+        /* Logo mobile top (visibile solo su mobile) */
+        .mobile-top-logo { display: none; position: fixed; top: 25px; left: 50%; transform: translateX(-50%); width: 230px; z-index: 30; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6)); }
+    </style>
+</head>
+<body>
+
+    <div class="slideshow">
+        <img src="../assets/bg_homepage_1.jpg" class="bg-image bg-1" alt="Slide 1">
+        <img src="../assets/bg_homepage_2.JPG" class="bg-image bg-2" alt="Slide 2">
+        <img src="../assets/bg_homepage_3.jpg" class="bg-image bg-3" alt="Slide 3">
+        <img src="../assets/bg_homepage_4.JPG" class="bg-image bg-4" alt="Slide 4">
+        <img src="../assets/bg_homepage_5.jpg" class="bg-image bg-5" alt="Slide 5">
+    </div>
+    <div class="overlay"></div>
+    <div class="bg-gradient"></div>
+
+    <!-- LOGO IN ALTO (fisso, visibile su desktop, tablet e mobile) -->
+    <div class="top-page-logo">
+        <img src="../shared/parks_logo_combined_white.svg" alt="PARKS Namibia">
+    </div>
+
+    <div class="branding-title-container">
+        <h2 class="branding-title">ETOSHA</h2>
+        <div class="branding-subtitle">National Park · Namibia</div>
+    </div>
+
+    <div class="login-card">
+        <a href="index.html" class="back-link"><i data-lucide="chevron-left" style="width:18px;"></i> INDIETRO</a>
+        <h1>LOGIN</h1>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label>INDIRIZZO EMAIL / NOME</label>
+                <input type="text" id="email" placeholder="nome@esempio.it" required>
+            </div>
+            <div class="input-group">
+                <label>PASS / CODICE ACCESSO</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="••••••••" required>
+                    <button type="button" id="togglePassword" class="toggle-password">
+                        <i data-lucide="eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login">ACCEDI ALL'APP</button>
+        </form>
+
+        <a href="register.html" class="register-tip">Non possiedi un account? <br> <span>REGISTRATI ORA</span></a>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Toggle Password Visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            const icon = this.querySelector('i');
+            icon.setAttribute('data-lucide', type === 'password' ? 'eye' : 'eye-off');
+            lucide.createIcons();
+        });
+
+        document.getElementById('loginForm').onsubmit = function(e) {
+            e.preventDefault();
+            var emailVal = document.getElementById('email').value.toLowerCase();
+            var pass = document.getElementById('password').value;
+
+            window.PARKS_APP.init(function() {
+                // Controllo Utenti Sistema
+                window.PARKS_DB.get('parks_users', [], function(sysUsers) {
+                    var u = sysUsers.find(x => x.email === emailVal || (x.name === emailVal.toUpperCase() && x.password === pass));
+                    if(u && u.password === pass) {
+                        // Check Expiry (except Super Admin)
+                        if(u.role !== 'SUPER_ADMIN' && u.expiry) {
+                            var exp = new Date(u.expiry);
+                            if(exp < new Date().setHours(0,0,0,0)) {
+                                alert("ACCESSO SCADUTO: Il tuo abbonamento è terminato il " + exp.toLocaleDateString() + ". Contatta l'assistenza.");
+                                return;
+                            }
+                        }
+                        window.PARKS_APP.setSession({ loggedIn: true, user: u.name, role: u.role }, function() {
+                            window.location.href = 'homepage.html';
+                        });
+                        return;
+                    }
+
+                    // Controllo Turisti
+                    window.PARKS_DB.get('parks_tourists', [], function(tourists) {
+                        // MIGRATION: Assicura che tutti i turisti abbiano un numero
+                        let migrationDone = false;
+                        tourists.forEach((tr, idx) => { if(!tr.tNumber) { tr.tNumber = idx + 1; migrationDone = true; } });
+                        if(migrationDone) window.PARKS_DB.save('parks_tourists', tourists);
+
+                        var emailInput = emailVal.toLowerCase();
+                        var t = tourists.find(x => 
+                            (x.email === emailInput || (x.firstName + ' ' + x.lastName).toUpperCase() === emailVal.toUpperCase())
+                        );
+
+                        if(t) {
+                            if(t.password !== pass) {
+                                alert("ERRORE LOGIN: Password errata per l'utente " + emailVal.toUpperCase());
+                                return;
+                            }
+                            if(!t.passActive) {
+                                alert("ACCOUNT SOSPESO: Il tuo profilo non è attivo. Contatta parks.luxembourg@gmail.com");
+                                return;
+                            }
+                            // Check Expiry
+                            if(t.expiry) {
+                                var expT = new Date(t.expiry);
+                                if(expT < new Date().setHours(0,0,0,0)) {
+                                    alert("ACCOUNT SCADUTO: Il tuo Pass è terminato il " + expT.toLocaleDateString() + ". Contatta parks.luxembourg@gmail.com");
+                                    return;
+                                }
+                            }
+                            window.PARKS_APP.setSession({ loggedIn: true, user: t.firstName, tNumber: t.tNumber, role: 'TOURIST' }, function() {
+                                window.location.href = 'homepage.html';
+                            });
+                        } else {
+                            alert("ERRORE LOGIN: Utente non trovato. Controlla l'email o il nome inserito.");
+                        }
+                    });
+                });
+            });
+        };
+    </script>
+</body>
+</html>
