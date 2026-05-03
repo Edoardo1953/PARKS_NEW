@@ -273,13 +273,13 @@
                 <li onclick="window.location.href='library.html'">
                     <i data-lucide="book-open"></i> <span>Libreria</span>
                 </li>
+                <li onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
                 <li onclick="window.location.href='library.html?view=mustsee'">
                     <i data-lucide="star"></i> <span>Must See</span>
                 </li>
                 <li onclick="window.location.href='kids_corner.html'">
                     <i data-lucide="baby"></i> <span>Kid's Corner</span>
                 </li>
-                <li onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
                 <li onclick="window.location.href='memory2/index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
             </ul>
 
@@ -416,6 +416,18 @@
                     slideIdx = 0;
                     document.getElementById('f-title').innerText = activeItem.name;
                     document.getElementById('f-desc').innerText = activeItem.description;
+                    
+                    // Modifiche dimensioni per ALERT
+                    document.querySelector('.fiche-content').style.maxWidth = '500px';
+                    document.querySelector('.fiche-header').style.height = '150px';
+                    document.querySelector('.fiche-header').style.background = 'transparent';
+                    document.querySelector('.fiche-header').style.border = 'none';
+                    document.querySelector('.fiche-header img').style.filter = 'drop-shadow(0 10px 20px rgba(0,0,0,0.5))';
+                    document.getElementById('f-title').style.fontSize = '2.5rem';
+                    document.getElementById('f-title').style.textAlign = 'center';
+                    document.getElementById('f-desc').style.textAlign = 'center';
+                    document.querySelectorAll('.slide-btn').forEach(b => b.style.display = 'none');
+                    
                     updateSlider();
                     document.getElementById('stats-list').innerHTML = '';
                     document.getElementById('fiche-stats').style.display = 'none';
@@ -476,6 +488,18 @@
             document.getElementById('f-title').innerText = activeItem.name;
             document.getElementById('f-desc').innerText = activeItem.description || "";
             document.getElementById('fiche-stats').style.display = 'block';
+            
+            // Ripristina dimensioni originali per SCHEDA ANIMALE
+            document.querySelector('.fiche-content').style.maxWidth = '1000px';
+            document.querySelector('.fiche-header').style.height = '450px';
+            document.querySelector('.fiche-header').style.background = '#000';
+            document.querySelector('.fiche-header').style.border = '1px solid rgba(255,255,255,0.1)';
+            document.querySelector('.fiche-header img').style.filter = 'none';
+            document.getElementById('f-title').style.fontSize = '3.5rem';
+            document.getElementById('f-title').style.textAlign = 'left';
+            document.getElementById('f-desc').style.textAlign = 'left';
+            document.querySelectorAll('.slide-btn').forEach(b => b.style.display = 'flex');
+
             updateSlider();
             renderStats();
             

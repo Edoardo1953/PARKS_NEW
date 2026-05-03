@@ -1,196 +1,243 @@
-/* 🌲 PARKS - shared/db.js (DUAL PROTECTION: INDEXEDDB + LS SHADOW) */
+/* 🌲 PARKS - shared/db.js (FIREBASE CLOUD + INDEXEDDB CACHE) */
 
 window.PARKS_DB = {
     _dbName: 'ParksProjectDB',
     _dbVersion: 1,
     _db: null,
-
-    // LS key for the structural shadow (no images, just text/structure)
-    _shadowKey: 'parks_shadow_v1',
-
-    // Keys that get a lightweight shadow copy in localStorage
-    _shadowableKeys: ['parks_library_v2', 'parks_users', 'parks_tourists'],
-
-    _initial: {
-      categories: [
-        { id: 'cat_animals', name: 'ANIMALS', image: '', subcategories: [] },
-        { id: 'cat_plants', name: 'PLANTS', subcategories: [] },
-        { id: 'cat_places', name: 'PLACES', subcategories: [] },
-        { id: 'cat_people', name: 'PEOPLES', subcategories: [] },
-        { id: 'cat_locations', name: 'GLOBE', subcategories: [] },
-        { id: 'cat_documents', name: 'DOCUMENTS', subcategories: [] }
-      ]
+    
+    // Configurazione Firebase di Edoardo
+    _firebaseConfig: {
+      apiKey: "AIzaSyAUDj-EhXc691cMRsBy1qP46UWkPIgcEb4",
+      authDomain: "parks-67a08.firebaseapp.com",
+      databaseURL: "https://parks-67a08-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "parks-67a08",
+      storageBucket: "parks-67a08.firebasestorage.app",
+      messagingSenderId: "872271919437",
+      appId: "1:872271919437:web:34362478eb72c6950d9f04"
     },
 
     init: function(callback) {
         var self = this;
+        // 1. Inizializza IndexedDB come cache locale
         var request = indexedDB.open(this._dbName, this._dbVersion);
-
         request.onupgradeneeded = function(e) {
             var db = e.target.result;
             if (!db.objectStoreNames.contains('library')) {
                 db.createObjectStore('library');
             }
         };
-
         request.onsuccess = function(e) {
             self._db = e.target.result;
-            self._migrate(function() {
-                if (callback) callback();
-            });
+            self._loadFirebase(callback);
         };
-
         request.onerror = function(e) {
             console.error('IndexedDB Error:', e);
-            if (callback) callback();
+            self._loadFirebase(callback);
         };
     },
 
-    // ------------------------------------------------------------------
-    // SHADOW: salva copia leggera (senza images base64) in localStorage
-    // come secondo livello di sicurezza contro la perdita dati
-    // ------------------------------------------------------------------
-    _writeShadow: function(key, value) {
-        if (!value || this._shadowableKeys.indexOf(key) === -1) return;
-        try {
-            var slim = this._stripImages(JSON.parse(JSON.stringify(value)));
-            var shadow = JSON.parse(localStorage.getItem(this._shadowKey) || '{}');
-            shadow[key] = slim;
-            shadow['_updated'] = new Date().toISOString();
-            localStorage.setItem(this._shadowKey, JSON.stringify(shadow));
-        } catch(e) {
-            console.warn('Shadow write failed:', e);
-        }
-    },
-
-    _readShadow: function(key) {
-        try {
-            var shadow = JSON.parse(localStorage.getItem(this._shadowKey) || '{}');
-            return shadow[key] || null;
-        } catch(e) { return null; }
-    },
-
-    // Rimuove le proprietà "image" e "photos" che contengono base64 pesanti
-    _stripImages: function(obj) {
-        if (!obj || typeof obj !== 'object') return obj;
-        if (Array.isArray(obj)) return obj.map(item => this._stripImages(item));
-
-        var out = {};
-        for (var k in obj) {
-            if (!obj.hasOwnProperty(k)) continue;
-            // Rimuovi solo i campi con dati base64 pesanti
-            if (k === 'image' || k === 'url') {
-                // Conserva solo se non è base64
-                if (typeof obj[k] === 'string' && obj[k].startsWith('data:')) {
-                    out[k] = ''; // Svuota i base64
-                } else {
-                    out[k] = obj[k];
-                }
-            } else if (k === 'photos') {
-                // Per i photos, conserva solo metadata (nome, tipo) senza i dati
-                if (Array.isArray(obj[k])) {
-                    out[k] = obj[k].map(p => {
-                        if (typeof p === 'object' && p !== null) {
-                            return { name: p.name || '', type: p.type || '' };
-                        }
-                        return null;
-                    }).filter(Boolean);
-                } else {
-                    out[k] = [];
-                }
-            } else {
-                out[k] = this._stripImages(obj[k]);
-            }
-        }
-        return out;
-    },
-
-    // ------------------------------------------------------------------
-    // MIGRATE: Controlla localStorage vecchio → IndexedDB → Shadow → Initial
-    // ------------------------------------------------------------------
-    _migrate: function(done) {
+    _loadFirebase: function(done) {
         var self = this;
+        if (window.firebase) return done();
 
-        // 1. Vecchio localStorage legacy (pre-IndexedDB)
-        var old = localStorage.getItem('parks_library_v2');
-        if (old) {
-            try {
-                var data = JSON.parse(old);
-                this.save('parks_library_v2', data, function() {
-                    localStorage.removeItem('parks_library_v2');
-                    console.log('✅ Migrazione LS→IDB completata.');
+        // Carica Firebase dinamicamente
+        function loadScript(src, cb) {
+            var s = document.createElement('script');
+            s.src = src;
+            s.onload = cb;
+            document.head.appendChild(s);
+        }
+
+        loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js", function() {
+            loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js", function() {
+                loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js", function() {
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(self._firebaseConfig);
+                    }
                     done();
                 });
-                return;
-            } catch(e) { /* continua */ }
-        }
-
-        // 2. Controlla IndexedDB
-        this.get('parks_library_v2', null, function(data) {
-            if (data) {
-                // IDB ha i dati: aggiorna il shadow
-                self._writeShadow('parks_library_v2', data);
-                console.log('✅ IndexedDB ha i dati. Shadow aggiornato.');
-                done();
-            } else {
-                // 3. IDB vuoto: prova a recuperare dal shadow
-                var shadow = self._readShadow('parks_library_v2');
-                if (shadow && shadow.categories && shadow.categories.length > 0) {
-                    console.warn('⚠️ IndexedDB vuoto! Ripristino struttura dal shadow LS. (Le immagini andranno ricaricate)');
-                    self.save('parks_library_v2', shadow, function() {
-                        done();
-                    });
-                } else {
-                    // 4. Nessun dato: metti la struttura vuota iniziale
-                    console.warn('⚠️ Nessun dato trovato. Inizializzazione struttura base.');
-                    self.save('parks_library_v2', self._initial, function() {
-                        self._writeShadow('parks_library_v2', self._initial);
-                        done();
-                    });
-                }
-            }
+            });
         });
     },
 
-    // ------------------------------------------------------------------
-    // GET: Legge da IndexedDB, con fallback al shadow se IDB è vuoto
-    // ------------------------------------------------------------------
+    _generateUUID: function() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    },
+
+    _uploadBase64ToStorage: async function(base64Str) {
+        return new Promise((resolve, reject) => {
+            var ext = 'png';
+            var mimeMatch = base64Str.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/);
+            if (mimeMatch && mimeMatch.length > 1) {
+                ext = mimeMatch[1].split('/')[1] || 'png';
+            }
+            var uuid = this._generateUUID();
+            var path = 'images/' + uuid + '.' + ext;
+            var ref = firebase.storage().ref().child(path);
+            
+            ref.putString(base64Str, 'data_url').then(function(snapshot) {
+                snapshot.ref.getDownloadURL().then(function(downloadURL) {
+                    resolve(downloadURL);
+                }).catch(reject);
+            }).catch(reject);
+        });
+    },
+
+    _processImagesBeforeSave: async function(value) {
+        var self = this;
+        var base64Items = [];
+        
+        // 1. Ricerca sincrona velocissima di tutte le foto nel file da 270MB
+        function findImages(obj) {
+            if (!obj || typeof obj !== 'object') return;
+            if (Array.isArray(obj)) {
+                for (var i = 0; i < obj.length; i++) findImages(obj[i]);
+                return;
+            }
+            for (var k in obj) {
+                if (!obj.hasOwnProperty(k)) continue;
+                if (typeof obj[k] === 'string' && obj[k].startsWith('data:image/')) {
+                    base64Items.push({ parent: obj, key: k, base64: obj[k] });
+                } else if (typeof obj[k] === 'object' && obj[k] !== null) {
+                    findImages(obj[k]);
+                }
+            }
+        }
+        
+        findImages(value);
+        
+        // Aggiorna UI con il totale
+        var progressText = document.getElementById('firebase-progress');
+        if (progressText && base64Items.length > 0) {
+            progressText.innerHTML = "Trovate <b>" + base64Items.length + "</b> foto da caricare.<br>Inizio caricamento...";
+        }
+
+        // 2. Carica le foto una ad una e sostituisce il link
+        for(var i=0; i < base64Items.length; i++) {
+            var item = base64Items[i];
+            if (progressText) {
+                progressText.innerHTML = "Caricamento foto: <b>" + (i + 1) + "</b> di <b>" + base64Items.length + "</b>...<br><small>(Non chiudere questa finestra)</small>";
+            }
+            try {
+                item.parent[item.key] = await self._uploadBase64ToStorage(item.base64);
+            } catch(e) {
+                if (i === 0) { // Mostra l'errore vero della prima foto!
+                    alert("FATAL ERROR STORAGE: " + (e.message || e));
+                }
+                console.error("Errore upload foto " + i, e);
+            }
+        }
+        
+        return value;
+    },
+
     get: function(key, fallback, callback) {
         var self = this;
-        if (!this._db) {
-            // Prova il shadow come ultima risorsa
-            var s = this._readShadow(key);
-            return callback(s || fallback);
+        // Controlla prima sul Cloud Firebase
+        if (window.firebase) {
+            firebase.database().ref(key).once('value').then(function(snapshot) {
+                if (snapshot.exists()) {
+                    var data = snapshot.val();
+                    // Salva nella cache locale
+                    if (self._db) {
+                        try {
+                            var tx = self._db.transaction(['library'], 'readwrite');
+                            tx.objectStore('library').put(data, key);
+                        } catch(e){}
+                    }
+                    callback(data);
+                } else {
+                    // Fallback a IndexedDB locale (utile la prima volta prima dell'importazione)
+                    self._getFromLocal(key, fallback, callback);
+                }
+            }).catch(function(err) {
+                console.error("Firebase Read Error:", err);
+                self._getFromLocal(key, fallback, callback);
+            });
+        } else {
+            self._getFromLocal(key, fallback, callback);
         }
+    },
+
+    _getFromLocal: function(key, fallback, callback) {
+        var self = this;
+        if (!this._db) { return this._tryShadow(key, fallback, callback); }
         var transaction = this._db.transaction(['library'], 'readonly');
         var store = transaction.objectStore('library');
         var request = store.get(key);
-
         request.onsuccess = function() {
             var res = request.result;
             if (res === undefined || res === null) {
-                // IDB vuoto per questa chiave: prova il shadow
-                var shadow = self._readShadow(key);
-                callback(shadow !== null ? shadow : fallback);
+                self._tryShadow(key, fallback, callback);
             } else {
                 callback(res);
             }
         };
-        request.onerror = function() { callback(fallback); };
+        request.onerror = function() { self._tryShadow(key, fallback, callback); };
     },
 
-    // ------------------------------------------------------------------
-    // SAVE: Salva in IndexedDB E aggiorna il shadow
-    // ------------------------------------------------------------------
-    save: function(key, value, callback) {
-        this._writeShadow(key, value);
+    _tryShadow: function(key, fallback, callback) {
+        try {
+            var shadow = JSON.parse(localStorage.getItem('parks_shadow_v1') || '{}');
+            var val = shadow[key] !== undefined ? shadow[key] : fallback;
+            if (val === undefined && key === 'parks_library_v2') {
+                val = { categories: [
+                    { id: 'cat_animals', name: 'ANIMALS', image: '', subcategories: [] },
+                    { id: 'cat_plants', name: 'PLANTS', subcategories: [] },
+                    { id: 'cat_places', name: 'PLACES', subcategories: [] },
+                    { id: 'cat_people', name: 'PEOPLES', subcategories: [] },
+                    { id: 'cat_locations', name: 'GLOBE', subcategories: [] },
+                    { id: 'cat_documents', name: 'DOCUMENTS', subcategories: [] }
+                ]};
+            }
+            callback(val);
+        } catch(e) {
+            callback(fallback);
+        }
+    },
 
-        if (!this._db) { if (callback) callback(false); return; }
-        var transaction = this._db.transaction(['library'], 'readwrite');
-        var store = transaction.objectStore('library');
-        var request = store.put(value, key);
+    save: async function(key, value, callback) {
+        var self = this;
+        
+        // UI di caricamento per capire se sta lavorando (non impilare i banner)
+        if (!document.getElementById('firebase-saving')) {
+            var loader = document.createElement('div');
+            loader.id = 'firebase-saving';
+            loader.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:sans-serif;color:#fff;text-align:center;padding:20px;';
+            loader.innerHTML = '<h2 style="margin-bottom:15px; color:#4CAF50;">Sincronizzazione col Cloud in corso</h2><div id="firebase-progress" style="font-size:20px; padding:20px; background:rgba(255,255,255,0.1); border-radius:10px; min-width:300px;">Analisi del file in corso... (potrebbe bloccarsi per qualche secondo)</div><br><p style="color:#aaa;">Visto che il file pesa 270MB, il caricamento di tutte le foto<br>potrebbe impiegare diverso tempo. Porta pazienza!</p>';
+            document.body.appendChild(loader);
+        }
 
-        request.onsuccess = function() { if (callback) callback(true); };
-        request.onerror = function() { if (callback) callback(false); };
+        try {
+            // 1. Processa le immagini (carica i base64 nello Storage e li sostituisce con i link web)
+            var processedValue = await this._processImagesBeforeSave(value);
+
+            // 2. Salva nel database Cloud
+            if (window.firebase) {
+                try {
+                    await firebase.database().ref(key).set(processedValue);
+                } catch(firebaseErr) {
+                    console.error("Firebase DB Set Error:", firebaseErr);
+                    alert("Errore salvataggio Cloud (Probabilmente permessi di sicurezza negati su Firebase). I dati verranno salvati solo in locale per ora.");
+                }
+            }
+            
+            // 3. Aggiorna la cache locale IndexedDB
+            if (this._db) {
+                var tx = this._db.transaction(['library'], 'readwrite');
+                tx.objectStore('library').put(processedValue, key);
+            }
+
+            if(document.getElementById('firebase-saving')) document.getElementById('firebase-saving').remove();
+            if (callback) callback(true);
+            
+        } catch(e) {
+            console.error("Save Error:", e);
+            if(document.getElementById('firebase-saving')) document.getElementById('firebase-saving').remove();
+            if (callback) callback(false);
+        }
     }
 };

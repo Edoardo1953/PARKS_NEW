@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-    <script src="../shared/db.js"></script>
+    <script src="../shared/db.js?v=1002"></script>
     <script src="../shared/app.js"></script>
     <style>
         :root { --primary-green: #2d7a4d; --danger: #ff5252; --accent: #ffab40; --dark-bg: #0d1e1a; }
@@ -1679,29 +1679,53 @@
                 e.target.value = '';
                 return;
             }
+            
+            // Mostra avviso di caricamento
+            var btn = e.target.parentElement;
+            var originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="loader" class="spin" style="width:14px; animation: spin 1s linear infinite;"></i> CARICAMENTO IN CORSO... (NON CHIUDERE)';
+            btn.style.background = 'rgba(255,171,64,0.3)';
+            
             var r = new FileReader();
             r.onload = function(ev) {
                 try {
                     var backup = JSON.parse(ev.target.result);
                     if(!backup._app || backup._app !== 'PARKS_ADMIN') {
                         alert('❌ File non valido. Usa solo backup creati da questa applicazione.');
+                        btn.innerHTML = originalHtml;
+                        btn.style.background = 'rgba(255,255,255,0.08)';
                         return;
                     }
                     var keys = ['parks_library_v2', 'parks_users', 'parks_tourists', 'parks_session', 'parks_home_content', 'parks_gallery', 'parks_visit_namibia_v1', 'parks_kids_drawings', 'parks_kids_puzzles'];
-                    var saved = 0;
-                    keys.forEach(function(key) {
-                        if(backup[key] !== undefined && backup[key] !== null) {
-                            window.PARKS_DB.save(key, backup[key], function() {
-                                saved++;
-                                if(saved === keys.filter(k => backup[k] != null).length) {
-                                    alert('✅ Backup ripristinato con successo! La pagina verrà ricaricata.');
-                                    location.reload();
-                                }
+                    var validKeys = keys.filter(k => backup[k] !== undefined && backup[k] !== null);
+                    
+                    if (validKeys.length === 0) {
+                        alert('❌ Nessun dato valido trovato nel backup.');
+                        btn.innerHTML = originalHtml;
+                        btn.style.background = 'rgba(255,255,255,0.08)';
+                        return;
+                    }
+
+                    // SALVATAGGIO SEQUENZIALE PER NON INTASARE FIREBASE!
+                    async function saveSequentially() {
+                        for(var i=0; i < validKeys.length; i++) {
+                            var key = validKeys[i];
+                            console.log("Inizio salvataggio di: " + key);
+                            await new Promise((resolve) => {
+                                window.PARKS_DB.save(key, backup[key], function() {
+                                    resolve();
+                                });
                             });
-                        } else { saved++; }
-                    });
+                        }
+                        alert('✅ Backup ripristinato con successo! La pagina verrà ricaricata.');
+                        location.reload();
+                    }
+                    saveSequentially();
+                    
                 } catch(err) {
-                    alert('❌ Errore durante il ripristino: ' + err.message);
+                    alert('❌ Errore durante il ripristino: ' + err.message + '\nIl file potrebbe essere troppo grande o danneggiato.');
+                    btn.innerHTML = originalHtml;
+                    btn.style.background = 'rgba(255,255,255,0.08)';
                 }
             };
             r.readAsText(file);
