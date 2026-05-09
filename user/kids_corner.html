@@ -159,6 +159,7 @@
             max-width: 100%;
             max-height: 100%;
             display: block;
+            touch-action: none;
         }
 
         .palette {
@@ -465,7 +466,7 @@
 
                 <button class="btn-play" onclick="startColoring()">
                     <i data-lucide="palette" style="width:32px; height:32px;"></i>
-                    MAGICO COLORA!
+                    DIPINGI MAGICAMENTE!
                 </button>
 
                 <button class="btn-play" onclick="startPuzzle()" style="background: #4cc9f0; box-shadow: 0 10px 30px rgba(76, 201, 240, 0.4);">
@@ -491,7 +492,7 @@
                         <i data-lucide="chevron-left"></i> ESCI
                     </button>
                     
-                    <h2 id="drawing-name" style="margin:0; letter-spacing:8px; color:var(--accent); font-size:1.5rem; text-transform:uppercase;">MAGICO COLORA!</h2>
+                    <h2 id="drawing-name" style="margin:0; letter-spacing:8px; color:var(--accent); font-size:1.5rem; text-transform:uppercase;">DIPINGI MAGICAMENTE!</h2>
 
                     <div style="display:flex; gap:12px;">
                         <button type="button" onclick="undo()" id="undo-btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; padding:12px 20px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px; opacity:0.5; cursor:not-allowed;">
@@ -751,7 +752,9 @@
                 </div>
             `).join('');
 
-            loadDrawing(kidsDrawings[currentDrawingIdx]);
+            if(kidsDrawings.length > 0) {
+                loadDrawing(kidsDrawings[currentDrawingIdx]);
+            }
         }
 
         function scrollSelector(dir) {
@@ -787,7 +790,9 @@
             });
 
             const img = new Image();
-            img.src = drawing.image;
+            if (drawing.image && !drawing.image.startsWith('data:')) {
+                img.crossOrigin = "Anonymous";
+            }
             img.onload = () => {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = 'white';
@@ -802,16 +807,26 @@
                 ctx.drawImage(img, x, y, w, h);
                 originalOutline = img;
                 
-                canvas.onclick = (e) => {
-                    saveState();
+                canvas.onpointerdown = (e) => {
                     const rect = canvas.getBoundingClientRect();
                     const scaleX = canvas.width / rect.width;
                     const scaleY = canvas.height / rect.height;
                     const clickX = Math.round((e.clientX - rect.left) * scaleX);
                     const clickY = Math.round((e.clientY - rect.top) * scaleY);
-                    floodFill(clickX, clickY, hexToRgb(selectedColor));
+                    
+                    saveState();
+                    
+                    setTimeout(() => {
+                        floodFill(clickX, clickY, hexToRgb(selectedColor));
+                    }, 0);
                 };
             };
+            img.onerror = () => {
+                console.warn("Failed to load with CORS, retrying without...");
+                img.removeAttribute('crossOrigin');
+                img.src = drawing.image; 
+            };
+            img.src = drawing.image;
         }
 
         function floodFill(startX, startY, fillRGB) {
@@ -819,37 +834,46 @@
             const height = canvas.height;
             if (startX < 0 || startX >= width || startY < 0 || startY >= height) return;
 
-            const imgData = ctx.getImageData(0, 0, width, height);
-            const data = imgData.data;
+            let imgData;
+            try {
+                imgData = ctx.getImageData(0, 0, width, height);
+            } catch (e) {
+                console.error("CORS Error:", e);
+                alert("Non è possibile colorare questo disegno per motivi di sicurezza del browser (CORS). Questo succede se l'immagine è caricata da un server esterno che non permette l'accesso ai dati. Contatta l'amministratore per abilitare il CORS su Firebase Storage.");
+                return;
+            }
             
+            const data = imgData.data;
             const startIdx = (startY * width + startX) * 4;
             const startR = data[startIdx];
             const startG = data[startIdx+1];
             const startB = data[startIdx+2];
+            const startA = data[startIdx+3];
 
             if (isBlack(startR, startG, startB) || (startR === fillRGB.r && startG === fillRGB.g && startB === fillRGB.b)) return;
 
-            const stack = [[startX, startY]];
+            const stack = [startX, startY];
             const visited = new Uint8Array(width * height);
             
             while (stack.length > 0) {
-                const [px, py] = stack.pop();
+                const py = stack.pop();
+                const px = stack.pop();
                 const pos = py * width + px;
                 const idx = pos * 4;
                 
                 if (visited[pos]) continue;
                 visited[pos] = 1;
 
-                if (Math.abs(data[idx] - startR) < 60 && Math.abs(data[idx+1] - startG) < 60 && Math.abs(data[idx+2] - startB) < 60) {
+                if (Math.abs(data[idx] - startR) < 80 && Math.abs(data[idx+1] - startG) < 80 && Math.abs(data[idx+2] - startB) < 80) {
                     data[idx] = fillRGB.r;
                     data[idx+1] = fillRGB.g;
                     data[idx+2] = fillRGB.b;
                     data[idx+3] = 255;
 
-                    if (px > 0) stack.push([px - 1, py]);
-                    if (px < width - 1) stack.push([px + 1, py]);
-                    if (py > 0) stack.push([px, py - 1]);
-                    if (py < height - 1) stack.push([px, py + 1]);
+                    if (px > 0) { stack.push(px - 1); stack.push(py); }
+                    if (px < width - 1) { stack.push(px + 1); stack.push(py); }
+                    if (py > 0) { stack.push(px); stack.push(py - 1); }
+                    if (py < height - 1) { stack.push(px); stack.push(py + 1); }
                 }
             }
             
@@ -912,9 +936,13 @@
         }
 
         function saveState() {
-            history.push(canvas.toDataURL());
-            if (history.length > 20) history.shift();
-            updateUndoButton();
+            try {
+                history.push(canvas.toDataURL());
+                if (history.length > 20) history.shift();
+                updateUndoButton();
+            } catch(e) {
+                console.warn("Stato non salvabile (CORS):", e);
+            }
         }
 
         function undo() {
@@ -949,7 +977,8 @@
         }
 
         function isBlack(r, g, b) {
-            return r < 140 && g < 140 && b < 140;
+            // Restore more restrictive threshold to avoid clicking on lines
+            return r < 60 && g < 60 && b < 60;
         }
 
         function hexToRgb(hex) {
