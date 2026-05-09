@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>PARKS - System Debug</title>
+    <style>
+        body { background: #000; color: #fff; font-family: monospace; padding: 20px; line-height: 1.5; }
+        .box { border: 1px solid #444; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+        .ok { color: #0f0; border-color: #0f0; }
+        .err { color: #f00; border-color: #f00; }
+        .warn { color: #ff0; border-color: #ff0; }
+        h1 { color: #ffab40; }
+    </style>
+</head>
+<body>
+    <h1>🔍 DIAGNOSTICA SISTEMA PARKS</h1>
+    <div id="results">
+        <div class="box" id="b-files">Controllo file...</div>
+        <div class="box" id="b-idb">Controllo Database Locale (IndexedDB)...</div>
+        <div class="box" id="b-firebase">Controllo Connessione Cloud (Firebase)...</div>
+        <div class="box" id="b-scripts">Controllo Script Interni...</div>
+    </div>
+
+    <script>
+        function log(id, msg, status) {
+            const el = document.getElementById(id);
+            el.innerHTML = msg;
+            el.className = 'box ' + status;
+        }
+
+        // 1. Controllo IDB
+        try {
+            const req = indexedDB.open('PARKS_FINAL_STORAGE', 1);
+            req.onsuccess = () => log('b-idb', '✅ Database Locale OK', 'ok');
+            req.onerror = () => log('b-idb', '❌ Database Locale BLOCCATO', 'err');
+        } catch(e) {
+            log('b-idb', '❌ Errore critico IndexedDB: ' + e.message, 'err');
+        }
+
+        // 2. Controllo Firebase Scripts
+        const scripts = [
+            'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js',
+            'shared/db.js',
+            'shared/app.js'
+        ];
+        
+        let loaded = 0;
+        scripts.forEach(src => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = () => {
+                loaded++;
+                if(loaded === scripts.length) {
+                    log('b-scripts', '✅ Tutti gli script caricati correttamente', 'ok');
+                    checkObjects();
+                }
+            };
+            s.onerror = () => log('b-scripts', '❌ Impossibile caricare: ' + src, 'err');
+            document.head.appendChild(s);
+        });
+
+        function checkObjects() {
+            if (window.PARKS_DB) {
+                log('b-files', '✅ File di sistema trovati', 'ok');
+                window.PARKS_DB.init(() => {
+                    log('b-firebase', '✅ Connessione Cloud stabilita (o fallback locale attivo)', 'ok');
+                    document.body.innerHTML += '<div class="box ok">🚀 SISTEMA PRONTO. Prova ad aprire <a href="admin/index.html" style="color:#0f0">L\'ADMIN QUI</a></div>';
+                });
+            } else {
+                log('b-files', '❌ Oggetto PARKS_DB non trovato negli script', 'err');
+            }
+        }
+
+        // Timeout di sicurezza
+        setTimeout(() => {
+            if(document.getElementById('b-scripts').className === 'box') {
+                log('b-scripts', '❌ Caricamento troppo lento o bloccato. Verifica la connessione internet.', 'warn');
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

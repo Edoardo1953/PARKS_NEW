@@ -299,6 +299,7 @@
             <div class="map-viewport" id="map-viewport">
                 <div class="map-canvas" id="map-canvas">
                     <img id="map-base" class="map-base" src="">
+                    <svg id="iti-lines" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:50; overflow:visible;"></svg>
                     <div id="markers-layer"></div>
                     <div id="tooltip" class="tooltip">
                         <h2 id="tt-title" style="margin:0 0 8px 0; color:#1a3c34; font-size:1.4rem;">PUNTO</h2>
@@ -333,6 +334,25 @@
         lucide.createIcons();
 
         var library = { active_map_id: null, map_markers: [], available_maps: [] };
+
+        function drawItineraryLines(waypoints) {
+            const svg = document.getElementById('iti-lines');
+            svg.innerHTML = '';
+            if(!waypoints || waypoints.length < 2) return;
+            
+            let pointsHtml = '';
+            for(let i=0; i<waypoints.length - 1; i++) {
+                const m1 = library.map_markers.find(m => m.id == waypoints[i]);
+                const m2 = library.map_markers.find(m => m.id == waypoints[i+1]);
+                if(m1 && m2) {
+                    // Draw a line. We also add a shadow line for better visibility
+                    svg.innerHTML += `
+                        <line x1="${m1.x}%" y1="${m1.y}%" x2="${m2.x}%" y2="${m2.y}%" stroke="black" stroke-width="6" opacity="0.5" />
+                        <line x1="${m1.x}%" y1="${m1.y}%" x2="${m2.x}%" y2="${m2.y}%" stroke="var(--accent)" stroke-width="4" stroke-dasharray="8 8" class="iti-path-line" />
+                    `;
+                }
+            }
+        }
 
         function renderMap() {
             var mActive = (library.available_maps || []).find(m => m.id === library.active_map_id);
@@ -468,13 +488,21 @@
         let slideIdx = 0;
 
         function openFiche(ficheId) {
-            // Cerca l'item in tutta la libreria
+            // Cerca l'item in tutta la libreria e in Visit Namibia
             let found = null;
-            library.categories.forEach(c => {
-                c.subcategories.forEach(s => {
-                    const it = s.items.find(i => i.id == ficheId);
-                    if(it) found = it;
-                });
+            [library, visitNamibia].forEach(db => {
+                if(db && db.categories) {
+                    db.categories.forEach(c => {
+                        if(c.subcategories) {
+                            c.subcategories.forEach(s => {
+                                if(s.items) {
+                                    const it = s.items.find(i => i.id == ficheId);
+                                    if(it) found = it;
+                                }
+                            });
+                        }
+                    });
+                }
             });
 
             if(!found) { alert("Scheda non trovata nella libreria."); return; }
@@ -576,6 +604,7 @@
                     const params = new URLSearchParams(window.location.search);
                     const mapId = params.get('mapId');
                     const markerId = params.get('markerId');
+                    const itiIdxStr = params.get('itiIdx');
                     
                     if(mapId) {
                         library.active_map_id = parseInt(mapId);
@@ -583,7 +612,22 @@
                     
                     renderMap();
 
-                    if(markerId) {
+                    if(itiIdxStr !== null) {
+                        window.PARKS_DB.get('parks_itineraries', [], function(itiData) {
+                            var iti = itiData[parseInt(itiIdxStr)];
+                            if (iti && iti.waypoints && iti.waypoints.length > 0) {
+                                drawItineraryLines(iti.waypoints);
+                                setTimeout(() => {
+                                    const firstId = iti.waypoints[0];
+                                    const markerEl = document.querySelector(`.marker-wrapper[data-id="${firstId}"]`);
+                                    if(markerEl) {
+                                        markerEl.style.animation = 'pulse 2s infinite';
+                                        markerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }
+                                }, 500);
+                            }
+                        });
+                    } else if(markerId) {
                         setTimeout(() => {
                             const markerEl = document.querySelector(`.marker-wrapper[data-id="${markerId}"]`);
                             if(markerEl) {
@@ -598,6 +642,12 @@
         });
     </script>
     <style>
+        .iti-path-line {
+            animation: dash 20s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -1000; }
+        }
         @keyframes pulse {
             0% { transform: scale(1) translate(-50%, -100%); filter: drop-shadow(0 0 0 var(--accent)); }
             50% { transform: scale(1.3) translate(-40%, -80%); filter: drop-shadow(0 0 30px var(--accent)); }

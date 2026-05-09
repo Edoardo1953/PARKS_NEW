@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETOSHA | Itinerario sulla Mappa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../shared/db.js?v=1.3"></script>
+    <script src="../shared/app.js?v=1.3"></script>
+    <style>
+        :root { 
+            --primary: #2d7a4d; 
+            --accent: #ffab40; 
+            --dark-bg: #0d1e1a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --sidebar-width: 300px;
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Outfit', sans-serif; background: var(--dark-bg); color: white;
+            overflow: hidden;
+        }
+
+        .layout { display: flex; height: 100vh; width: 100vw; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            width: 260px;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+        .sidebar-logo img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .sidebar-menu li {
+            padding: 15px 20px;
+            margin-bottom: 8px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 600;
+            transition: 0.3s;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .sidebar-menu li:hover, .sidebar-menu li.active {
+            background: var(--glass);
+            color: var(--accent);
+        }
+
+        .sidebar-menu li.active {
+            background: rgba(255, 171, 64, 0.1);
+            border: 1px solid rgba(255, 171, 64, 0.2);
+        }
+
+        .sidebar-menu li i { width: 20px; }
+
+        .logout-btn {
+            margin-top: auto;
+            background: rgba(255, 82, 82, 0.1);
+            color: #ff5252;
+            border: 1px solid rgba(255, 82, 82, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 700;
+            transition: 0.3s;
+        }
+        .logout-btn:hover { background: #ff5252; color: white; }
+
+        /* MAIN CONTENT - MAP */
+        .main-content {
+            flex-grow: 1;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header { 
+            padding: 1rem 2rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: rgba(0,0,0,0.8); 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            z-index: 50; 
+        }
+
+        .map-viewport { 
+            flex-grow: 1;
+            width: 100%; 
+            position: relative;
+            min-height: 0;
+        }
+
+        /* Leaflet ha bisogno di dimensioni assolute per renderizzare correttamente */
+        #iti-map { 
+            position: absolute;
+            inset: 0;
+            z-index: 10; 
+            background: #1a2e28;
+        }
+        
+        .leaflet-container { font-family: 'Outfit', sans-serif; }
+        
+        .custom-iti-marker {
+            background: none;
+            border: none;
+        }
+        .marker-icon-container {
+            width: 40px; height: 40px; 
+            background: var(--accent); 
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            border: 3px solid white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            color: #000;
+            font-weight: 900;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .marker-icon-container:hover {
+            transform: scale(1.1);
+        }
+
+        .tooltip { 
+            position: absolute; 
+            background: white; 
+            color: black; 
+            padding: 18px; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            width: 240px; 
+            display: none; 
+            transform: translate(-50%, -140%); 
+            z-index: 2000; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6); 
+            border-bottom: 6px solid var(--accent); 
+        }
+        .tooltip::after { 
+            content: ''; 
+            position: absolute; 
+            bottom: -12px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            border-left: 12px solid transparent; 
+            border-right: 12px solid transparent; 
+            border-top: 12px solid white; 
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 80px; padding: 30px 10px; }
+            .sidebar-menu li span, .sidebar-logo, .logout-btn span { display: none; }
+            .sidebar-menu li { justify-content: center; padding: 15px; }
+            .map-base { height: 75vh; }
+        }
+
+        /* FICHE OVERLAY */
+        #fiche-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--dark-bg);
+            z-index: 5000;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .fiche-content {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .close-fiche {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 5001;
+            transition: 0.3s;
+        }
+        .close-fiche:hover { background: #ff5252; border-color: #ff5252; transform: rotate(90deg); }
+
+        .fiche-header { 
+            height: 450px; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            position: relative; 
+            background: #000; 
+            margin-bottom: 2rem; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        .fiche-header img { width: 100%; height: 100%; object-fit: contain; }
+        
+        .slide-btn { 
+            position: absolute; top:50%; transform:translateY(-50%); 
+            background: var(--accent); color: #000; border:none; 
+            width: 44px; height: 44px; cursor:pointer; border-radius:50%; 
+            z-index: 10; display: flex; align-items: center; justify-content: center; 
+            font-weight: 900; box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+        }
+
+        #fiche-stats { 
+            background: rgba(255,255,255,0.05); 
+            padding: 20px 30px; 
+            border-radius: 15px; 
+            border: 1px solid rgba(255,255,255,0.05); 
+            min-width: 300px;
+            flex-shrink: 0;
+        }
+        #stats-list { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        #stats-list p { margin: 0; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
+        #stats-list p:last-child { border-bottom: none; padding-bottom: 0; }
+        #stats-list span { text-align: right; font-weight: 600; opacity: 0.9; }
+        b, strong { font-weight: 900; color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="../shared/parks_logo_combined_white.svg" alt="PARKS">
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li onclick="window.location.href='homepage.html'">
+                    <i data-lucide="home"></i> <span>Home</span>
+                </li>
+                <li class="active" onclick="window.location.href='map.html'">
+                    <i data-lucide="map"></i> <span>Mappa Interattiva</span>
+                </li>
+                <li onclick="window.location.href='itineraries.html'">
+                    <i data-lucide="milestone"></i> <span>Itinerari</span>
+                </li>
+                <li onclick="window.location.href='alerts.html'">
+                    <i data-lucide="bell"></i> <span>Inserisci un ALERT</span>
+                </li>
+                <li onclick="window.location.href='library.html'">
+                    <i data-lucide="book-open"></i> <span>Libreria</span>
+                </li>
+                <li onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
+                <li onclick="window.location.href='library.html?view=mustsee'">
+                    <i data-lucide="star"></i> <span>Must See</span>
+                </li>
+                <li onclick="window.location.href='kids_corner.html'">
+                    <i data-lucide="baby"></i> <span>Kid's Corner</span>
+                </li>
+                <li onclick="window.location.href='memory2/index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
+            </ul>
+
+            <button class="logout-btn" onclick="logout()">
+                <i data-lucide="log-out"></i> <span>Logout</span>
+            </button>
+        </aside>
+
+        <main class="main-content">
+            <!-- Top bar compatta: titolo itinerario + pulsante torna -->
+            <header style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem 1.5rem;">
+                <button onclick="window.history.back()" style="background:rgba(255,171,64,0.15); border:1px solid rgba(255,171,64,0.3); color:var(--accent); padding:8px 16px; border-radius:30px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:12px; transition:0.2s;" onmouseover="this.style.background='rgba(255,171,64,0.3)'" onmouseout="this.style.background='rgba(255,171,64,0.15)'">
+                    <i data-lucide="arrow-left" style="width:16px;"></i> TUTTI GLI ITINERARI
+                </button>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <div id="route-title" style="font-size:1rem; font-weight:900; color:var(--accent); letter-spacing:3px; text-transform:uppercase;">CARICAMENTO...</div>
+                    <div id="route-location" style="font-size:0.65rem; font-weight:700; opacity:0.4; letter-spacing:2px; text-transform:uppercase;"></div>
+                </div>
+                <div id="route-info-inline" style="display:none; flex-direction:row; gap:20px; align-items:center;">
+                    <div style="text-align:center;">
+                        <div id="route-dist" style="font-size:1rem; font-weight:900; color:var(--accent);">—</div>
+                        <div style="font-size:0.6rem; opacity:0.5; letter-spacing:1px;">KM</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div id="route-time" style="font-size:1rem; font-weight:900; color:#4caf50;">—</div>
+                        <div style="font-size:0.6rem; opacity:0.5; letter-spacing:1px;">TEMPO</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div id="route-stops" style="font-size:1rem; font-weight:900; color:white;">—</div>
+                        <div style="font-size:0.6rem; opacity:0.5; letter-spacing:1px;">TAPPE</div>
+                    </div>
+                </div>
+                <div style="width:160px;"></div><!-- spacer per centrare il titolo -->
+            </header>
+
+            <div class="map-viewport" id="map-viewport">
+                <div id="iti-map"></div>
+                
+                <!-- Loading spinner (centrato sulla mappa) -->
+                <div id="route-loading">
+                    <div class="spinner"></div>
+                    CALCOLO PERCORSO...
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- OVERLAY SCHEDA ANIMALE -->
+    <div id="fiche-overlay">
+        <button class="close-fiche" onclick="closeFiche()"><i data-lucide="x"></i></button>
+        <div class="fiche-content">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 20px; flex-wrap: wrap;">
+                <h1 id="f-title" style="color:var(--accent); font-size:3.5rem; margin:0; font-weight:900; text-transform:uppercase; word-break: break-word; flex: 1; min-width: 250px;">TITOLO</h1>
+                <div id="fiche-stats">
+                    <h4 style="color:var(--accent); margin-top:0; margin-bottom:15px; letter-spacing:2px; font-weight:900; text-transform:uppercase; font-size:0.9rem;">Scheda Tecnica</h4>
+                    <div id="stats-list"></div>
+                </div>
+            </div>
+            <div class="fiche-header">
+                <img id="f-img" src="">
+                <button class="slide-btn" style="left:20px;" onclick="prevSlide()">‹</button>
+                <button class="slide-btn" style="right:20px;" onclick="nextSlide()">›</button>
+            </div>
+            <div id="f-desc" style="font-size:1.3rem; line-height:1.7; opacity:0.9; margin-bottom: 3rem; white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        var library = { categories: [], available_maps: [] };
+        var visitNamibia = { categories: [] };
+        var leafMap = null;
+
+        function handleWaypointClick(ficheId, wpTitle) {
+            if(ficheId) {
+                openFiche(ficheId);
+            } else {
+                alert(wpTitle);
+            }
+        }
+
+        let activeItem = null;
+        let itemImages = [];
+        let slideIdx = 0;
+
+        function openFiche(ficheId) {
+            // Cerca l'item in tutta la libreria e in Visit Namibia
+            let found = null;
+            [library, visitNamibia].forEach(db => {
+                if(db && db.categories) {
+                    db.categories.forEach(c => {
+                        if(c.subcategories) {
+                            c.subcategories.forEach(s => {
+                                if(s.items) {
+                                    const it = s.items.find(i => i.id == ficheId);
+                                    if(it) found = it;
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            if(!found) { alert("Scheda non trovata nella libreria."); return; }
+            
+            activeItem = found;
+            itemImages = (activeItem.photos || []).filter(p => {
+                return !((typeof p === 'object' && p.type === 'application/pdf') || (typeof p === 'string' && p.startsWith('data:application/pdf')));
+            }).map(p => typeof p === 'object' ? p.url : p);
+
+            slideIdx = 0;
+            document.getElementById('f-title').innerText = activeItem.name;
+            document.getElementById('f-desc').innerText = activeItem.description || "";
+            document.getElementById('fiche-stats').style.display = 'block';
+            
+            // Ripristina dimensioni originali per SCHEDA ANIMALE
+            document.querySelector('.fiche-content').style.maxWidth = '1000px';
+            document.querySelector('.fiche-header').style.height = '450px';
+            document.querySelector('.fiche-header').style.background = '#000';
+            document.querySelector('.fiche-header').style.border = '1px solid rgba(255,255,255,0.1)';
+            document.querySelector('.fiche-header img').style.filter = 'none';
+            document.getElementById('f-title').style.fontSize = '3.5rem';
+            document.getElementById('f-title').style.textAlign = 'left';
+            document.getElementById('f-desc').style.textAlign = 'left';
+            document.querySelectorAll('.slide-btn').forEach(b => b.style.display = 'flex');
+
+            updateSlider();
+            renderStats();
+            
+            document.getElementById('fiche-overlay').style.display = 'flex';
+            lucide.createIcons();
+        }
+
+        function updateSlider() {
+            document.getElementById('f-img').src = itemImages[slideIdx] || "";
+            document.querySelector('.fiche-header').style.display = (itemImages.length > 0) ? 'block' : 'none';
+        }
+
+        function nextSlide() { if(itemImages.length > 0) { slideIdx = (slideIdx + 1) % itemImages.length; updateSlider(); } }
+        function prevSlide() { if(itemImages.length > 0) { slideIdx = (slideIdx - 1 + itemImages.length) % itemImages.length; updateSlider(); } }
+
+        function renderStats() {
+            const f = activeItem.facts || {};
+            
+            function fmt(val) {
+                if (!val || val === '-') return '-';
+                return String(val).trim()
+                    .replace(/([\d])([a-zA-Z])/g, '$1 $2')
+                    .replace(/\b(\d{4,})\b/g, m => m.replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+            }
+
+            document.getElementById('stats-list').innerHTML = `
+                <p><b>${f.label1 || 'Peso'}</b> <span>${fmt(f.weight)}</span></p>
+                <p><b>${f.label2 || 'Dimens.'}</b> <span>${fmt(f.size)}</span></p>
+                <p><b>${f.label3 || 'Longev.'}</b> <span>${fmt(f.life)}</span></p>
+                ${f.speed ? `<p><b>Velocità</b> <span>${fmt(f.speed)}</span></p>` : ''}
+            `;
+        }
+
+        function closeFiche() {
+            document.getElementById('fiche-overlay').style.display = 'none';
+        }
+
+        function showTooltip(e, title) { 
+            e.stopPropagation(); 
+            var tt = document.getElementById('tooltip'); 
+            document.getElementById('tt-title').innerText = title.toUpperCase(); 
+            var tt = document.getElementById('tooltip');
+            if (tt) {
+                document.getElementById('tt-title').innerText = title.toUpperCase(); 
+                tt.style.left = e.target.style.left; 
+                tt.style.top = e.target.style.top; 
+                tt.style.display = 'block'; 
+            }
+        }
+
+        document.getElementById('map-viewport').onclick = function() { 
+            var tt = document.getElementById('tooltip');
+            if(tt) tt.style.display = 'none'; 
+        }
+
+        function logout() {
+            window.PARKS_APP.setSession({ loggedIn: false }, function() {
+                window.location.href = 'index.html';
+            });
+        }
+
+        window.PARKS_APP.init(() => { 
+            window.PARKS_APP.getSession(function(session) {
+                if (!session || !session.loggedIn) {
+                    window.location.href = 'index.html';
+                }
+            });
+
+            const params = new URLSearchParams(window.location.search);
+            const itiIdxStr = params.get('itiIdx');
+            
+            if(itiIdxStr !== null) {
+                // 1. Carica subito l'itinerario (Priorità Alta)
+                window.PARKS_DB.get('parks_itineraries', [], function(itiData) {
+                    // Firebase può restituire array come oggetti {"0":{...}} → normalizziamo
+                    if (itiData && !Array.isArray(itiData)) {
+                        itiData = Object.values(itiData);
+                    }
+                    var iti = itiData[parseInt(itiIdxStr)];
+                    // Normalizziamo anche i waypoints annidati
+                    if (iti && iti.waypoints && !Array.isArray(iti.waypoints)) {
+                        iti.waypoints = Object.values(iti.waypoints);
+                    }
+                    if (iti && iti.waypoints && iti.waypoints.length > 0) {
+                        // Update UI
+                        document.getElementById('route-title').textContent = iti.title || 'Itinerario';
+                        document.getElementById('route-location').textContent = iti.location || '';
+
+                        // Inizializza Mappa
+                        leafMap = L.map('iti-map').setView([-22.56, 17.06], 6);
+                        setTimeout(() => { if(leafMap) leafMap.invalidateSize(); }, 400);
+                    } else {
+                        document.getElementById('route-title').textContent = "ERRORE CARICAMENTO";
+                        document.getElementById('route-title').style.color = "#ff5252";
+                        alert("Itinerario non trovato. Verifica che i dati siano stati salvati correttamente nell'Admin.");
+                        window.location.href = 'itineraries.html';
+                        return;
+                    }
+
+                        // 2. Carica il resto in background (Priorità Bassa)
+                        window.PARKS_DB.get('parks_visit_namibia_v1', {categories:[]}, function(vData) { visitNamibia = vData; });
+                        window.PARKS_DB.get('parks_library_v2', {categories:[]}, function(data) { 
+                            if(data) {
+                                library = data; 
+                                if(!library.available_maps) library.available_maps = [];
+                            }
+                        });
+
+                                // Road tiles (OpenStreetMap) — shows cities, roads, labels — DEFAULT
+                                var roadLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; OpenStreetMap contributors',
+                                    maxZoom: 19
+                                });
+                                // Satellite tiles (Esri) — no labels but great imagery
+                                var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                                    attribution: 'Tiles &copy; Esri',
+                                    maxZoom: 19
+                                });
+                                // Satellite + labels hybrid
+                                var hybridLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                                    attribution: 'Labels &copy; Esri',
+                                    maxZoom: 19,
+                                    pane: 'overlayPane'
+                                });
+                                
+                                // Start with road map (shows cities/labels)
+                                roadLayer.addTo(leafMap);
+                                
+                                // Layer control
+                                L.control.layers({
+                                    '🗺️ Mappa Stradale (Città)': roadLayer,
+                                    '🛰️ Satellite': satelliteLayer,
+                                }, {
+                                    '🏷️ Etichette su Satellite': hybridLabels
+                                }, { position: 'topright' }).addTo(leafMap);
+
+                                var latlngs = [];
+                                iti.waypoints.forEach((wp, idx) => {
+                                    latlngs.push([wp.lat, wp.lng]);
+                                    var color = idx === 0 ? "#4caf50" : (idx === iti.waypoints.length - 1 ? "#ff5252" : "#ffab40");
+                                    var label = idx === 0 ? "PARTENZA" : (idx === iti.waypoints.length - 1 ? "ARRIVO" : "TAPPA");
+                                    var num = idx + 1;
+                                    var emoji = idx === 0 ? "🟢" : (idx === iti.waypoints.length - 1 ? "🔴" : "🟡");
+                                    
+                                    var icon = L.divIcon({
+                                        className: 'custom-iti-marker',
+                                        html: `<div class="marker-icon-container" style="background:${color}; cursor:${wp.ficheId ? 'pointer' : 'default'};" onclick="handleWaypointClick('${wp.ficheId || ''}', '${(wp.title||'').replace(/'/g,"\\'")}')">
+                                            <span style="font-size:14px; font-weight:900; color:${idx===0?'#000':'#000'};">${num}</span>
+                                        </div>`,
+                                        iconSize: [44, 44],
+                                        iconAnchor: [22, 22]
+                                    });
+
+                                    var m = L.marker([wp.lat, wp.lng], {icon: icon}).addTo(leafMap);
+                                    var tooltipContent = `<b style="font-size:12px;">${emoji} ${label} ${num}</b><br><span style="font-size:11px; color:#555;">${wp.title || ''}</span>${wp.ficheId ? '<br><span style="font-size:10px; color:#2d7a4d; font-weight:800;">📋 Clicca per la scheda</span>' : ''}`;
+                                    m.bindTooltip(tooltipContent, {direction: 'top', offset: [0, -22], className: 'iti-tooltip'});
+                                });
+
+                                // Fit bounds with straight line first
+                                var bounds = L.latLngBounds(latlngs);
+                                leafMap.fitBounds(bounds, {padding: [80, 80]});
+
+                                // Fetch OSRM road routing
+                                if(latlngs.length > 1) {
+                                    fetchOSRMRoute(iti.waypoints, function(routeResult) {
+                                        document.getElementById('route-loading').style.display = 'none';
+                                        if(routeResult) {
+                                            // Draw the real road route
+                                            L.geoJSON(routeResult.geometry, {
+                                                style: {
+                                                    color: '#ffab40',
+                                                    weight: 5,
+                                                    opacity: 0.9,
+                                                    lineJoin: 'round',
+                                                    lineCap: 'round'
+                                                }
+                                            }).addTo(leafMap);
+                                            
+                                            // Show route info
+                                            var totalDist = (routeResult.distance / 1000).toFixed(1);
+                                            var totalTime = Math.round(routeResult.duration / 60);
+                                            var hours = Math.floor(totalTime / 60);
+                                            var mins = totalTime % 60;
+                                            var timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                                            
+                                            document.getElementById('route-dist').textContent = totalDist;
+                                            document.getElementById('route-time').textContent = timeStr;
+                                            document.getElementById('route-stops').textContent = iti.waypoints.length;
+                                            document.getElementById('route-info-inline').style.display = 'flex';
+                                        } else {
+                                            // Fallback: dashed straight line
+                                            L.polyline(latlngs, {color: '#ffab40', weight: 4, dashArray: '12, 8', opacity: 0.8}).addTo(leafMap);
+                                            document.getElementById('route-info-inline').style.display = 'none';
+                                        }
+                                    });
+                                }
+                });
+            }
+        });
+
+        // OSRM routing fetch (free, no API key)
+        function fetchOSRMRoute(waypoints, callback) {
+            document.getElementById('route-loading').style.display = 'flex';
+            // OSRM expects: lng,lat;lng,lat;...
+            var coords = waypoints.map(wp => wp.lng + ',' + wp.lat).join(';');
+            var url = 'https://router.project-osrm.org/route/v1/driving/' + coords + '?overview=full&geometries=geojson';
+            
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    if(data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                        callback({
+                            geometry: data.routes[0].geometry,
+                            distance: data.routes[0].distance,
+                            duration: data.routes[0].duration
+                        });
+                    } else {
+                        callback(null);
+                    }
+                })
+                .catch(() => callback(null));
+        }
+    </script>
+    <style>
+
+        #route-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            background: rgba(13,30,26,0.9);
+            padding: 24px 36px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,171,64,0.2);
+            color: white;
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 2px;
+        }
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255,171,64,0.2);
+            border-top-color: #ffab40;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .iti-tooltip {
+            background: white !important;
+            border: none !important;
+            border-radius: 10px !important;
+            padding: 8px 12px !important;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3) !important;
+        }
+        .leaflet-tooltip.iti-tooltip::before { border-top-color: white !important; }
+
+        #route-header {
+            position: absolute;
+            top: 14px;
+            left: 80px;
+            right: 160px;
+            z-index: 1000;
+            background: rgba(13,30,26,0.88);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #route-title {
+            font-size: 1rem;
+            font-weight: 900;
+            color: #ffab40;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        #route-location {
+            font-size: 0.7rem;
+            font-weight: 700;
+            opacity: 0.5;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+    </style>
+</body>
+</html>

@@ -7,8 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/logo.css">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="../shared/db.js"></script>
-    <script src="../shared/app.js"></script>
+    <script src="../shared/db.js?v=1.3"></script>
+    <script src="../shared/app.js?v=1.3"></script>
     <style>
         :root { --primary: #2d7a4d; --accent: #ffab40; --dark-bg: #0d1e1a; --glass: rgba(255, 255, 255, 0.05); }
         body { margin: 0; font-family: 'Outfit', sans-serif; background: var(--dark-bg); color: white; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -157,7 +157,7 @@
             window.PARKS_APP.init(function() {
                 // Controllo Utenti Sistema
                 window.PARKS_DB.get('parks_users', [], function(sysUsers) {
-                    var u = sysUsers.find(x => x.email === emailVal || (x.name === emailVal.toUpperCase() && x.password === pass));
+                    var u = sysUsers.find(x => x.email === emailVal || (x.name && x.name.toUpperCase() === emailVal.toUpperCase()));
                     if(u && u.password === pass) {
                         // Check Expiry (except Super Admin)
                         if(u.role !== 'SUPER_ADMIN' && u.expiry) {

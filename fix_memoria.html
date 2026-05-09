@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>PARKS | Ripristino Memoria</title>
+    <style>
+        body { font-family: sans-serif; background: #0d1e1a; color: white; text-align: center; padding: 50px; }
+        .box { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; display: inline-block; }
+        button { background: #ffab40; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .status { margin-top: 20px; color: #4CAF50; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>🛠️ Ripristino Emergenza Database</h1>
+        <p>Questo strumento pulirà la memoria del browser bloccata dai vecchi dati (270MB).<br>I tuoi itinerari salvati sul Cloud rimarranno al sicuro.</p>
+        <button onclick="fix()">PULISCI MEMORIA E RIPRISTINA</button>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        function fix() {
+            try {
+                // Rimuove i blocchi pesanti che causano il crash
+                localStorage.removeItem('parks_shadow_v1');
+                localStorage.removeItem('parks_library_v2');
+                
+                // Opzionale: pulizia IndexedDB
+                indexedDB.deleteDatabase("ParksProjectDB");
+                indexedDB.deleteDatabase("ParksLocalDB");
+                
+                document.getElementById('status').innerHTML = "✅ MEMORIA PULITA!<br>Ora chiudi questa pagina e ricarica l'ADMIN (Ctrl+F5).";
+                alert("Pulizia completata. Ricarica l'Admin ora.");
+            } catch(e) {
+                alert("Errore durante la pulizia: " + e);
+            }
+        }
+    </script>
+</body>
+</html>

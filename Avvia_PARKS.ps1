@@ -9,7 +9,15 @@ $root = $PSScriptRoot
 
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$port/")
-$listener.Start()
+try {
+    $listener.Start()
+} catch {
+    Write-Host "❌ ERRORE: Impossibile avviare il server sulla porta $port." -ForegroundColor Red
+    Write-Host "Probabilmente la porta è già occupata o servono permessi di amministratore."
+    Write-Host "Messaggio: $($_.Exception.Message)"
+    Read-Host "Premi INVIO per uscire"
+    exit
+}
 
 Write-Host ""
 Write-Host "  *** PARKS App - Server Avviato! ***" -ForegroundColor Cyan

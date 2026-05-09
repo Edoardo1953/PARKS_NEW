@@ -1,0 +1,77 @@
+:root {
+    --primary-green: #2d7a4d;
+    --danger: #ff5252;
+    --accent: #ffab40;
+    --dark-bg: #0d1e1a;
+    --sidebar-w: 220px;
+}
+
+body {
+    background: var(--dark-bg);
+    color: white;
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    overflow: hidden;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 700;
+    opacity: 0.6;
+    transition: 0.2s;
+}
+
+.nav-btn.active {
+    background: var(--primary-green);
+    opacity: 1;
+}
+
+.btn-editor {
+    background: var(--primary-green);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.btn-save { background: var(--accent); color: #000; }
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+}
+
+.f-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 12px;
+    color: white;
+    font-size: 14px;
+}
+
+.label {
+    font-size: 10px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+    display: block;
+}
