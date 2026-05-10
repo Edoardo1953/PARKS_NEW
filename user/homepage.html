@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="../shared/db.js?v=1.4"></script>
     <script src="../shared/app.js?v=1.4"></script>
+    <link rel="stylesheet" href="../shared/mobile_responsive.css">
     <style>
         :root { 
             --primary: #2d7a4d; 
@@ -342,16 +343,42 @@
         }
         .play-btn i { width: 16px; height: 16px; }
 
-        /* MOBILE ARADAPTATION */
-        @media (max-width: 1024px) {
-            .sidebar { width: 80px; padding: 30px 10px; }
-            .sidebar-menu li span, .sidebar-logo, .logout-btn span { display: none; }
-            .sidebar-menu li { justify-content: center; padding: 15px; }
-            .hero h1 { font-size: 3.5rem; }
-            .grid-sections { grid-template-columns: 1fr; }
-            .language-selector { top: 20px; right: 20px; }
-            .lang-icon { width: 30px; height: 30px; }
+        /* QUICK GALLERY */
+        .quick-gallery-container {
+            margin-bottom: 40px;
+            animation: fadeInUp 1.2s ease-out;
         }
+        .quick-gallery-container h3 {
+            color: var(--accent);
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0.8;
+        }
+        .quick-gallery {
+            display: flex;
+            gap: 15px;
+        }
+        .quick-gallery img {
+            width: 200px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .quick-gallery img:hover {
+            transform: scale(1.05) translateY(-5px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 30px rgba(255, 171, 64, 0.2);
+        }
+
+        /* MOBILE ADAPTATION - Handled by shared/mobile_responsive.css */
     </style>
 </head>
 <body>
@@ -404,25 +431,34 @@
                 </div>
             </div>
             <div class="hero">
+                <!-- MINI METEO BAR HORIZONTAL AT TOP -->
+                <div id="meteo-card" class="section-card" onclick="window.location.href='weather_original.html'" style="display: flex; align-items: center; gap: 15px; padding: 8px 20px; width: fit-content; margin-bottom: 25px; cursor: pointer; background: rgba(255,171,64,0.15); border: 1px solid var(--accent); border-radius: 50px; position: relative; overflow: hidden; backdrop-filter: blur(5px);">
+                    <div id="meteo-bg" style="position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; transition: opacity 1s ease-in-out; opacity:0.2;"></div>
+                    <div style="position:relative; z-index:1; display:flex; align-items:center; gap:12px;">
+                        <i data-lucide="sun" style="width:20px; height:20px; color:var(--accent); filter: drop-shadow(0 0 5px var(--accent));"></i>
+                        <h3 style="font-size:12px; margin:0; letter-spacing:2px; font-weight:900; text-transform:uppercase;">METEO</h3>
+                        <div style="width:1px; height:15px; background:rgba(255,255,255,0.2);"></div>
+                        <div style="font-size:10px; opacity:0.8; font-weight:700; letter-spacing:1px;">NAMIBIA LIVE</div>
+                    </div>
+                </div>
+
                 <h1 id="home-title" style="color:var(--accent); font-weight:900; letter-spacing:-2px;">ETOSHA</h1>
-                <p class="tagline" id="home-tagline" style="font-weight:300; letter-spacing:4px; opacity:0.6; text-transform:uppercase;">National Park · Namibia</p>
+                <p class="tagline" id="home-tagline" style="font-weight:300; letter-spacing:4px; opacity:0.6; text-transform:uppercase; margin-bottom: 30px;">National Park · Namibia</p>
 
-                <div style="display: flex; gap: 20px; align-items: stretch; margin-bottom: 30px;">
-                    <!-- MINI METEO CARD WITH SLIDESHOW BACKGROUND -->
-                    <div id="meteo-card" class="section-card" onclick="window.location.href='weather_original.html'" style="width: 160px; flex-shrink: 0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; cursor:pointer; background: rgba(255,171,64,0.15); border: 2px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.3); position:relative; overflow:hidden;">
-                        <div id="meteo-bg" style="position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; transition: opacity 1s ease-in-out; opacity:0.4;"></div>
-                        <div style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center;">
-                            <i data-lucide="sun" style="width:54px; height:54px; color:var(--accent); margin-bottom:12px; filter: drop-shadow(0 0 10px var(--accent));"></i>
-                            <h3 style="font-size:20px; margin:0; letter-spacing:3px; font-weight:900;">METEO</h3>
-                            <div style="font-size:10px; opacity:0.8; margin-top:6px; font-weight:700;">NAMIBIA LIVE</div>
-                        </div>
+                <!-- QUICK GALLERY -->
+                <div class="quick-gallery-container">
+                    <h3><i data-lucide="camera"></i> GALLERIA</h3>
+                    <div class="quick-gallery" id="quick-gallery-list">
+                        <!-- Populated by JS -->
+                        <img src="../assets/bg_homepage_1.jpg" alt="Gallery 1" onclick="openSlideshow(this.src)">
+                        <img src="../assets/bg_homepage_3.jpg" alt="Gallery 2" onclick="openSlideshow(this.src)">
                     </div>
+                </div>
 
-                    <div class="description-card" id="home-description">
-                        L'Etosha National Park è una delle riserve naturali più importanti dell'Africa. 
-                        Il suo nome significa "grande luogo bianco", in riferimento all'Etosha Pan, una vastissima depressione salina che copre circa un quarto dell'area del parco. 
-                        Questo ecosistema unico attrae una fauna straordinaria: elefanti, rinoceronti neri, leoni e innumerevoli specie di antilopi si radunano attorno alle pozze d'acqua, offrendo uno degli spettacoli naturali più emozionanti del continente.
-                    </div>
+                <div class="description-card" id="home-description" style="margin-bottom: 40px; max-width: 900px;">
+                    L'Etosha National Park è una delle riserve naturali più importanti dell'Africa. 
+                    Il suo nome significa "grande luogo bianco", in riferimento all'Etosha Pan, una vastissima depressione salina che copre circa un quarto dell'area del parco. 
+                    Questo ecosistema unico attrae una fauna straordinaria: elefanti, rinoceronti neri, leoni e innumerevoli specie di antilopi si radunano attorno alle pozze d'acqua, offrendo uno degli spettacoli naturali più emozionanti del continente.
                 </div>
 
                 <div class="grid-sections">
@@ -574,8 +610,16 @@
         function renderGallery(images) {
             galleryImages = images;
             const container = document.getElementById('gallery-container');
-            if(!container) return;
-            container.innerHTML = images.map(src => `<img src="${src}" alt="Gallery" onclick="openSlideshow(this.src)">`).join('');
+            const quickContainer = document.getElementById('quick-gallery-list');
+            
+            if(container) {
+                container.innerHTML = images.map(src => `<img src="${src}" alt="Gallery" onclick="openSlideshow(this.src)">`).join('');
+            }
+            
+            if(quickContainer && images.length >= 2) {
+                quickContainer.innerHTML = images.slice(0, 2).map(src => `<img src="${src}" alt="Gallery Quick" onclick="openSlideshow(this.src)">`).join('');
+            }
+            
             lucide.createIcons();
             // Inizializza meteo slideshow se non ancora partito
             if(window.meteoStarted) return;

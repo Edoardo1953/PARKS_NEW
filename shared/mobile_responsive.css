@@ -1,0 +1,197 @@
+/* 📱 PARKS_NEW - Mobile & Premium Responsiveness System */
+
+:root {
+    --mobile-nav-height: 70px;
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 1. SIDEBAR VS MOBILE NAV */
+@media (max-width: 768px) {
+    .layout {
+        flex-direction: column !important;
+    }
+
+    .sidebar {
+        display: none !important; /* Hide sidebar completely on mobile */
+    }
+
+    .main-content {
+        padding: 15px !important;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 20px) !important;
+        height: 100vh !important;
+        overflow-y: auto !important;
+    }
+
+    /* Create the Mobile Nav Bar */
+    .mobile-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: var(--mobile-nav-height);
+        background: rgba(13, 30, 26, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 9999;
+        padding-bottom: var(--safe-area-bottom);
+        justify-content: space-around;
+        align-items: center;
+    }
+
+    .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.5);
+        text-decoration: none;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: 0.3s;
+        gap: 4px;
+        flex: 1;
+    }
+
+    .mobile-nav-item i {
+        width: 22px;
+        height: 22px;
+    }
+
+    .mobile-nav-item.active {
+        color: var(--accent);
+    }
+
+    .mobile-nav-item.active i {
+        filter: drop-shadow(0 0 8px var(--accent));
+    }
+
+    /* Mobile Drawer (Menu completo) */
+    .mobile-drawer {
+        position: fixed;
+        inset: 0;
+        background: rgba(13, 30, 26, 0.98);
+        backdrop-filter: blur(20px);
+        z-index: 10000;
+        display: none; /* Nascosto di default */
+        flex-direction: column;
+        padding: 40px 20px;
+        overflow-y: auto;
+    }
+
+    .mobile-drawer.open {
+        display: flex;
+    }
+
+    .drawer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+    }
+
+    .drawer-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .drawer-item {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        color: white;
+        text-decoration: none;
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        padding: 15px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 15px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .drawer-item.active {
+        background: rgba(255, 171, 64, 0.1);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .drawer-item i {
+        width: 24px;
+        height: 24px;
+    }
+
+    /* UI Adjustments */
+    .hero h1 {
+        font-size: 2.8rem !important;
+        letter-spacing: -1px !important;
+    }
+
+    .hero p.tagline {
+        font-size: 0.9rem !important;
+        letter-spacing: 2px !important;
+        margin-bottom: 25px !important;
+    }
+
+    .quick-gallery-container {
+        margin-bottom: 30px !important;
+    }
+    .quick-gallery img {
+        width: 140px !important;
+        height: 90px !important;
+        border-radius: 12px !important;
+    }
+    .quick-gallery {
+        gap: 10px !important;
+    }
+
+    .description-card {
+        padding: 25px !important;
+        font-size: 1rem !important;
+        max-height: none !important;
+    }
+
+    .grid-sections {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+
+    .section-card {
+        padding: 20px !important;
+    }
+
+    /* Map on Mobile */
+    .map-base {
+        height: 60vh !important;
+    }
+
+    /* Fiche Overlay on Mobile */
+    .fiche-content {
+        padding: 15px !important;
+        margin-top: 60px !important;
+    }
+
+    #f-title {
+        font-size: 2.2rem !important;
+    }
+
+    .fiche-header {
+        height: 300px !important;
+    }
+
+    #fiche-stats {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+}
+
+/* Fallback for browsers without display: flex in CSS yet */
+.mobile-nav { display: none; }

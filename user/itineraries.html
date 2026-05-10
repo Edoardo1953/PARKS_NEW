@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="../shared/db.js?v=1.3"></script>
     <script src="../shared/app.js?v=1.3"></script>
+    <link rel="stylesheet" href="../shared/mobile_responsive.css">
     <style>
         :root { 
             --primary: #2d7a4d; 
@@ -105,8 +106,8 @@
 
         .itinerary-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
             overflow-y: auto;
             padding-bottom: 50px;
         }
@@ -114,61 +115,66 @@
         .iti-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 25px;
-            padding: 30px;
+            border-radius: 20px;
+            padding: 15px;
             cursor: pointer;
             transition: 0.4s;
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 8px;
+            height: auto;
+            min-height: min-content;
         }
         .iti-card:hover {
-            transform: translateY(-10px);
+            transform: translateY(-5px);
             background: rgba(255, 255, 255, 0.06);
             border-color: var(--accent);
         }
 
         .iti-icon {
-            width: 50px;
-            height: 50px;
+            width: 35px;
+            height: 35px;
             background: var(--accent);
             color: #000;
-            border-radius: 15px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 10px;
         }
 
         .iti-name {
-            font-size: 1.8rem;
+            font-size: 1.2rem;
             font-weight: 900;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
+            line-height: 1.1;
+            margin: 5px 0;
         }
 
         .iti-details {
-            font-size: 0.9rem;
-            opacity: 0.6;
-            line-height: 1.6;
+            font-size: 0.85rem;
+            opacity: 0.8;
+            line-height: 1.4;
+            margin-bottom: 10px;
         }
 
         .iti-map-btn {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 10px 15px;
             border-radius: 12px;
             font-weight: 700;
             cursor: pointer;
-            margin-top: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
             transition: 0.3s;
+            font-size: 0.8rem;
+            flex-shrink: 0;
         }
         .iti-map-btn:hover { background: #3eb471; }
 
@@ -274,7 +280,7 @@
                     </div>
                 `;
                 if(iti.image) {
-                    iconHtml = `<div style="width:100%; height:150px; border-radius:15px; margin-bottom:15px; overflow:hidden;"><img src="${iti.image}" style="width:100%; height:100%; object-fit:cover;"></div>`;
+                    iconHtml = `<div style="width:100%; height:100px; border-radius:12px; margin-bottom:8px; overflow:hidden;"><img src="${iti.image}" style="width:100%; height:100%; object-fit:cover;"></div>`;
                 }
 
                 let tappeHtml = '';
