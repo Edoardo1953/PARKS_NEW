@@ -84,7 +84,8 @@
             flex-direction: column;
             position: relative;
             background: radial-gradient(circle at center, #1a3c34, var(--dark-bg));
-            overflow: hidden;
+            overflow-y: auto; /* Permette lo scorrimento */
+            -webkit-overflow-scrolling: touch;
         }
 
         .kids-home {
@@ -288,12 +289,12 @@
 
         /* PUZZLE PLAYING STATE */
         .puzzle-overlay.puzzle-playing #puzzle-image-selector {
-            opacity: 0.3;
-            transform: scale(0.9);
-            filter: blur(2px);
-            pointer-events: none;
-            max-height: 50px;
-            margin-bottom: 10px;
+            opacity: 1;
+            transform: scale(1);
+            filter: none;
+            pointer-events: auto;
+            max-height: 100px;
+            margin-bottom: 20px;
         }
         
         .puzzle-overlay.puzzle-playing #puzzle-title {

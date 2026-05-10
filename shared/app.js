@@ -17,9 +17,14 @@ window.PARKS_APP = {
 
     // Iniezione Navigazione Mobile
     renderMobileNav: function() {
-        if (document.querySelector('.mobile-nav')) return;
+        // 1. Check if we should render (not on desktop, not in admin, not on login)
+        if (window.innerWidth > 768) return;
         
         const fullPath = window.location.pathname;
+        if (fullPath.includes('/admin/') || fullPath.includes('index.html') || fullPath.includes('login.html')) return;
+
+        if (document.querySelector('.mobile-nav')) return;
+        
         const currentPage = fullPath.substring(fullPath.lastIndexOf('/') + 1) || 'homepage.html';
         
         // 1. Barra Inferiore (Quick Links)

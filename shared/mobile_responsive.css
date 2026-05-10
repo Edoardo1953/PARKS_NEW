@@ -191,7 +191,22 @@
         width: 100% !important;
         min-width: 0 !important;
     }
+
+    /* Language Selector & Meteo overlap fix */
+    .hero {
+        padding-top: 30px !important;
+    }
+
+    .language-selector {
+        top: 100px !important; /* Spostato più in basso */
+        right: 15px !important;
+    }
+
+    #meteo-card {
+        margin-top: -15px !important; /* Spostato più in alto */
+        margin-left: -10px !important; /* Spostato più a sinistra */
+    }
 }
 
-/* Fallback for browsers without display: flex in CSS yet */
-.mobile-nav { display: none; }
+/* Fallback for browsers without display: flex in CSS yet, and hiding on desktop */
+.mobile-nav, .mobile-drawer { display: none !important; }
