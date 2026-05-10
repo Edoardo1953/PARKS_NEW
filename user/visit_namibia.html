@@ -9,9 +9,14 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="../shared/db.js?v=1.3"></script>
     <script src="../shared/app.js?v=1.3"></script>
+    <link rel="stylesheet" href="../shared/mobile_responsive.css">
     <style>
         :root { --primary-green: #1a3c34; --darker-green: #0d1e1a; --accent: #ffab40; }
-        body { background-color: var(--darker-green); color: white; height: 100vh; margin: 0; overflow: hidden; font-family: sans-serif; display: flex; flex-direction: column; }
+        body { 
+            background-color: var(--darker-green); color: white; height: 100vh; margin: 0; 
+            /* overflow: hidden; */ /* Permetti lo scroll naturale */
+            font-family: sans-serif; display: flex; flex-direction: column; 
+        }
         
         header { padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.05); }
         .main-container { flex: 1; display: grid; grid-template-columns: 300px 1fr; overflow: hidden; }
@@ -198,25 +203,7 @@
         </main>
     </div>
 
-    <!-- BOTTOM TAB BAR (mobile only) -->
-    <nav class="mobile-tab-bar">
-        <button class="tab-btn active" onclick="navHome()">
-            <i data-lucide="home" style="width:22px;"></i>
-            HOME
-        </button>
-        <button class="tab-btn" onclick="window.location.href='map.html'">
-            <i data-lucide="map" style="width:22px;"></i>
-            MAPPA
-        </button>
-        <button class="tab-btn" onclick="window.location.href='weather_original.html'">
-            <i data-lucide="sun" style="width:22px;"></i>
-            METEO
-        </button>
-        <button class="tab-btn" onclick="logout()">
-            <i data-lucide="log-out" style="width:22px;"></i>
-            ESCI
-        </button>
-    </nav>
+    <!-- BOTTOM TAB BAR rimosso (ora iniettato da app.js) -->
 
     <!-- LIGHTBOX FULLSCREEN -->
     <div id="lightbox">

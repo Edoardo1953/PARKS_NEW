@@ -5,10 +5,21 @@
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Base Hidden State for Desktop */
+.mobile-nav, .mobile-drawer { 
+    display: none !important; 
+}
+
 /* 1. SIDEBAR VS MOBILE NAV */
 @media (max-width: 768px) {
     .layout {
         flex-direction: column !important;
+        height: auto !important; /* Allow layout to grow */
+        min-height: 100vh;
+    }
+
+    body, html {
+        overflow: auto !important; /* Allow browser scrolling on mobile */
     }
 
     .sidebar {
@@ -17,9 +28,11 @@
 
     .main-content {
         padding: 15px !important;
-        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 20px) !important;
-        height: 100vh !important;
-        overflow-y: auto !important;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 30px) !important;
+        min-height: 100vh !important;
+        height: auto !important;
+        overflow-y: visible !important; /* Use browser scroll */
+        background-attachment: scroll !important; /* Better for mobile performance */
     }
 
     /* Create the Mobile Nav Bar */
@@ -207,6 +220,3 @@
         margin-left: -10px !important; /* Spostato più a sinistra */
     }
 }
-
-/* Fallback for browsers without display: flex in CSS yet, and hiding on desktop */
-.mobile-nav, .mobile-drawer { display: none !important; }

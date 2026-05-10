@@ -21,11 +21,20 @@ window.PARKS_APP = {
         if (window.innerWidth > 768) return;
         
         const fullPath = window.location.pathname;
-        if (fullPath.includes('/admin/') || fullPath.includes('index.html') || fullPath.includes('login.html')) return;
+        const fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1);
+
+        // Don't render on login/register or admin pages
+        if (fullPath.includes('/admin/') || 
+            fileName === 'index.html' || 
+            fileName === 'login.html' || 
+            fileName === 'register.html' ||
+            fileName === '') { // Root often defaults to index.html
+            return;
+        }
 
         if (document.querySelector('.mobile-nav')) return;
         
-        const currentPage = fullPath.substring(fullPath.lastIndexOf('/') + 1) || 'homepage.html';
+        const currentPage = fileName || 'homepage.html';
         
         // 1. Barra Inferiore (Quick Links)
         const nav = document.createElement('nav');
@@ -39,12 +48,15 @@ window.PARKS_APP = {
             { id: 'drawer-toggle', icon: 'menu', label: 'Menu', isToggle: true }
         ];
 
-        nav.innerHTML = quickItems.map(item => `
-            <a ${item.isToggle ? 'href="javascript:void(0)" id="mobile-menu-btn"' : `href="${item.id}"`} class="mobile-nav-item ${currentPage.includes(item.id) ? 'active' : ''}">
-                <i data-lucide="${item.icon}"></i>
-                <span>${item.label}</span>
-            </a>
-        `).join('');
+        nav.innerHTML = quickItems.map(item => {
+            const isActive = currentPage.includes(item.id);
+            return `
+                <a ${item.isToggle ? 'href="javascript:void(0)" id="mobile-menu-btn"' : `href="${item.id}"`} class="mobile-nav-item ${isActive ? 'active' : ''}">
+                    <i data-lucide="${item.icon}"></i>
+                    <span>${item.label}</span>
+                </a>
+            `;
+        }).join('');
 
         // 2. Drawer (Menu Completo)
         const drawer = document.createElement('div');
@@ -89,7 +101,7 @@ window.PARKS_APP = {
             const btn = document.getElementById('mobile-menu-btn');
             if(btn) btn.onclick = this.toggleDrawer;
             if (window.lucide) window.lucide.createIcons();
-        }, 100);
+        }, 200);
     },
 
     toggleDrawer: function() {
