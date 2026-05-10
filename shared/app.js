@@ -17,18 +17,17 @@ window.PARKS_APP = {
 
     // Iniezione Navigazione Mobile
     renderMobileNav: function() {
-        // 1. Check if we should render (not on desktop, not in admin, not on login)
-        if (window.innerWidth > 768) return;
-        
+        // 1. Check if we should render (not in admin, not on login)
         const fullPath = window.location.pathname;
         const fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1);
 
         // Don't render on login/register or admin pages
+        // We allow '' only if we are sure it's not the landing page, 
+        // but since index.html is the landing, we exclude '' to be safe if it's the root.
         if (fullPath.includes('/admin/') || 
             fileName === 'index.html' || 
             fileName === 'login.html' || 
-            fileName === 'register.html' ||
-            fileName === '') { // Root often defaults to index.html
+            fileName === 'register.html') {
             return;
         }
 
@@ -51,7 +50,7 @@ window.PARKS_APP = {
         nav.innerHTML = quickItems.map(item => {
             const isActive = currentPage.includes(item.id);
             return `
-                <a ${item.isToggle ? 'href="javascript:void(0)" id="mobile-menu-btn"' : `href="${item.id}"`} class="mobile-nav-item ${isActive ? 'active' : ''}">
+                <a ${item.isToggle ? 'href="javascript:void(0)" onclick="window.PARKS_APP.toggleDrawer()"' : `href="${item.id}"`} class="mobile-nav-item ${isActive ? 'active' : ''}">
                     <i data-lucide="${item.icon}"></i>
                     <span>${item.label}</span>
                 </a>
@@ -96,12 +95,10 @@ window.PARKS_APP = {
         document.body.appendChild(nav);
         document.body.appendChild(drawer);
 
-        // Event Listener per il toggle
+        // Icon creation
         setTimeout(() => {
-            const btn = document.getElementById('mobile-menu-btn');
-            if(btn) btn.onclick = this.toggleDrawer;
             if (window.lucide) window.lucide.createIcons();
-        }, 200);
+        }, 100);
     },
 
     toggleDrawer: function() {

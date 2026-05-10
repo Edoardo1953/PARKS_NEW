@@ -159,6 +159,36 @@
             max-width: 90vw;
         }
 
+        @media (max-width: 768px) {
+            .toolbar {
+                bottom: 80px; /* Alza la toolbar per non sovrapporsi alla barra di navigazione mobile */
+                padding: 10px 15px;
+                gap: 15px;
+                border-radius: 20px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .icon-selector {
+                padding: 5px 10px;
+            }
+            .form-group {
+                border-left: none;
+                border-top: 1px solid rgba(255,255,255,0.1);
+                padding-left: 0;
+                padding-top: 10px;
+                flex-direction: column;
+            }
+            .alert-input {
+                width: 100%;
+            }
+            .btn-save {
+                font-size: 0.8rem;
+                padding: 10px 20px;
+                width: 100%;
+                border-radius: 15px;
+            }
+        }
+
         .icon-selector {
             display: flex;
             gap: 15px;

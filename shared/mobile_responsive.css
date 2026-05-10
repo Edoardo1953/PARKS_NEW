@@ -7,7 +7,7 @@
 
 /* Base Hidden State for Desktop */
 .mobile-nav, .mobile-drawer { 
-    display: none !important; 
+    display: none; 
 }
 
 /* 1. SIDEBAR VS MOBILE NAV */
@@ -67,6 +67,7 @@
         transition: 0.3s;
         gap: 4px;
         flex: 1;
+        cursor: pointer;
     }
 
     .mobile-nav-item i {
@@ -96,7 +97,7 @@
     }
 
     .mobile-drawer.open {
-        display: flex;
+        display: flex !important;
     }
 
     .drawer-header {
