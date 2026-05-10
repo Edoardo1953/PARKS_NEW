@@ -449,6 +449,22 @@
             .puzzle-tile { width: 85px !important; height: 85px !important; }
             .puzzle-sidebar { margin-left: 0 !important; width: 100% !important; margin-top: 20px; }
             .puzzle-overlay.puzzle-playing .puzzle-grid { transform: scale(1) !important; }
+
+            /* Safari Quiz Mobile Fixes */
+            #quiz-overlay { overflow-x: hidden !important; padding: 15px !important; }
+            #quiz-levels-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+            #quiz-container { padding: 20px !important; width: 100% !important; box-sizing: border-box; }
+            #quiz-options { grid-template-columns: 1fr !important; gap: 10px !important; width: 100% !important; }
+            #quiz-scoreboard { min-width: 0 !important; width: 100% !important; box-sizing: border-box; padding: 15px !important; }
+            #quiz-scoreboard-body { flex-wrap: wrap; justify-content: center !important; gap: 10px !important; }
+            #quiz-image-container { width: 100% !important; max-width: 300px; height: auto !important; aspect-ratio: 3/2; }
+            #quiz-result-image { width: 150px !important; height: 150px !important; }
+            #quiz-result-title { font-size: 2rem !important; }
+            #quiz-question { font-size: 1.3rem !important; margin-bottom: 25px !important; }
+            #quiz-current-progress-container { width: 100% !important; box-sizing: border-box; text-align: center; }
+            #quiz-overlay h2 { font-size: 1.2rem !important; letter-spacing: 2px !important; text-align: center; flex: 1; }
+            #quiz-overlay > div:first-child { gap: 10px !important; margin-bottom: 20px !important; }
+            #quiz-overlay > div:first-child div:last-child { display: none !important; }
         }
     </style>
 </head>
