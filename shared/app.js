@@ -43,7 +43,7 @@ window.PARKS_APP = {
             { id: 'homepage.html', icon: 'home', label: 'Home' },
             { id: 'map.html', icon: 'map', label: 'Mappa' },
             { id: 'itineraries.html', icon: 'milestone', label: 'Percorsi' },
-            { id: 'kids_corner.html', icon: 'baby', label: 'Kids' },
+            { id: 'library.html', icon: 'book-open', label: 'Libreria' },
             { id: 'drawer-toggle', icon: 'menu', label: 'Menu', isToggle: true }
         ];
 
