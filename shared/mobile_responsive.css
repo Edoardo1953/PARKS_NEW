@@ -214,7 +214,6 @@
         box-sizing: border-box !important;
         overflow-x: hidden !important;
         overflow-y: visible !important; /* Force natural growth */
-        display: block !important;
         height: auto !important; /* No fixed height */
         min-height: min-content !important;
     }
