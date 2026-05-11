@@ -38,7 +38,7 @@
 
     .main-content {
         padding: 15px !important;
-        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 30px) !important;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 100px) !important;
         min-height: 100vh !important;
         height: auto !important;
         overflow-y: visible !important; /* Use browser scroll */
@@ -200,11 +200,21 @@
     /* Fiche Overlay on Mobile */
     .fiche-content, #fiche-view, #fiche-overlay {
         padding: 15px !important;
-        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 50px) !important;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 180px) !important;
         margin-top: 20px !important;
         width: 100% !important;
         box-sizing: border-box !important;
         overflow-x: hidden !important;
+    }
+
+    /* Extra safety for the last elements in fiche */
+    #fiche-desc, #fiche-extras, #stats-list {
+        margin-bottom: 40px !important;
+    }
+
+    .fiche-content > div:last-child, 
+    #fiche-view > div:last-child {
+        padding-bottom: 100px !important;
     }
 
     #f-title, #fiche-title {
@@ -265,7 +275,7 @@
 
     .content-area, .main-content {
         padding: 1.5rem 1rem !important;
-        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 50px) !important;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 180px) !important;
         overflow-x: hidden !important;
         width: 100% !important;
         box-sizing: border-box !important;
