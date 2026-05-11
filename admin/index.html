@@ -153,6 +153,9 @@
                 <!-- GRUPPO 2: CLOUD SYNC -->
                 <div style="display:flex; background:rgba(255,171,64,0.05); padding:4px; border-radius:30px; border:1px solid rgba(255,171,64,0.2); align-items:center; gap:5px;">
                     <div style="font-size:9px; font-weight:900; color:var(--accent); margin:0 10px; letter-spacing:1px;">CLOUD</div>
+                    <button onclick="clearLocalCache()" title="Svuota memoria locale" style="background:rgba(255,82,82,0.1); color:#ff5252; border:1px solid rgba(255,82,82,0.3); padding:8px 14px; border-radius:30px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:6px; font-size:11px; transition:0.2s;" onmouseover="this.style.background='rgba(255,82,82,0.2)'" onmouseout="this.style.background='rgba(255,82,82,0.1)'">
+                        <i data-lucide="trash-2" style="width:14px;"></i> PULISCI CACHE
+                    </button>
                     <button onclick="pushLocalToCloud()" title="Invia dati online" style="background:var(--accent); color:#000; border:none; padding:8px 16px; border-radius:30px; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:6px; font-size:11px; transition:0.2s;">
                         <i data-lucide="cloud-upload" style="width:14px;"></i> PUBBLICA ONLINE
                     </button>
@@ -2122,19 +2125,37 @@
             save();
         }
 
-        function uploadThumb(type, idString, e) {
+        async function uploadThumb(type, idString, e) {
+            var file = e.target.files[0];
+            if(!file) return;
+
             var data = (curSection === 'visit') ? visitNamibia : library;
-            var r = new FileReader(); 
-            r.onload = function(ev) {
-                if(type === 'cat') data.categories.find(c => c.id === idString).image = ev.target.result;
-                else {
+            
+            // Pulsante loading feedback (opzionale ma utile)
+            var imgEl = e.target.parentElement.querySelector('img');
+            if(imgEl) imgEl.style.opacity = '0.3';
+
+            try {
+                const cloudUrl = await window.PARKS_DB.uploadFile(file);
+                if(type === 'cat') {
+                    var cat = data.categories.find(c => c.id === idString);
+                    if(cat) cat.image = cloudUrl;
+                } else {
                     var parts = idString.split('|');
                     var c = data.categories.find(x => x.id === parts[0]);
-                    c.subcategories.find(s => s.id === parts[1]).image = ev.target.result;
+                    if(c) {
+                        var sub = c.subcategories.find(s => s.id === parts[1]);
+                        if(sub) sub.image = cloudUrl;
+                    }
                 }
                 save();
-            };
-            r.readAsDataURL(e.target.files[0]);
+            } catch(err) {
+                console.error("Upload error:", err);
+                alert("Errore durante il caricamento dell'immagine.");
+            } finally {
+                if(imgEl) imgEl.style.opacity = '1';
+                e.target.value = '';
+            }
         }
 
         function addCategory() { 
@@ -2433,120 +2454,6 @@
             }
         }
 
-        // ============================================================
-        // BACKUP & RESTORE SYSTEM
-        // ============================================================
-        function exportBackup() {
-            var backup = { _version: 1, _date: new Date().toISOString(), _app: 'PARKS_ADMIN' };
-            var keys = ['parks_library_v2', 'parks_users', 'parks_tourists', 'parks_session', 'parks_home_content', 'parks_gallery', 'parks_visit_namibia_v1', 'parks_kids_drawings', 'parks_kids_puzzles'];
-            var loaded = 0;
-            keys.forEach(function(key) {
-                window.PARKS_DB.get(key, null, function(val) {
-                    backup[key] = val;
-                    loaded++;
-                    if(loaded === keys.length) {
-                        var json = JSON.stringify(backup);
-                        var blob = new Blob([json], { type: 'application/json' });
-                        var url = URL.createObjectURL(blob);
-                        var a = document.createElement('a');
-                        var dateStr = new Date().toISOString().slice(0,10);
-                        a.download = 'PARKS_backup_' + dateStr + '.json';
-                        a.href = url;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                        // Visual feedback
-                        var btn = event.currentTarget;
-                        var orig = btn.innerHTML;
-                        btn.innerHTML = '<i data-lucide="check" style="width:14px;"></i> SALVATO!';
-                        btn.style.background = 'rgba(45,122,77,0.8)';
-                        setTimeout(function() { btn.innerHTML = orig; btn.style.background = 'rgba(45,122,77,0.3)'; lucide.createIcons(); }, 2000);
-                        lucide.createIcons();
-                        console.log('✅ PARKS Backup exported:', Object.keys(backup).length, 'keys,', (json.length/1024/1024).toFixed(2), 'MB');
-                    }
-                });
-            });
-        }
-
-        function importBackup(e) {
-            var file = e.target.files[0];
-            if(!file) return;
-            if(!confirm('⚠️ ATTENZIONE: Il ripristino sovrascriverà TUTTI i dati attuali con quelli del backup. Procedere?')) {
-                e.target.value = '';
-                return;
-            }
-            
-            // Mostra avviso di caricamento
-            var btn = e.target.parentElement;
-            var originalHtml = btn.innerHTML;
-            btn.innerHTML = '<i data-lucide="loader" class="spin" style="width:14px; animation: spin 1s linear infinite;"></i> CARICAMENTO IN CORSO... (NON CHIUDERE)';
-            btn.style.background = 'rgba(255,171,64,0.3)';
-            
-            var r = new FileReader();
-            r.onload = function(ev) {
-                try {
-                    var backup = JSON.parse(ev.target.result);
-                    if(!backup._app || backup._app !== 'PARKS_ADMIN') {
-                        alert('❌ File non valido. Usa solo backup creati da questa applicazione.');
-                        btn.innerHTML = originalHtml;
-                        btn.style.background = 'rgba(255,255,255,0.08)';
-                        return;
-                    }
-                    var keys = ['parks_library_v2', 'parks_users', 'parks_tourists', 'parks_session', 'parks_home_content', 'parks_gallery', 'parks_visit_namibia_v1', 'parks_kids_drawings', 'parks_kids_puzzles'];
-                    var validKeys = keys.filter(k => backup[k] !== undefined && backup[k] !== null);
-                    
-                    if (validKeys.length === 0) {
-                        alert('❌ Nessun dato valido trovato nel backup.');
-                        btn.innerHTML = originalHtml;
-                        btn.style.background = 'rgba(255,255,255,0.08)';
-                        return;
-                    }
-
-                    // SALVATAGGIO SEQUENZIALE PER NON INTASARE FIREBASE!
-                    async function saveSequentially() {
-                        for(var i=0; i < validKeys.length; i++) {
-                            var key = validKeys[i];
-                            console.log("Inizio salvataggio di: " + key);
-                            await new Promise((resolve) => {
-                                window.PARKS_DB.save(key, backup[key], function() {
-                                    resolve();
-                                });
-                            });
-                        }
-                        alert('✅ Backup ripristinato con successo! La pagina verrà ricaricata.');
-                        location.reload();
-                    }
-                    saveSequentially();
-                    
-                } catch(err) {
-                    alert('❌ Errore durante il ripristino: ' + err.message + '\nIl file potrebbe essere troppo grande o danneggiato.');
-                    btn.innerHTML = originalHtml;
-                    btn.style.background = 'rgba(255,255,255,0.08)';
-                }
-            };
-            r.readAsText(file);
-        }
-        // ============================================================
-        
-        let backupTriggered = false;
-
-        function exitAndBackup() {
-            exportBackup();
-            setTimeout(() => {
-                backupTriggered = true;
-                window.location.href = '../user/homepage.html';
-            }, 1000);
-        }
-
-        // Avvisa l'admin se sta chiudendo la scheda senza aver fatto il backup
-        window.addEventListener('beforeunload', function (e) {
-            if (!backupTriggered) {
-                e.preventDefault();
-                e.returnValue = "Ricordati di scaricare il BACKUP prima di uscire! Vuoi annullare per scaricarlo?";
-                return e.returnValue;
-            }
-        });
 
         // INITIALIZATION ROBUSTA
         window.PARKS_APP.init(() => { 
@@ -2797,6 +2704,17 @@
             }, 1000);
         }
 
+        function clearLocalCache() {
+            if (confirm("ATTENZIONE: questa operazione svuoterà la memoria temporanea del browser su questo PC.\n\nL'app dovrà riscaricare tutti i dati dal Cloud al prossimo avvio. Procedere?")) {
+                if (window.indexedDB) {
+                    const DB_NAME = 'ParksAppDB';
+                    window.indexedDB.deleteDatabase(DB_NAME);
+                    alert("Cache pulita con successo! Ora ricarica la pagina e vai nella vista User.");
+                    window.location.reload();
+                }
+            }
+        }
+
         function pushLocalToCloud() {
             if(!confirm("ATTENZIONE: Vuoi caricare i tuoi dati locali sul Cloud?\nQuesto sovrascriverà il database online con quello che vedi attualmente sul tuo PC.")) return;
             
@@ -2812,6 +2730,7 @@
                 </div>
             `;
             document.body.appendChild(loader);
+            var progText = document.getElementById('push-progress-text');
 
             var keys = [
                 'parks_itineraries', 'parks_users', 'parks_tourists', 
@@ -2835,27 +2754,164 @@
                 parks_kids_puzzles: kidsPuzzles
             };
 
+            // FUNZIONE DI COMPRESSIONE IMMAGINI (Riduce a 1200px e ottimizza JPEG)
+            async function compressImage(base64Str, maxWidth = 1200, quality = 0.7) {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.src = base64Str;
+                    img.onerror = () => resolve(base64Str); // Se fallisce, tiene l'originale
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxWidth) {
+                            height *= maxWidth / width;
+                            width = maxWidth;
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                });
+            }
+
+            // FUNZIONE DI PULIZIA E OTTIMIZZAZIONE AUTOMATICA
+            async function sanitizeData(key, obj) {
+                if (!obj || typeof obj !== 'object') return obj;
+                
+                let modified = false;
+                let foundCount = 0;
+                
+                // Funzione ricorsiva di scansione
+                async function scan(item, path) {
+                    // SE È UNA STRINGA BASE64 (es. elemento di un array come in Gallery)
+                    if (typeof item === 'string' && item.startsWith('data:image')) {
+                        if (item.length > 30000) { // Solo se più grande di 30KB
+                            foundCount++;
+                            if (progText) {
+                                progText.innerHTML = 'OTTIMIZZAZIONE DATABASE...<br><b style="color:#ffab40;">' + key.toUpperCase() + '</b><br><div style="margin-top:15px; color:#4caf50; font-weight:900;">⚡ Compressione immagine #' + foundCount + '...</div>';
+                            }
+                            try {
+                                let compressed = await compressImage(item);
+                                modified = true;
+                                return await window.PARKS_DB._uploadBase64ToStorage(compressed);
+                            } catch(e) { return item; }
+                        }
+                        return item;
+                    }
+
+                    if (!item || typeof item !== 'object') return item;
+                    
+                    if (Array.isArray(item)) {
+                        for (let i = 0; i < item.length; i++) {
+                            item[i] = await scan(item[i], path + '[' + i + ']');
+                        }
+                    } else {
+                        for (let k in item) {
+                            let val = item[k];
+                            if (typeof val === 'string' && val.startsWith('data:image')) {
+                                if (val.length > 30000) { // Solo se più grande di 30KB
+                                    foundCount++;
+                                    if (progText) {
+                                        progText.innerHTML = 'OTTIMIZZAZIONE DATABASE IN CORSO...<br><b style="color:#ffab40;">' + key.toUpperCase() + '</b><br><div style="margin-top:15px; color:#4caf50; font-weight:900;">⚡ Compressione e Cloud Upload #' + foundCount + '...</div><div style="font-size:10px; opacity:0.6; margin-top:5px;">(Sto rimpicciolendo le foto giganti per sbloccare l\'invio)</div>';
+                                    }
+                                    try {
+                                        // 1. Comprime l'immagine
+                                        let compressed = await compressImage(val);
+                                        // 2. Carica su Storage
+                                        item[k] = await window.PARKS_DB._uploadBase64ToStorage(compressed);
+                                        modified = true;
+                                    } catch(e) { console.error("Optimization failed:", e); }
+                                }
+                            } else if (typeof val === 'object') {
+                                item[k] = await scan(val, path + "." + k);
+                            }
+                        }
+                    }
+                    return item;
+                }
+
+                if (progText) progText.innerHTML = 'Analisi database in corso...<br><b style="color:#ffab40;">' + key.toUpperCase() + '</b>';
+                let cleaned = await scan(obj, key);
+                
+                if (modified) {
+                    console.log("✅ Data cleaned and saved to local DB:", key);
+                    await new Promise(res => window.PARKS_DB.save(key, cleaned, res, true));
+                }
+                return cleaned;
+            }
+
             var total = keys.length;
-            function pushNext(idx) {
+            async function pushNext(idx) {
                 if(idx >= total) {
                     loader.remove();
-                    alert("ALLINEAMENTO COMPLETATO!\nIl Cloud è ora sincronizzato con i tuoi dati locali.");
+                    alert("ALLINEAMENTO COMPLETATO!\nIl Cloud è ora sincronizzato e i dati sono stati ottimizzati.");
                     return;
                 }
 
                 var key = keys[idx];
-                var data = currentDataMap[key];
-                var progText = document.getElementById('push-progress-text');
+                var rawData = currentDataMap[key];
+                
+                // 1. Sanificazione (Rileva ed elimina Base64 enormi)
+                var data = await sanitizeData(key, rawData);
+                
                 if(progText) progText.innerHTML = 'Invio rubrica al Cloud:<br><b style="color:#ffab40; font-size:18px;">' + key.toUpperCase() + '</b><br><small>' + (idx+1) + ' di ' + total + '</small>';
 
-                // Forza il salvataggio su Firebase
                 if(window.firebase) {
-                    firebase.database().ref(key).set(data).then(function() {
+                    try {
+                        let data = currentDataMap[key];
+                        if (!data) {
+                            console.warn("Dati mancanti per " + key + ", salto...");
+                            pushNext(idx + 1);
+                            return;
+                        }
+
+                        let sizeMB = (JSON.stringify(data).length / (1024 * 1024)).toFixed(2);
+                        console.log("📤 Sending " + key + " (" + sizeMB + " MB)...");
+                        
+                        // Invio Standard (Single Set)
+                        await firebase.database().ref(key).set(data);
+
+                        // Aggiorna versione
+                        var isHuge = (key === 'parks_library_v2' || key === 'parks_gallery' || key === 'parks_visit_namibia_v1');
+                        if(isHuge) {
+                            var v = Date.now();
+                            await firebase.database().ref(key + '_version').set(v);
+                            if(window.PARKS_DB && window.PARKS_DB._db) {
+                                await new Promise(res => {
+                                    var wtx = window.PARKS_DB._db.transaction(['library'], 'readwrite');
+                                    wtx.objectStore('library').put(v, key + '_version');
+                                    wtx.oncomplete = res;
+                                });
+                            }
+                        }
                         pushNext(idx + 1);
-                    }).catch(function(err) {
+                    } catch(err) {
                         console.error("Errore PUSH Cloud:", key, err);
-                        pushNext(idx + 1); // Continua comunque
-                    });
+                        
+                        // TEST DI DIAGNOSTICA: Prova a inviare un dato minuscolo per capire se è un limite di dimensione
+                        if (err.message.includes('PERMISSION_DENIED')) {
+                            try {
+                                console.log("🔍 Eseguendo Test Minuscolo su " + key + "...");
+                                await firebase.database().ref(key + '_debug').set({ test: "ok", time: Date.now() });
+                                alert("DIAGNOSI: Il Cloud accetta piccoli dati ma rifiuta la rubrica " + key + ".\n\nIl problema è la DIMENSIONE dei dati che supera i limiti del tuo piano Firebase o delle tue regole.");
+                            } catch(diagErr) {
+                                alert("DIAGNOSI: Accesso negato anche per dati minuscoli.\n\nIl problema sono i PERMESSI (regole di sicurezza) del tuo database Firebase.");
+                            }
+                        }
+
+                        let newKey = (key === 'parks_library_v2' || key === 'parks_library_v3') ? 'parks_library_v3' : 
+                                     (key === 'parks_visit_namibia_v1' || key === 'parks_visit_namibia_v2') ? 'parks_visit_namibia_v2' : null;
+
+                        // Se fallisce una chiave, avvisiamo ma proviamo a continuare con le altre
+                        if(!confirm("Errore durante l'invio di " + key + ": " + err.message + "\n\nVuoi saltare questa rubrica e continuare con le altre?")) {
+                            loader.remove();
+                            return;
+                        }
+                        pushNext(idx + 1);
+                    }
                 } else {
                     pushNext(idx + 1);
                 }
