@@ -200,23 +200,38 @@
     /* Fiche Overlay on Mobile */
     .fiche-content, #fiche-view, #fiche-overlay {
         padding: 15px !important;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 50px) !important;
         margin-top: 20px !important;
         width: 100% !important;
         box-sizing: border-box !important;
         overflow-x: hidden !important;
     }
 
-    #f-title {
-        font-size: 2.2rem !important;
+    #f-title, #fiche-title {
+        font-size: 1.8rem !important;
+        line-height: 1.2 !important;
+        margin-bottom: 10px !important;
+        width: 100% !important;
     }
 
     .fiche-header {
-        height: 300px !important;
+        height: 250px !important; /* Slightly smaller for better fit */
+        margin-bottom: 15px !important;
     }
 
     #fiche-stats {
         width: 100% !important;
         min-width: 0 !important;
+        padding: 15px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Force Fiche Header to column */
+    .fiche-content > div:first-child, 
+    #fiche-view > div:first-child {
+        flex-direction: column !important;
+        gap: 15px !important;
+        align-items: stretch !important;
     }
 
     /* Language Selector & Meteo overlap fix */
@@ -250,11 +265,18 @@
 
     .content-area, .main-content {
         padding: 1.5rem 1rem !important;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 50px) !important;
         overflow-x: hidden !important;
         width: 100% !important;
         box-sizing: border-box !important;
         height: auto !important;
         min-height: 100vh !important;
+    }
+
+    .grid-4, .grid-sections, .itinerary-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+        padding-bottom: 40px !important;
     }
 
     .grid-4 {
@@ -300,7 +322,14 @@
     }
 
     #stats-list p {
-        font-size: 0.9rem !important;
+        font-size: 0.85rem !important;
+        padding: 6px 0 !important;
+    }
+    #stats-list p span {
+        text-align: right !important;
+        flex: 1 !important;
+        padding-left: 10px !important;
+        word-break: break-word !important;
     }
 
     #fiche-desc {
@@ -308,8 +337,8 @@
         line-height: 1.5 !important;
     }
 
-    #fiche-title {
-        font-size: 2.2rem !important;
+    #fiche-title, #f-title {
+        font-size: 1.8rem !important;
         min-width: 0 !important;
         width: 100% !important;
     }
@@ -317,6 +346,8 @@
     #fiche-stats {
         min-width: 0 !important;
         width: 100% !important;
-        margin-top: 20px !important;
+        margin-top: 15px !important;
+        padding: 15px !important;
+        box-sizing: border-box !important;
     }
 }
