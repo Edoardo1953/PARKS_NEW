@@ -1,7 +1,7 @@
 /* 📱 PARKS_NEW - Mobile & Premium Responsiveness System */
 
 :root {
-    --mobile-nav-height: 70px;
+    --mobile-nav-height: 75px;
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -19,17 +19,24 @@
     }
 
     body, html {
-        overflow-x: hidden !important; /* Prevent horizontal "dancing" */
+        overflow-x: hidden !important;
         width: 100%;
         position: relative;
         overflow-y: auto !important;
+        height: auto !important;
+        min-height: 100vh;
+        /* Ensure there's always space at the very bottom of the document */
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 50px) !important;
     }
 
-    .layout, .main-container {
+    .layout, .main-container, .content-area, .main-content {
         width: 100% !important;
         max-width: 100% !important;
         overflow-x: hidden !important;
+        overflow-y: visible !important;
         display: block !important;
+        height: auto !important;
+        min-height: 100vh !important;
     }
 
     .sidebar {
@@ -38,11 +45,12 @@
 
     .main-content {
         padding: 15px !important;
-        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 100px) !important;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 200px) !important;
         min-height: 100vh !important;
         height: auto !important;
-        overflow-y: visible !important; /* Use browser scroll */
-        background-attachment: scroll !important; /* Better for mobile performance */
+        overflow-y: visible !important; 
+        background-attachment: scroll !important;
+        display: block !important;
     }
 
     /* Create the Mobile Nav Bar */
@@ -200,11 +208,15 @@
     /* Fiche Overlay on Mobile */
     .fiche-content, #fiche-view, #fiche-overlay {
         padding: 15px !important;
-        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 180px) !important;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 300px) !important;
         margin-top: 20px !important;
         width: 100% !important;
         box-sizing: border-box !important;
         overflow-x: hidden !important;
+        overflow-y: visible !important; /* Force natural growth */
+        display: block !important;
+        height: auto !important; /* No fixed height */
+        min-height: min-content !important;
     }
 
     /* Extra safety for the last elements in fiche */
@@ -214,7 +226,8 @@
 
     .fiche-content > div:last-child, 
     #fiche-view > div:last-child {
-        padding-bottom: 100px !important;
+        padding-bottom: 200px !important;
+        margin-bottom: 50px !important;
     }
 
     #f-title, #fiche-title {
@@ -275,12 +288,14 @@
 
     .content-area, .main-content {
         padding: 1.5rem 1rem !important;
-        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 180px) !important;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 300px) !important;
         overflow-x: hidden !important;
+        overflow-y: visible !important;
         width: 100% !important;
         box-sizing: border-box !important;
         height: auto !important;
         min-height: 100vh !important;
+        display: block !important;
     }
 
     .grid-4, .grid-sections, .itinerary-grid {
