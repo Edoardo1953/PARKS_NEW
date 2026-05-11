@@ -19,7 +19,17 @@
     }
 
     body, html {
-        overflow: auto !important; /* Allow browser scrolling on mobile */
+        overflow-x: hidden !important; /* Prevent horizontal "dancing" */
+        width: 100%;
+        position: relative;
+        overflow-y: auto !important;
+    }
+
+    .layout, .main-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        display: block !important;
     }
 
     .sidebar {
@@ -188,9 +198,12 @@
     }
 
     /* Fiche Overlay on Mobile */
-    .fiche-content {
+    .fiche-content, #fiche-view, #fiche-overlay {
         padding: 15px !important;
-        margin-top: 60px !important;
+        margin-top: 20px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
     }
 
     #f-title {
@@ -229,14 +242,17 @@
 
     .main-container, .layout {
         display: block !important;
-        grid-template-columns: 1fr !important;
+        width: 100% !important;
+        max-width: 100% !important;
         height: auto !important;
-        overflow: visible !important;
+        overflow-x: hidden !important;
     }
 
     .content-area, .main-content {
         padding: 1.5rem 1rem !important;
-        overflow: visible !important;
+        overflow-x: hidden !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
         height: auto !important;
         min-height: 100vh !important;
     }
@@ -290,5 +306,17 @@
     #fiche-desc {
         font-size: 1rem !important;
         line-height: 1.5 !important;
+    }
+
+    #fiche-title {
+        font-size: 2.2rem !important;
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    #fiche-stats {
+        min-width: 0 !important;
+        width: 100% !important;
+        margin-top: 20px !important;
     }
 }
