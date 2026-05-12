@@ -205,6 +205,66 @@
         height: 60vh !important;
     }
 
+    /* ===== ITINERARY MAP PAGE — fix Leaflet zero-height on mobile ===== */
+    /* The generic block/height:auto rules break the flex map layout.     */
+    /* We restore the correct structure specifically for this page.        */
+    html:has(body.itinerary-map-page) {
+        overflow: hidden !important;
+        height: 100% !important;
+        padding-bottom: 0 !important;
+    }
+
+    body.itinerary-map-page {
+        overflow: hidden !important;
+        height: 100% !important;
+        padding-bottom: 0 !important;
+    }
+
+    body.itinerary-map-page .layout {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100vh !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.itinerary-map-page .main-content {
+        flex: 1 1 0% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        height: 0 !important;     /* forces flex child to respect parent height */
+        min-height: 0 !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
+    body.itinerary-map-page .map-viewport {
+        flex: 1 1 0% !important;
+        position: relative !important;
+        min-height: 0 !important;
+        height: 0 !important;     /* flex will give it the remaining space */
+        width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    body.itinerary-map-page #iti-map {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* Compact the top header bar on mobile for itinerary map */
+    body.itinerary-map-page header {
+        padding: 0.5rem 0.8rem !important;
+        flex-shrink: 0;
+    }
+    body.itinerary-map-page header div:first-child {
+        display: flex !important; /* show the back button */
+    }
+    /* ===== END ITINERARY MAP PAGE ===== */
+
     /* Fiche Overlay on Mobile */
     .fiche-content, #fiche-view, #fiche-overlay {
         padding: 15px !important;

@@ -328,7 +328,7 @@
         .fs-btn:hover { background: var(--accent); color: #000; }
     </style>
 </head>
-<body>
+<body class="itinerary-map-page">
 
     <div class="layout">
         <aside class="sidebar">
@@ -590,7 +590,10 @@
 
                         // Inizializza Mappa
                         leafMap = L.map('iti-map').setView([-22.56, 17.06], 6);
-                        setTimeout(() => { if(leafMap) leafMap.invalidateSize(); }, 400);
+                        // Multiple invalidateSize retries for mobile rendering
+                        setTimeout(() => { if(leafMap) leafMap.invalidateSize(); }, 300);
+                        setTimeout(() => { if(leafMap) leafMap.invalidateSize(); }, 700);
+                        setTimeout(() => { if(leafMap) leafMap.invalidateSize(); }, 1500);
                     } else {
                         document.getElementById('route-title').textContent = "ERRORE CARICAMENTO";
                         document.getElementById('route-title').style.color = "#ff5252";
