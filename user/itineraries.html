@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -223,6 +223,7 @@
                     <i data-lucide="baby"></i> <span>Kid's Corner</span>
                 </li>
                 <li onclick="window.location.href='memory2/index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
+                <li onclick="window.location.href='forex_light.html'"><i data-lucide="trending-up"></i> <span>Cambi Valuta</span></li>
             </ul>
 
             <button class="logout-btn" onclick="logout()">
@@ -234,7 +235,7 @@
             <div class="header">
                 <div>
                     <h1>Itinerari Consigliati</h1>
-                    <p style="opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; margin-top: 10px;">Scopri i percorsi più suggestivi del parco</p>
+                    <p style="opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; margin-top: 10px;">Scopri i percorsi piÃ¹ suggestivi del parco</p>
                 </div>
                 <div style="background: rgba(255,171,64,0.1); border: 1px solid var(--accent); padding: 10px 20px; border-radius: 30px; color: var(--accent); font-weight: 900; font-size: 0.8rem;">
                     EXPLORE ETOSHA
@@ -299,7 +300,7 @@
                     </div>
                     ${tappeHtml}
                     <div class="iti-details">
-                        ${iti.description || 'Questo itinerario ti porterà alla scoperta di una zona unica del parco.'}
+                        ${iti.description || 'Questo itinerario ti porterÃ  alla scoperta di una zona unica del parco.'}
                     </div>
                     <button class="iti-map-btn" style="${btnStyle}" onclick="event.stopPropagation(); if(${hasWaypoints}) goToItinerary(${idx})">
                         <i data-lucide="map"></i> VEDI SULLA MAPPA
@@ -333,7 +334,7 @@
 
                 // Carica gli itinerari subito (leggeri)
                 window.PARKS_DB.get('parks_itineraries', [], function(itiData) {
-                    // Firebase può restituire array come oggetti {"0":{...}} → normalizziamo
+                    // Firebase puÃ² restituire array come oggetti {"0":{...}} â†’ normalizziamo
                     if (itiData && !Array.isArray(itiData)) {
                         itiData = Object.values(itiData);
                     }
@@ -350,3 +351,4 @@
     </script>
 </body>
 </html>
+

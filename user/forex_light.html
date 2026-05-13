@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PARKS | Cambi Valuta v3.3</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css" />
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../shared/db.js"></script>
+    <script src="../shared/app.js"></script>
+    <link rel="stylesheet" href="../shared/mobile_responsive.css?v=2.2">
+    
+    <style>
+        :root {
+            --accent-primary: #3b82f6;
+            --accent-gradient: linear-gradient(135deg, #1d4ed8, #0ea5e9);
+            --bg-main: #050505;
+            --bg-sidebar: #0a0a0a;
+            --bg-card: #121212;
+            --bg-hover: #1e1e1e;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --sidebar-width: 300px;
+            --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        h1, h2, h3, .curr-amount { font-family: 'Outfit', sans-serif; }
+        body, html { height: 100%; width: 100%; background: var(--bg-main); color: var(--text-primary); overflow: hidden; }
+
+        .layout { display: flex; height: 100vh; width: 100vw; }
+        
+        .sidebar {
+            width: var(--sidebar-width); background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; padding: 20px; z-index: 100;
+        }
+        .sidebar-logo { width: 260px; margin-bottom: 30px; }
+        .sidebar-logo img { width: 100%; height: auto; display: block; }
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        .sidebar-menu li {
+            padding: 15px 20px; margin-bottom: 8px; border-radius: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px;
+            font-weight: 600; transition: 0.3s; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem;
+        }
+        .sidebar-menu li:hover { background: rgba(255,255,255,0.05); color: #ffab40; }
+        .sidebar-menu li.active { background: rgba(255, 171, 64, 0.1); border: 1px solid rgba(255, 171, 64, 0.2); color: #ffab40; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; background: radial-gradient(circle at center, #1a3c34, var(--bg-main)); }
+
+        .parks-mobile-topbar { 
+            display: none; padding: 15px 20px; background: rgba(13, 30, 26, 0.95); 
+            border-bottom: 1px solid rgba(255,255,255,0.1); align-items: center; gap: 15px; z-index: 999; 
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        }
+        .parks-mobile-topbar .logo-small { height: 32px; width: auto; min-width: 100px; display: block !important; }
+        .parks-mobile-topbar h2 { font-size: 1.1rem; font-weight: 800; color: #ffab40; text-transform: uppercase; letter-spacing: 1px; margin: 0; }
+
+        .intro-header { padding: 30px; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.2); backdrop-filter: blur(10px); }
+        .header-inner { max-width: 1100px; margin: 0 auto; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+        .header-text-container h1 { font-size: 2.5rem; font-weight: 900; background: linear-gradient(135deg, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; }
+        .header-subtitle { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 3px; font-weight: 700; margin-top: 5px; }
+
+        .split-content { display: flex; flex: 1; overflow: hidden; max-width: 1100px; margin: 0 auto; width: 100%; }
+        .split-left { flex: 1; overflow-y: auto; padding: 10px 20px 150px; display: flex; flex-direction: column; align-items: center; -webkit-overflow-scrolling: touch; }
+        .split-left > * { width: 100%; max-width: 650px; }
+
+        .currency-row {
+            display: flex; align-items: center; padding: 24px; background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 24px; margin-bottom: 15px; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: var(--shadow-premium); position: relative; overflow: hidden;
+        }
+        .currency-row::after { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 4px; background: var(--accent-gradient); opacity: 0; transition: 0.3s; }
+        .currency-row:hover { transform: translateY(-4px) scale(1.02); border-color: var(--accent-primary); box-shadow: var(--shadow-glow); }
+        .currency-row:hover::after { opacity: 1; }
+        
+        .base-row { border-width: 2px; border-color: var(--accent-primary); background: rgba(59, 130, 246, 0.08); }
+        .base-row::after { opacity: 1; }
+
+        .curr-left { margin-right: 20px; }
+        .flag-container { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); }
+        .curr-middle { flex: 1; display: flex; flex-direction: column; }
+        .curr-code { font-weight: 900; font-size: 1.4rem; display: block; letter-spacing: 0.5px; }
+        .curr-name { font-size: 0.9rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+        .curr-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+        .curr-amount { font-size: 2rem; font-weight: 900; color: var(--accent-primary); letter-spacing: -0.5px; }
+
+        .delete-btn {
+            background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 8px; border-radius: 10px; cursor: pointer;
+            transition: 0.2s; font-size: 0.9rem; opacity: 0; transform: translateX(10px);
+        }
+        .currency-row:hover .delete-btn { opacity: 1; transform: translateX(0); }
+        .delete-btn:hover { background: #ef4444; color: white; }
+
+        .split-right { width: 400px; border-left: 1px solid var(--border-color); background: rgba(0,0,0,0.3); padding: 30px; display: flex; flex-direction: column; }
+        .numpad-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 25px; text-align: center; }
+        .numpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .numpad-grid button {
+            aspect-ratio: 1; border-radius: 18px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);
+            font-size: 1.5rem; font-weight: 800; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .numpad-grid button:hover { background: var(--bg-hover); border-color: var(--accent-primary); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+        .numpad-grid button:active { transform: scale(0.95); }
+        .numpad-grid .op-key { color: var(--accent-primary); background: rgba(59, 130, 246, 0.05); }
+        .numpad-grid .ac-key { color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+        .numpad-grid .equal-key { background: var(--accent-gradient); color: white; border: none; grid-column: span 4; aspect-ratio: auto; height: 60px; margin-top: 10px; }
+
+        .btn-mobile-numpad {
+            position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%;
+            background: var(--accent-gradient); color: white; border: none; font-size: 1.5rem;
+            display: none; align-items: center; justify-content: center; z-index: 1000; box-shadow: var(--shadow-glow);
+        }
+
+        .add-currency-btn {
+            display: flex; align-items: center; justify-content: center; gap: 12px; padding: 25px;
+            background: rgba(59, 130, 246, 0.05); color: var(--accent-primary); border: 2px dashed var(--accent-primary);
+            border-radius: 24px; cursor: pointer; font-weight: 800; margin-top: 10px; transition: 0.3s; width: 100%;
+        }
+        .add-currency-btn:hover { background: rgba(59, 130, 246, 0.1); transform: scale(1.02); }
+
+        /* Numpad Overlay - FLOATING & CENTERED */
+        .numpad-overlay-final {
+            position: fixed !important; inset: 0 !important; background: transparent !important; z-index: 9999 !important; 
+            display: flex !important; flex-direction: column !important; justify-content: flex-end !important; pointer-events: none !important;
+            align-items: center !important; padding-bottom: 20px !important;
+        }
+        .numpad-overlay-inner-final { 
+            width: 92% !important; max-width: 400px !important; background: rgba(15, 15, 15, 0.98) !important; 
+            border: 2px solid var(--accent-primary) !important; border-radius: 35px !important; 
+            padding: 15px 15px 25px !important; position: relative !important;
+            box-shadow: 0 10px 50px rgba(0,0,0,1) !important; pointer-events: auto !important;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        }
+        .numpad-close-area-final { flex: 1 !important; width: 100% !important; pointer-events: auto !important; background: transparent !important; }
+        
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); z-index: 2000; display: flex; flex-direction: column; padding: 30px; align-items: center; }
+        .overlay-card { width: 100%; max-width: 500px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 30px; overflow: hidden; box-shadow: var(--shadow-premium); display: flex; flex-direction: column; }
+        .overlay-header { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; gap: 15px; align-items: center; }
+        .overlay-header input { flex: 1; background: transparent; border: none; color: white; font-size: 1.2rem; font-weight: 600; outline: none; }
+        .overlay-list { list-style: none; flex: 1; overflow-y: auto; padding: 10px; min-height: 200px; max-height: 60vh; }
+        .overlay-item { padding: 18px 20px; border-radius: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: 0.2s; }
+        .overlay-item:hover { background: var(--bg-hover); }
+
+        .hidden { display: none !important; }
+        .real-time-badge { background: #ef4444; color: white; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 5px; margin-top: 5px; width: fit-content; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none !important; }
+            .parks-mobile-topbar { display: flex !important; }
+            .intro-header { display: none !important; }
+            .split-right { display: none !important; }
+            .split-content { flex-direction: column !important; }
+            .main-content { background: var(--bg-main) !important; padding: 0 !important; }
+            .curr-amount { font-size: 1.5rem !important; }
+            .delete-btn { opacity: 1 !important; transform: none !important; }
+            .btn-mobile-numpad { display: flex !important; }
+            .split-left { padding-top: 15px !important; padding-bottom: 150px !important; }
+            
+            .numpad-grid { gap: 6px !important; }
+            .numpad-grid button { height: 42px !important; border-radius: 12px !important; font-size: 1.1rem !important; }
+            .numpad-grid .equal-key { height: 42px !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo"><img src="../shared/parks_logo_combined_white.svg" alt="PARKS"></div>
+            <ul class="sidebar-menu">
+                <li onclick="window.location.href='homepage.html'"><i data-lucide="home"></i> <span>Home</span></li>
+                <li onclick="window.location.href='map.html'"><i data-lucide="map"></i> <span>Mappa Interattiva</span></li>
+                <li onclick="window.location.href='itineraries.html'"><i data-lucide="milestone"></i> <span>Itinerari</span></li>
+                <li onclick="window.location.href='alerts.html'"><i data-lucide="bell"></i> <span>Inserisci un ALERT</span></li>
+                <li onclick="window.location.href='library.html'"><i data-lucide="book-open"></i> <span>Libreria</span></li>
+                <li onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
+                <li onclick="window.location.href='kids_corner.html'"><i data-lucide="baby"></i> <span>Kid's Corner</span></li>
+                <li class="active"><i data-lucide="trending-up"></i> <span>Cambi Valuta</span></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="parks-mobile-topbar">
+                <img src="../shared/parks_logo_combined_white.svg" class="logo-small" alt="PARKS">
+                <h2>Cambi Valuta</h2>
+            </div>
+
+            <header class="intro-header">
+                <div class="header-inner">
+                    <div class="header-text-container">
+                        <h1>FOREX DASH</h1>
+                        <p class="header-subtitle">Live Cross Rates</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="split-content">
+                <div class="split-left">
+                    <div id="baseContainer" style="width:100%;"></div>
+                    <ul id="currencyList" style="list-style: none; width: 100%;"></ul>
+                    <div class="add-currency-btn" onclick="showSearch()">
+                        <i class="fa-solid fa-plus-circle"></i> Cerca ed aggiungi divisa...
+                    </div>
+                </div>
+
+                <div class="split-right">
+                    <div class="numpad-title">Calcolatore</div>
+                    <div id="numpadPC" class="numpad-grid"></div>
+                </div>
+            </div>
+
+            <button class="btn-mobile-numpad" onclick="toggleNumpad()"><i class="fa-solid fa-calculator"></i></button>
+        </main>
+    </div>
+
+    <!-- Mobile Numpad Overlay - FLOATING & CENTERED -->
+    <div id="numpadOverlay" class="numpad-overlay-final hidden">
+        <div class="numpad-close-area-final" onclick="toggleNumpad()"></div>
+        <div class="numpad-overlay-inner-final">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span class="numpad-title" style="margin:0; font-size:0.65rem; color:var(--accent-primary);">CALCOLATORE FLOTTANTE</span>
+                <button onclick="toggleNumpad()" style="background:rgba(255,255,255,0.1); border:none; color:white; width:24px; height:24px; border-radius:50%; font-size:0.7rem;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="numpadMobile" class="numpad-grid"></div>
+        </div>
+    </div>
+
+    <div id="searchOverlay" class="overlay hidden">
+        <div class="overlay-card">
+            <div class="overlay-header">
+                <i class="fa-solid fa-magnifying-glass" style="color: var(--accent-primary);"></i>
+                <input type="text" id="searchInput" placeholder="Cerca divisa (es. Dollaro, ZAR...)" oninput="filterSearch()">
+                <button style="background:none; border:none; color:white; cursor:pointer; font-size:1.5rem;" onclick="hideSearch()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <ul id="searchResults" class="overlay-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        console.log("Forex Light v3.3 - Universal Formatting");
+        lucide.createIcons();
+
+        const MASTER_CURRENCIES = {
+            "EUR": "Euro", "USD": "Dollaro USA", "GBP": "Lira Sterlina", "BRL": "Real Brasiliano",
+            "HKD": "Dollaro Hong Kong", "CAD": "Dollaro Canadese", "JPY": "Yen Giapponese",
+            "ZAR": "Rand Sudafricano", "AUD": "Dollaro Australiano", "CHF": "Franco Svizzero",
+            "CNY": "Yuan Cinese", "NAD": "Dollaro Namibiano", "NZD": "Dollaro Neozelandese",
+            "SGD": "Dollaro Singapore", "MXN": "Peso Messicano", "INR": "Rupia Indiana",
+            "RUB": "Rublo Russo", "KRW": "Won Sudcoreano", "TRY": "Lira Turca", "NOK": "Corona Norvegese",
+            "SEK": "Corona Svedese", "DKK": "Corona Danese", "PLN": "Zloty Polacco", "HUF": "Fiorino Ungherese"
+        };
+
+        const FALLBACK_RATES = {
+            "EUR": {"USD":1.1742,"GBP":0.8582,"ZAR":20.4250,"NAD":20.4250,"BRL":5.4520,"JPY":162.5400,"CAD":1.4820,"AUD":1.6520,"CHF":0.9720},
+            "USD": {"EUR":0.8516,"GBP":0.7309,"ZAR":17.3980,"NAD":17.3980,"BRL":4.6430,"JPY":138.4200,"CAD":1.2621,"AUD":1.4070,"CHF":0.8280},
+            "ZAR": {"EUR":0.0489,"USD":0.0575,"GBP":0.0420,"NAD":1.0000,"BRL":0.2669,"JPY":7.9578,"CAD":0.0726},
+            "NAD": {"EUR":0.0489,"USD":0.0575,"GBP":0.0420,"ZAR":1.0000,"BRL":0.2669,"JPY":7.9578,"CAD":0.0726}
+        };
+
+        let baseCurrency = localStorage.getItem('forex_base') || 'EUR';
+        let baseAmountStr = '1';
+        let extraCurrencies = [];
+        try {
+            extraCurrencies = JSON.parse(localStorage.getItem('forex_extra'));
+            if (!Array.isArray(extraCurrencies)) extraCurrencies = ['ZAR', 'NAD', 'GBP'];
+        } catch(e) { extraCurrencies = ['ZAR', 'NAD', 'GBP']; }
+        
+        let rates = {};
+        let allCurrencies = MASTER_CURRENCIES;
+        let isInitial = true;
+
+        async function init() {
+            if(FALLBACK_RATES[baseCurrency]) rates = { ...FALLBACK_RATES[baseCurrency] };
+            renderNumpad();
+            render();
+            try {
+                const resp = await fetch('https://api.frankfurter.app/currencies');
+                if(resp.ok) {
+                    const data = await resp.json();
+                    allCurrencies = { ...MASTER_CURRENCIES, ...data };
+                }
+            } catch(e) { }
+            await updateRates();
+            render();
+        }
+
+        async function updateRates() {
+            const technicalBase = baseCurrency === 'NAD' ? 'ZAR' : baseCurrency;
+            const targetList = ['EUR', 'USD', ...extraCurrencies, 'NAD', 'ZAR'].filter(c => c !== technicalBase);
+            const symbols = [...new Set(targetList)].join(',');
+            if(!symbols) return;
+            try {
+                const resp = await fetch(`https://api.frankfurter.app/latest?from=${technicalBase}&to=${symbols}`);
+                if(resp.ok) {
+                    const data = await resp.json();
+                    rates = { ...data.rates };
+                    applySpecialRules();
+                    return;
+                }
+            } catch(e) { }
+            try {
+                const resp2 = await fetch(`https://open.er-api.com/v6/latest/${technicalBase}`);
+                if(resp2.ok) {
+                    const data2 = await resp2.json();
+                    rates = { ...data2.rates };
+                    applySpecialRules();
+                    return;
+                }
+            } catch(e) { }
+        }
+
+        function applySpecialRules() {
+            if(baseCurrency === 'NAD') rates['ZAR'] = 1.0;
+            else {
+                if(rates['ZAR'] && !rates['NAD']) rates['NAD'] = rates['ZAR'];
+                if(rates['NAD'] && !rates['ZAR']) rates['ZAR'] = rates['NAD'];
+            }
+        }
+
+        function renderNumpad() {
+            const html = `
+                <button onclick="press('7')">7</button><button onclick="press('8')">8</button><button onclick="press('9')">9</button><button class="op-key" onclick="press('/')">/</button>
+                <button onclick="press('4')">4</button><button onclick="press('5')">5</button><button onclick="press('6')">6</button><button class="op-key" onclick="press('*')">*</button>
+                <button onclick="press('1')">1</button><button onclick="press('2')">2</button><button onclick="press('3')">3</button><button class="op-key" onclick="press('-')">-</button>
+                <button onclick="press('0')">0</button><button onclick="press(',')">,</button><button class="ac-key" onclick="press('AC')">AC</button><button class="op-key" onclick="press('+')">+</button>
+                <button class="equal-key" onclick="press('=')">=</button>
+            `;
+            document.getElementById('numpadPC').innerHTML = html;
+            document.getElementById('numpadMobile').innerHTML = html;
+        }
+
+        function formatNum(n, minDec = 4) {
+            // Unificiamo il formato per TUTTE le valute (inclusi EUR e USD)
+            return n.toLocaleString('it-IT', { 
+                minimumFractionDigits: minDec, 
+                maximumFractionDigits: 4,
+                useGrouping: true 
+            });
+        }
+
+        function render() {
+            const baseContainer = document.getElementById('baseContainer');
+            const baseName = allCurrencies[baseCurrency] || baseCurrency;
+            
+            // 1. Rendering riga BASE
+            baseContainer.innerHTML = `
+                <div class="currency-row base-row">
+                    <div class="curr-left"><div class="flag-container"><span class="fi ${getFlagClass(baseCurrency)}"></span></div></div>
+                    <div class="curr-middle">
+                        <span class="curr-code">${baseCurrency}</span>
+                        <span class="curr-name">${baseName}</span>
+                        <div class="real-time-badge">BASE</div>
+                    </div>
+                    <div class="curr-right">
+                        <span class="curr-amount">${formatBaseDisplay(baseAmountStr)}</span>
+                    </div>
+                </div>
+            `;
+            
+            const list = document.getElementById('currencyList');
+            list.innerHTML = '';
+            const baseVal = evaluate(baseAmountStr);
+            
+            // Costruzione lista con EUR e USD sempre in cima
+            const fullList = [];
+            if(baseCurrency !== 'EUR') fullList.push('EUR');
+            if(baseCurrency !== 'USD') fullList.push('USD');
+            
+            // Aggiunta altre valute (evitando duplicati se già messe sopra)
+            extraCurrencies.forEach(c => { 
+                if(c !== 'EUR' && c !== 'USD' && c !== baseCurrency) {
+                    fullList.push(c);
+                }
+            });
+            
+            // 2. Rendering lista valute (comprese EUR e USD)
+            fullList.forEach(code => {
+                const rate = rates[code] || 0;
+                const total = baseVal * rate;
+                const name = allCurrencies[code] || code;
+                const isFixed = (code === 'EUR' || code === 'USD');
+                
+                list.innerHTML += `
+                    <li class="currency-row" onclick="setBase('${code}')">
+                        <div class="curr-left"><div class="flag-container"><span class="fi ${getFlagClass(code)}"></span></div></div>
+                        <div class="curr-middle">
+                            <span class="curr-code">${code}</span>
+                            <span class="curr-name">${name}</span>
+                        </div>
+                        <div class="curr-right">
+                            <span class="curr-amount">${rate > 0 ? formatNum(total) : '--'}</span>
+                            ${!isFixed ? `<button class="delete-btn" onclick="event.stopPropagation(); remove('${code}')"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                    </li>
+                `;
+            });
+            
+            localStorage.setItem('forex_base', baseCurrency);
+            localStorage.setItem('forex_extra', JSON.stringify(extraCurrencies));
+        }
+
+        function formatBaseDisplay(str) {
+            if(/[+\-*/]/.test(str)) return str;
+            let n = parseFloat(str.replace(',', '.')) || 0;
+            return formatNum(n, 2);
+        }
+
+        function getFlagClass(code) {
+            const map = { EUR:'fi-eu', USD:'fi-us', GBP:'fi-gb', BRL:'fi-br', HKD:'fi-hk', CAD:'fi-ca', AUD:'fi-au', JPY:'fi-jp', CHF:'fi-ch', CNY:'fi-cn', ZAR:'fi-za', NAD:'fi-na' };
+            return 'fi ' + (map[code] || 'fi-' + code.substring(0,2).toLowerCase());
+        }
+        function evaluate(str) {
+            try {
+                let expr = str.replace(/,/g, '.').replace(/[^0-9+\-*/.]/g, '');
+                if (/[+\-*/]$/.test(expr)) expr = expr.slice(0,-1);
+                const res = new Function('return ' + (expr || '0'))();
+                return isFinite(res) ? res : 0;
+            } catch { return 0; }
+        }
+        function press(key) {
+            if(key === 'AC') { baseAmountStr = '1'; isInitial = true; }
+            else if(key === '=') { baseAmountStr = evaluate(baseAmountStr).toString().replace('.', ','); isInitial = false; }
+            else {
+                if(isInitial && !isNaN(key)) { baseAmountStr = key; isInitial = false; }
+                else { if(baseAmountStr === '0' && !isNaN(key)) baseAmountStr = key; else baseAmountStr += key; }
+            }
+            render();
+        }
+        async function setBase(code) {
+            baseCurrency = code; baseAmountStr = '1'; isInitial = true;
+            if(FALLBACK_RATES[baseCurrency]) rates = { ...FALLBACK_RATES[baseCurrency] };
+            render(); await updateRates(); render();
+        }
+        function remove(code) { extraCurrencies = extraCurrencies.filter(c => c !== code); render(); }
+        function showSearch() { document.getElementById('searchOverlay').classList.remove('hidden'); document.getElementById('searchInput').focus(); filterSearch(); }
+        function hideSearch() { document.getElementById('searchOverlay').classList.add('hidden'); }
+        function toggleNumpad() { document.getElementById('numpadOverlay').classList.toggle('hidden'); }
+        function filterSearch() {
+            const q = document.getElementById('searchInput').value.toUpperCase();
+            const r = document.getElementById('searchResults'); r.innerHTML = '';
+            let found = 0;
+            Object.entries(allCurrencies).forEach(([code, name]) => {
+                if (code.includes(q) || name.toUpperCase().includes(q)) {
+                    if (code === baseCurrency || code === 'EUR' || code === 'USD' || extraCurrencies.includes(code)) return;
+                    found++;
+                    r.innerHTML += `<li class="overlay-item" onclick="add('${code}')"><span><span class="fi ${getFlagClass(code)}" style="margin-right:15px;"></span> <strong>${code}</strong> - ${name}</span><i class="fa-solid fa-plus" style="color:var(--accent-primary)"></i></li>`;
+                }
+            });
+            if(found === 0) r.innerHTML = '<li class="overlay-item" style="opacity:0.5; justify-content:center;">Nessun risultato trovato</li>';
+        }
+        async function add(code) { if(!extraCurrencies.includes(code)) extraCurrencies.push(code); hideSearch(); await updateRates(); render(); }
+        init();
+    </script>
+</body>
+</html>

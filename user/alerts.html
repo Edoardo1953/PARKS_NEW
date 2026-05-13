@@ -321,6 +321,7 @@
                 <li onclick="window.location.href='library.html?view=mustsee'"><i data-lucide="star"></i> Must See</li>
                 <li onclick="window.location.href='kids_corner.html'"><i data-lucide="baby"></i> <span>Kid's Corner</span></li>
                 <li onclick="window.location.href='memory2/index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
+                <li onclick="window.location.href='forex_light.html'"><i data-lucide="trending-up"></i> <span>Cambi Valuta</span></li>
             </ul>
             <button class="logout-btn" onclick="logout()"><i data-lucide="log-out"></i> Logout</button>
         </aside>
@@ -457,7 +458,7 @@
                 window.PARKS_DB.save('parks_library_v2', library, () => {
                     const saveBtn = document.querySelector('.btn-save');
                     const originalText = 'INVIA ALERT AI RANGERS';
-                    saveBtn.innerHTML = 'INVIATO ✔';
+                    saveBtn.innerHTML = 'INVIATO ✅';
                     saveBtn.style.background = '#4caf50';
                     showToast();
                     
@@ -493,3 +494,4 @@
     </script>
 </body>
 </html>l>
+

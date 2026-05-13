@@ -360,6 +360,7 @@
                     <i data-lucide="baby"></i> <span>Kid's Corner</span>
                 </li>
                 <li onclick="window.location.href='memory2/index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
+                <li onclick="window.location.href='forex_light.html'"><i data-lucide="trending-up"></i> <span>Cambi Valuta</span></li>
             </ul>
 
             <button class="logout-btn" onclick="logout()">
@@ -379,15 +380,15 @@
                 </div>
                 <div id="route-info-inline" style="display:none; flex-direction:row; gap:20px; align-items:center;">
                     <div style="text-align:center;">
-                        <div id="route-dist" style="font-size:1rem; font-weight:900; color:var(--accent);">—</div>
+                        <div id="route-dist" style="font-size:1rem; font-weight:900; color:var(--accent);">â€”</div>
                         <div style="font-size:0.6rem; opacity:0.5; letter-spacing:1px;">KM</div>
                     </div>
                     <div style="text-align:center;">
-                        <div id="route-time" style="font-size:1rem; font-weight:900; color:#4caf50;">—</div>
+                        <div id="route-time" style="font-size:1rem; font-weight:900; color:#4caf50;">â€”</div>
                         <div style="font-size:0.6rem; opacity:0.5; letter-spacing:1px;">TEMPO</div>
                     </div>
                     <div style="text-align:center;">
-                        <div id="route-stops" style="font-size:1rem; font-weight:900; color:white;">—</div>
+                        <div id="route-stops" style="font-size:1rem; font-weight:900; color:white;">â€”</div>
                         <div style="font-size:0.6rem; opacity:0.5; letter-spacing:1px;">TAPPE</div>
                     </div>
                 </div>
@@ -419,8 +420,8 @@
             </div>
             <div class="fiche-header">
                 <img id="f-img" src="" ondblclick="openFS()">
-                <button class="slide-btn" style="left:20px;" onclick="prevSlide()">‹</button>
-                <button class="slide-btn" style="right:20px;" onclick="nextSlide()">›</button>
+                <button class="slide-btn" style="left:20px;" onclick="prevSlide()">❮</button>
+                <button class="slide-btn" style="right:20px;" onclick="nextSlide()">❯</button>
                 <button class="fs-btn" onclick="openFS()"><i data-lucide="maximize" style="width:20px;"></i> FULL SCREEN</button>
             </div>
             <div id="f-desc" style="font-size:1.3rem; line-height:1.7; opacity:0.9; margin-bottom: 3rem; white-space: pre-wrap;"></div>
@@ -430,8 +431,8 @@
     <!-- LIGHTBOX FULLSCREEN -->
     <div id="lightbox">
         <button class="lb-close" onclick="closeFS()">×</button>
-        <button class="lb-arrow" style="left:0;" onclick="prevSlide()">‹</button>
-        <button class="lb-arrow" style="right:0;" onclick="nextSlide()">›</button>
+        <button class="lb-arrow" style="left:0;" onclick="prevSlide()">❮</button>
+        <button class="lb-arrow" style="right:0;" onclick="nextSlide()">❯</button>
         <img id="lightbox-img" src="">
     </div>
 
@@ -645,7 +646,7 @@
                                     var color = idx === 0 ? "#4caf50" : (idx === iti.waypoints.length - 1 ? "#ff5252" : "#ffab40");
                                     var label = idx === 0 ? "PARTENZA" : (idx === iti.waypoints.length - 1 ? "ARRIVO" : "TAPPA");
                                     var num = idx + 1;
-                                    var emoji = idx === 0 ? "🟢" : (idx === iti.waypoints.length - 1 ? "🔴" : "🟡");
+                                    var emoji = idx === 0 ? "🏁" : (idx === iti.waypoints.length - 1 ? "🚩" : "📍");
                                     
                                     var icon = L.divIcon({
                                         className: 'custom-iti-marker',
@@ -657,7 +658,7 @@
                                     });
 
                                     var m = L.marker([wp.lat, wp.lng], {icon: icon}).addTo(leafMap);
-                                    var tooltipContent = `<b style="font-size:12px;">${emoji} ${label} ${num}</b><br><span style="font-size:11px; color:#555;">${wp.title || ''}</span>${wp.ficheId ? '<br><span style="font-size:10px; color:#2d7a4d; font-weight:800;">📋 Clicca per la scheda</span>' : ''}`;
+                                    var tooltipContent = `<b style="font-size:12px;">${emoji} ${label} ${num}</b><br><span style="font-size:11px; color:#555;">${wp.title || ''}</span>${wp.ficheId ? '<br><span style="font-size:10px; color:#2d7a4d; font-weight:800;">ðŸ“‹ Clicca per la scheda</span>' : ''}`;
                                     m.bindTooltip(tooltipContent, {direction: 'top', offset: [0, -22], className: 'iti-tooltip'});
                                 });
 
@@ -797,3 +798,4 @@
     </style>
 </body>
 </html>
+

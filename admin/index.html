@@ -99,6 +99,26 @@
             display: inline-block;
         }
         @keyframes spin-s { to { transform: rotate(360deg); } }
+
+        /* KIDS CORNER TABS */
+        .kid-tab { 
+            border: none; 
+            padding: 10px 25px; 
+            border-radius: 15px; 
+            font-weight: 900; 
+            cursor: pointer; 
+            font-size: 11px; 
+            text-transform: uppercase;
+            transition: 0.3s; 
+            background: transparent; 
+            color: white; 
+            opacity: 0.4; 
+        }
+        .kid-tab.active { 
+            background: var(--accent) !important; 
+            color: black !important; 
+            opacity: 1 !important; 
+        }
     </style>
 </head>
 <body>
@@ -367,10 +387,10 @@
 
                 <!-- GAME TYPE TABS -->
                 <div style="display:flex; gap:10px; margin-bottom:30px; background:rgba(255,255,255,0.03); padding:10px; border-radius:20px; width:fit-content;">
-                    <button id="tab-kids-coloring" class="kid-tab active" onclick="switchKidsTab('coloring')" style="background:var(--accent); color:black; border:none; padding:10px 25px; border-radius:15px; font-weight:900; cursor:pointer; font-size:11px; text-transform:uppercase;">Disegni da Colora</button>
-                    <button id="tab-kids-memory" class="kid-tab" onclick="switchKidsTab('memory')" style="background:transparent; color:white; border:none; padding:10px 25px; border-radius:15px; font-weight:900; cursor:pointer; opacity:0.4; font-size:11px; text-transform:uppercase;">Memory Game</button>
-                    <button id="tab-kids-puzzle" class="kid-tab" onclick="switchKidsTab('puzzle')" style="background:transparent; color:white; border:none; padding:10px 25px; border-radius:15px; font-weight:900; cursor:pointer; opacity:0.4; font-size:11px; text-transform:uppercase;">Puzzle</button>
-                    <button id="tab-kids-quiz" class="kid-tab" onclick="switchKidsTab('quiz')" style="background:transparent; color:white; border:none; padding:10px 25px; border-radius:15px; font-weight:900; cursor:pointer; opacity:0.4; font-size:11px; text-transform:uppercase;">Safari Quiz</button>
+                    <button id="tab-kids-coloring" class="kid-tab active" onclick="switchKidsTab('coloring')">Disegni da Colorare</button>
+                    <button id="tab-kids-memory" class="kid-tab" onclick="switchKidsTab('memory')">Memory Game</button>
+                    <button id="tab-kids-puzzle" class="kid-tab" onclick="switchKidsTab('puzzle')">Puzzle</button>
+                    <button id="tab-kids-quiz" class="kid-tab" onclick="switchKidsTab('quiz')">Safari Quiz</button>
                 </div>
 
                 <!-- CONTENT AREA FOR COLORING (ACTIVE) -->
@@ -385,15 +405,15 @@
                 <!-- CONTENT AREA FOR MEMORY -->
                 <div id="kids-memory-zone" style="display:none;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                        <h3 style="margin:0; opacity:0.6; letter-spacing:2px; font-size:0.8rem;">GESTIONE TESSERE MEMORY</h3>
+                        <div style="display:flex; flex-direction:column;">
+                            <h3 style="margin:0; opacity:0.6; letter-spacing:2px; font-size:0.8rem;">GESTIONE GIOCHI MEMORY</h3>
+                            <p style="margin:5px 0 0 0; font-size:10px; opacity:0.4;">Crea diversi set di gioco con quante tessere desideri (8, 12, 16...)</p>
+                        </div>
                         <div style="display:flex; gap:10px;">
-                            <button onclick="seedAllMemory()" style="background:rgba(255,171,64,0.1); color:#ffab40; border:1px solid rgba(255,171,64,0.2); padding:8px 20px; border-radius:15px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px;">
-                                <i data-lucide="refresh-cw"></i> REIMPOSTA GIOCHI 1 E 2
-                            </button>
-                            <button class="btn-plus-s" onclick="openMemoryEditor()" style="margin:0; padding:8px 20px; font-size:11px;"><i data-lucide="plus"></i> AGGIUNGI TESSERA</button>
+                            <button class="btn-plus-s" onclick="addMemoryGame()" style="margin:0; padding:8px 20px; font-size:11px; background:var(--accent); color:black;"><i data-lucide="plus-circle"></i> NUOVO GIOCO</button>
                         </div>
                     </div>
-                    <div id="memory-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:20px; padding-bottom:50px;"></div>
+                    <div id="memory-games-list" style="display:flex; flex-direction:column; gap:25px; padding-bottom:50px;"></div>
                 </div>
 
                 <div id="kids-quiz-zone" style="display:none;">
@@ -448,9 +468,6 @@
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                         <h3 style="margin:0; opacity:0.6; letter-spacing:2px; font-size:0.8rem;">RACCOLTA IMMAGINI PUZZLE</h3>
                         <div style="display:flex; gap:10px;">
-                            <button onclick="seedDefaultPuzzles()" style="background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); padding:8px 20px; border-radius:15px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px;">
-                                <i data-lucide="database"></i> CARICA PREDEFINITI
-                            </button>
                             <button class="btn-plus-s" onclick="openPuzzleEditor()" style="margin:0; padding:8px 20px; font-size:11px;"><i data-lucide="plus"></i> AGGIUNGI PUZZLE</button>
                         </div>
                     </div>
@@ -786,6 +803,31 @@
                 </div>
             </div>
         </div>
+    <!-- MODAL PER NUOVO GIOCO MEMORY -->
+    <div id="new-game-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:4000; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+        <div style="background:var(--dark-bg); border:2px solid var(--accent); border-radius:30px; width:450px; padding:35px; box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+            <h2 style="margin:0 0 5px 0; color:var(--accent); letter-spacing:3px; font-size:1.2rem;">NUOVO GIOCO MEMORY</h2>
+            <p style="font-size:10px; opacity:0.5; margin-bottom:25px; text-transform:uppercase; letter-spacing:1px;">CONFIGURA IL SET DI TESSERE</p>
+            
+            <div class="input-group">
+                <span class="label" style="display:block; font-size:10px; font-weight:900; color:var(--accent); margin-bottom:5px; letter-spacing:1px;">NOME DEL GIOCO</span>
+                <input type="text" id="new-game-name" class="f-input" placeholder="es: ANIMALI DELLA SAVANA" style="text-transform:uppercase; width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; padding:12px; border-radius:10px; font-weight:700; outline:none;">
+            </div>
+
+            <div class="input-group" style="margin-top:20px;">
+                <span class="label" style="display:block; font-size:10px; font-weight:900; color:var(--accent); margin-bottom:5px; letter-spacing:1px;">SCEGLI UN'ICONA</span>
+                <div id="emoji-picker" style="display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; margin-top:10px; background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
+                    <!-- Emojis populated by JS -->
+                </div>
+                <input type="hidden" id="new-game-icon" value="🎲">
+            </div>
+
+            <div style="display:flex; gap:15px; margin-top:30px;">
+                <button onclick="document.getElementById('new-game-modal').style.display='none'" class="btn-editor btn-close" style="flex:1; width:auto; height:50px; background:#000; border:2px solid rgba(255,255,255,0.2); border-radius:12px; color:white; font-weight:900; cursor:pointer;">ANNULLA</button>
+                <button onclick="confirmAddGame()" class="btn-editor btn-save" style="flex:2; height:50px; justify-content:center; background:#2d7a4d; border:2px solid #3eb471; border-radius:12px; color:white; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:10px;">CREA GIOCO <i data-lucide="check"></i></button>
+            </div>
+        </div>
+    </div>
     </main>
 
     <script>
@@ -1374,11 +1416,8 @@
         var visitNamibia = { categories: [] };
         var kidsDrawings = [];
         var kidsPuzzles = [];
-        var kidsMemory = [];
-        var kidsQuiz = [
-            { id: 1, question: "Qual è il 'Re della Savana'?", options: ["Elefante", "Leone", "Zebra", "Giraffa"], correct: 1, level: 1 },
-            { id: 2, question: "Quale animale ha il collo lunghissimo?", options: ["Ippopotamo", "Giraffa", "Gazzella", "Rinoceronte"], correct: 1, level: 1 }
-        ];
+        var memoryGames = [];
+        var kidsQuiz = [];
         var itinerariesList = [];
         var curSection = 'library'; // 'library' or 'visit'
         var activeTab = 'alert';
@@ -2495,8 +2534,10 @@
             loadData('parks_home_v1', {}, 'homeContent', () => renderHome());
             loadData('parks_gallery', [], 'gallery', () => renderGallery());
             loadData('parks_visit_namibia_v1', {categories:[]}, 'visitNamibia');
-            loadData('parks_kids_drawings', [], 'kidsDrawings');
-            loadData('parks_kids_quiz', [], 'kidsQuiz');
+            loadData('parks_kids_drawings', [], 'kidsDrawings', () => renderKids());
+            loadData('parks_kids_quiz', [], 'kidsQuiz', () => renderKidsQuiz());
+            loadData('parks_kids_memory_v2', [], 'memoryGames', () => renderKidsMemory());
+            loadData('parks_kids_puzzles', [], 'kidsPuzzles', () => renderKidsPuzzles());
         });
         var dashMap = null;
         var alertMarkersLayer = null;
@@ -2512,7 +2553,7 @@
                 parks_home_v1: (typeof homeContent !== 'undefined' ? homeContent : {}),
                 parks_gallery: (typeof gallery !== 'undefined' ? gallery : []),
                 parks_kids_drawings: kidsDrawings,
-                parks_kids_memory: kidsMemory,
+                parks_kids_memory_v2: memoryGames,
                 parks_kids_quiz: kidsQuiz,
                 parks_kids_puzzles: kidsPuzzles,
                 timestamp: Date.now()
@@ -2585,14 +2626,17 @@
                     function saveNext(index) {
                         if(index >= total) {
                             // SEEDING FINALE (Se mancano pezzi nel Kids Corner dopo il ripristino)
-                            if(!kidsMemory || kidsMemory.length === 0) {
-                                kidsMemory = [
-                                    { id: 1, name: 'Lion', img: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=200' },
-                                    { id: 2, name: 'Elephant', img: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=200' },
-                                    { id: 3, name: 'Zebra', img: 'https://images.unsplash.com/photo-1501705388883-4ed8a543392c?w=200' },
-                                    { id: 4, name: 'Giraffe', img: 'https://images.unsplash.com/photo-1547721064-36202128d53e?w=200' }
-                                ];
-                                window.PARKS_DB.save('parks_kids_memory', kidsMemory, null, true);
+                            if(!memoryGames || memoryGames.length === 0) {
+                                memoryGames = [{
+                                    id: Date.now(),
+                                    name: "GIOCO PREDEFINITO",
+                                    icon: "🦁",
+                                    cards: [
+                                        { id: 1, name: 'Lion', image: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=200' },
+                                        { id: 2, name: 'Elephant', image: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=200' }
+                                    ]
+                                }];
+                                window.PARKS_DB.save('parks_kids_memory_v2', memoryGames);
                             }
                             if(!kidsQuiz || kidsQuiz.length === 0) {
                                 kidsQuiz = [
@@ -2625,6 +2669,16 @@
 
                         // PONTI DI COMPATIBILITÀ
                         if(key === 'parks_home_content') targetKey = 'parks_home_v1';
+                        if(key === 'parks_kids_memory') {
+                            targetKey = 'parks_kids_memory_v2';
+                            // Convert old flat cards array to new game structure
+                            rawData = [{
+                                id: Date.now(),
+                                name: "GIOCO RECUPERATO",
+                                icon: "🎲",
+                                cards: Array.isArray(rawData) ? rawData : []
+                            }];
+                        }
                         
                         // AGGIORNAMENTO VARIABILI IN MEMORIA (Per vedere subito i dati)
                         if(targetKey === 'parks_library_v2') library = rawData;
@@ -2642,7 +2696,7 @@
                         if(targetKey === 'parks_tourists') tourists = rawData;
                         if(targetKey === 'parks_gallery') gallery = rawData;
                         if(targetKey === 'parks_kids_drawings') kidsDrawings = rawData;
-                        if(targetKey === 'parks_kids_memory') kidsMemory = rawData;
+                        if(targetKey === 'parks_kids_memory_v2') memoryGames = rawData;
                         if(targetKey === 'parks_kids_quiz') kidsQuiz = rawData;
                         if(targetKey === 'parks_kids_puzzles') kidsPuzzles = rawData;
 
@@ -2707,7 +2761,7 @@
         function clearLocalCache() {
             if (confirm("ATTENZIONE: questa operazione svuoterà la memoria temporanea del browser su questo PC.\n\nL'app dovrà riscaricare tutti i dati dal Cloud al prossimo avvio. Procedere?")) {
                 if (window.indexedDB) {
-                    const DB_NAME = 'ParksAppDB';
+                    const DB_NAME = 'PARKS_FINAL_STORAGE';
                     window.indexedDB.deleteDatabase(DB_NAME);
                     alert("Cache pulita con successo! Ora ricarica la pagina e vai nella vista User.");
                     window.location.reload();
@@ -2735,7 +2789,7 @@
             var keys = [
                 'parks_itineraries', 'parks_users', 'parks_tourists', 
                 'parks_library_v2', 'parks_visit_namibia_v1', 'parks_home_v1', 
-                'parks_gallery', 'parks_kids_drawings', 'parks_kids_memory', 
+                'parks_gallery', 'parks_kids_drawings', 'parks_kids_memory_v2', 
                 'parks_kids_quiz', 'parks_kids_puzzles'
             ];
             
@@ -2749,7 +2803,7 @@
                 parks_home_v1: homeContent,
                 parks_gallery: gallery,
                 parks_kids_drawings: kidsDrawings,
-                parks_kids_memory: kidsMemory,
+                parks_kids_memory_v2: memoryGames,
                 parks_kids_quiz: kidsQuiz,
                 parks_kids_puzzles: kidsPuzzles
             };
@@ -2920,7 +2974,7 @@
             pushNext(0);
         }
         function cloudRecovery() {
-            var keysToTry = ['parks_itineraries', 'parks_kids_memory', 'parks_kids_quiz'];
+            var keysToTry = ['parks_itineraries', 'parks_kids_memory_v2', 'parks_kids_quiz'];
             var foundCount = 0;
             
             var loader = document.createElement('div');
@@ -2960,7 +3014,7 @@
                             if(hasData) {
                                 // Salvataggio locale e aggiornamento variabile
                                 if(key === 'parks_itineraries') itinerariesList = val;
-                                if(key === 'parks_kids_memory') kidsMemory = val;
+                                if(key === 'parks_kids_memory_v2') memoryGames = val;
                                 if(key === 'parks_kids_quiz') kidsQuiz = val;
                                 
                                 window.PARKS_DB.save(key, val, function() {
@@ -3110,32 +3164,32 @@
             });
         }
         function switchKidsTab(tab) {
-            // Hide all zones
-            document.getElementById('kids-coloring-zone').style.display = 'none';
-            document.getElementById('kids-memory-zone').style.display = 'none';
-            document.getElementById('kids-puzzle-zone').style.display = 'none';
-            document.getElementById('kids-quiz-zone').style.display = 'none';
-            
-            // Show target zone
-            document.getElementById(`kids-${tab}-zone`).style.display = 'block';
-            if(tab === 'coloring') renderKids();
-            if(tab === 'puzzle') renderKidsPuzzles();
-            if(tab === 'memory') renderKidsMemory();
-            if(tab === 'quiz') renderKidsQuiz();
-            
-            // Update Tab buttons
-            document.querySelectorAll('.kid-tab').forEach(t => {
-                t.style.background = 'transparent';
-                t.style.color = 'white';
-                t.style.opacity = '0.4';
-            });
-            
+            // 1. AGGIORNA HIGHLIGHT TASTI (Priorità assoluta)
+            document.querySelectorAll('.kid-tab').forEach(t => t.classList.remove('active'));
             const activeTab = document.getElementById(`tab-kids-${tab}`);
-            activeTab.style.background = 'var(--accent)';
-            activeTab.style.color = 'black';
-            activeTab.style.opacity = '1';
+            if(activeTab) activeTab.classList.add('active');
+
+            // 2. GESTIONE ZONE (Sicura)
+            const zones = ['coloring', 'memory', 'puzzle', 'quiz'];
+            zones.forEach(z => {
+                const zoneEl = document.getElementById(`kids-${z}-zone`);
+                if(zoneEl) zoneEl.style.display = (z === tab) ? 'block' : 'none';
+            });
+
+            // 3. RENDER CONTENUTI (Con protezione errori)
+            try {
+                if(tab === 'coloring') renderKids();
+                if(tab === 'puzzle') renderKidsPuzzles();
+                if(tab === 'memory') renderKidsMemory();
+                if(tab === 'quiz') renderKidsQuiz();
+            } catch(err) {
+                console.error("Errore nel render della tab " + tab, err);
+            }
             
-            lucide.createIcons();
+            // 4. ICONE
+            if(window.lucide) {
+                try { lucide.createIcons(); } catch(e) {}
+            }
         }
 
         // KIDS CORNER ADMIN FUNCTIONS
@@ -3153,7 +3207,10 @@
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-weight:900; font-size:12px; color:var(--accent);">${k.name.toUpperCase()}</span>
-                        <button onclick="delKidDrawing(${i})" style="background:none; border:none; color:#ff5252; cursor:pointer;"><i data-lucide="trash-2" style="width:16px;"></i></button>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="openKidEditor(${i})" style="background:none; border:none; color:white; opacity:0.4; cursor:pointer;"><i data-lucide="edit-3" style="width:16px;"></i></button>
+                            <button onclick="delKidDrawing(${i})" style="background:none; border:none; color:#ff5252; cursor:pointer;"><i data-lucide="trash-2" style="width:16px;"></i></button>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -3174,29 +3231,51 @@
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-weight:900; font-size:12px; color:#4cc9f0;">${k.name.toUpperCase()}</span>
-                        <button onclick="delKidPuzzle(${i})" style="background:none; border:none; color:#ff5252; cursor:pointer;"><i data-lucide="trash-2" style="width:16px;"></i></button>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="openPuzzleEditor(${i})" style="background:none; border:none; color:white; opacity:0.4; cursor:pointer;"><i data-lucide="edit-3" style="width:16px;"></i></button>
+                            <button onclick="delKidPuzzle(${i})" style="background:none; border:none; color:#ff5252; cursor:pointer;"><i data-lucide="trash-2" style="width:16px;"></i></button>
+                        </div>
                     </div>
                 </div>
             `).join('');
             lucide.createIcons();
         }
 
-        let currentKidEditorMode = 'coloring';
+        let currentDrawingIdx = -1;
+        let currentPuzzleIdx = -1;
 
-        function openKidEditor() {
+        function openKidEditor(idx = -1) {
             currentKidEditorMode = 'coloring';
+            currentDrawingIdx = idx;
             document.getElementById('kid-editor-modal').style.display = 'flex';
-            document.getElementById('kid-modal-title').innerText = "NUOVO DISEGNO";
+            document.getElementById('kid-modal-title').innerText = idx === -1 ? "NUOVO DISEGNO" : "MODIFICA DISEGNO";
             document.getElementById('kid-modal-hint').innerText = "CARICA UN'IMMAGINE IN BIANCO E NERO DA FAR COLORARE AI BIMBI";
             resetKidEditor();
+
+            if(idx !== -1) {
+                const k = kidsDrawings[idx];
+                document.getElementById('kid-name').value = k.name;
+                document.getElementById('kid-preview').src = k.image;
+                document.getElementById('kid-preview-container').style.display = 'block';
+                document.getElementById('kid-upload-placeholder').style.display = 'none';
+            }
         }
 
-        function openPuzzleEditor() {
+        function openPuzzleEditor(idx = -1) {
             currentKidEditorMode = 'puzzle';
+            currentPuzzleIdx = idx;
             document.getElementById('kid-editor-modal').style.display = 'flex';
-            document.getElementById('kid-modal-title').innerText = "NUOVO PUZZLE";
+            document.getElementById('kid-modal-title').innerText = idx === -1 ? "NUOVO PUZZLE" : "MODIFICA PUZZLE";
             document.getElementById('kid-modal-hint').innerText = "CARICA UN'IMMAGINE A COLORI CHE VERRÀ SCOMPOSTA IN 3x3 E 4x4";
             resetKidEditor();
+
+            if(idx !== -1) {
+                const k = kidsPuzzles[idx];
+                document.getElementById('kid-name').value = k.name;
+                document.getElementById('kid-preview').src = k.image;
+                document.getElementById('kid-preview-container').style.display = 'block';
+                document.getElementById('kid-upload-placeholder').style.display = 'none';
+            }
         }
 
         let pendingKidFile = null;
@@ -3239,24 +3318,38 @@
                 }
 
                 if(currentKidEditorMode === 'coloring') {
-                    kidsDrawings.push({ id: Date.now(), name, image: imgUrl });
+                    if(currentDrawingIdx === -1) {
+                        kidsDrawings.push({ id: Date.now(), name, image: imgUrl });
+                    } else {
+                        kidsDrawings[currentDrawingIdx].name = name;
+                        kidsDrawings[currentDrawingIdx].image = imgUrl;
+                    }
                     window.PARKS_DB.save('parks_kids_drawings', kidsDrawings, function() {
                         closeKidEditor();
                         renderKids();
                     });
                 } else if(currentKidEditorMode === 'memory') {
+                    const game = memoryGames[currentGameIdx];
+                    if(!game) throw new Error("Gioco non trovato nell'indice: " + currentGameIdx);
+                    if(!game.cards) game.cards = []; // Difensivo per dati vecchi
+                    
                     if(currentMemoryIdx === -1) {
-                        kidsMemory.push({ id: Date.now(), name, image: imgUrl });
+                        game.cards.push({ id: Date.now(), name, image: imgUrl });
                     } else {
-                        kidsMemory[currentMemoryIdx].name = name;
-                        kidsMemory[currentMemoryIdx].image = imgUrl;
+                        game.cards[currentMemoryIdx].name = name;
+                        game.cards[currentMemoryIdx].image = imgUrl;
                     }
-                    window.PARKS_DB.save('parks_kids_memory', kidsMemory, function() {
+                    window.PARKS_DB.save('parks_kids_memory_v2', memoryGames, function() {
                         closeKidEditor();
                         renderKidsMemory();
                     });
                 } else if(currentKidEditorMode === 'puzzle') {
-                    kidsPuzzles.push({ id: Date.now(), name, image: imgUrl });
+                    if(currentPuzzleIdx === -1) {
+                        kidsPuzzles.push({ id: Date.now(), name, image: imgUrl });
+                    } else {
+                        kidsPuzzles[currentPuzzleIdx].name = name;
+                        kidsPuzzles[currentPuzzleIdx].image = imgUrl;
+                    }
                     window.PARKS_DB.save('parks_kids_puzzles', kidsPuzzles, function() {
                         closeKidEditor();
                         renderKidsPuzzles();
@@ -3270,73 +3363,136 @@
             }
         }
 
+        let currentGameIdx = -1;
         let currentMemoryIdx = -1;
 
-        function renderKidsMemory() {
-            const list = document.getElementById('memory-list');
-            if(!list) return;
-            if(kidsMemory.length === 0) {
-                list.innerHTML = '<div style="grid-column: 1/-1; padding:3rem; text-align:center; opacity:0.3; font-weight:700;">NESSUNA TESSERA CARICATA</div>';
-                return;
+        function addMemoryGame() {
+            const emojis = ['🦁', '🦒', '🐘', '🦓', '🐆', '🐊', '🦏', '🦛', '🐗', '🐢', '🦎', '🐍', '🐒', '🦋', '🐝', '🐜', '🕷', '🦂', '🌵', '🌴', '🏜️', '🐾', '🎲', '🌍'];
+            const picker = document.getElementById('emoji-picker');
+            if(picker) {
+                picker.innerHTML = emojis.map(e => `
+                    <div onclick="selectEmoji(this, '${e}')" class="emoji-opt" style="font-size:1.5rem; cursor:pointer; padding:8px; border-radius:10px; text-align:center; transition:0.2s;">${e}</div>
+                `).join('');
             }
-
-            let html = '';
             
-            // GAME 1 (0-7)
-            const game1 = kidsMemory.slice(0, 8);
-            html += `<div style="grid-column: 1/-1; margin-top:20px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; color:#ffd700; font-weight:900; letter-spacing:3px; font-size:0.8rem;">GIOCO 1 - I CLASSICI</div>`;
-            html += `<div style="grid-column: 1/-1; display:grid; grid-template-columns: repeat(8, 1fr); gap:10px; margin-bottom:40px;">`;
-            html += game1.map((k, i) => renderMemoryCard(k, i)).join('');
-            html += `</div>`;
-
-            // GAME 2 (8-15)
-            const game2 = kidsMemory.slice(8, 16);
-            if(game2.length > 0) {
-                html += `<div style="grid-column: 1/-1; margin-top:20px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; color:#4caf50; font-weight:900; letter-spacing:3px; font-size:0.8rem;">GIOCO 2 - GLI ESPLORATORI</div>`;
-                html += `<div style="grid-column: 1/-1; display:grid; grid-template-columns: repeat(8, 1fr); gap:10px; margin-bottom:40px;">`;
-                html += game2.map((k, i) => renderMemoryCard(k, i + 8)).join('');
-                html += `</div>`;
-            }
-
-            // EXTRA (16+)
-            if(kidsMemory.length > 16) {
-                html += `<div style="grid-column: 1/-1; margin-top:20px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; opacity:0.5; font-weight:900; letter-spacing:3px; font-size:0.8rem;">ALTRE TESSERE</div>`;
-                html += `<div style="grid-column: 1/-1; display:grid; grid-template-columns: repeat(8, 1fr); gap:10px; margin-bottom:40px;">`;
-                html += kidsMemory.slice(16).map((k, i) => renderMemoryCard(k, i + 16)).join('');
-                html += `</div>`;
-            }
-
-            list.innerHTML = html;
-            lucide.createIcons();
+            document.getElementById('new-game-name').value = "";
+            document.getElementById('new-game-icon').value = "🎲";
+            document.getElementById('new-game-modal').style.display = 'flex';
+            if(window.lucide) lucide.createIcons();
         }
 
-        function renderMemoryCard(k, i) {
-            return `
-                <div class="lib-card" style="padding:10px; margin:0;">
-                    <div style="background:#fff; border-radius:10px; height:80px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; border:1px solid rgba(255,255,255,0.1);">
-                        <img src="${k.image}" style="max-width:100%; max-height:100%; object-fit:contain;">
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:900; font-size:9px; color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;">${k.name.toUpperCase()}</span>
-                        <div style="display:flex; gap:5px;">
-                            <button onclick="openMemoryEditor(${i})" style="background:none; border:none; color:white; cursor:pointer; opacity:0.5; padding:0;"><i data-lucide="edit-3" style="width:12px;"></i></button>
-                            <button onclick="delKidMemory(${i})" style="background:none; border:none; color:#ff5252; cursor:pointer; padding:0;"><i data-lucide="trash-2" style="width:12px;"></i></button>
+        function selectEmoji(el, e) {
+            document.querySelectorAll('.emoji-opt').forEach(opt => {
+                opt.style.background = 'transparent';
+                opt.style.transform = 'scale(1)';
+            });
+            el.style.background = 'rgba(255,171,64,0.2)';
+            el.style.transform = 'scale(1.2)';
+            document.getElementById('new-game-icon').value = e;
+        }
+
+        function confirmAddGame() {
+            try {
+                const nameInput = document.getElementById('new-game-name');
+                const iconInput = document.getElementById('new-game-icon');
+                
+                if(!nameInput || !iconInput) throw new Error("Elementi del modal non trovati!");
+                
+                const name = nameInput.value.trim();
+                const icon = iconInput.value;
+                
+                if(!name) { alert("Per favore, inserisci un NOME per il gioco!"); return; }
+                
+                if(!Array.isArray(memoryGames)) memoryGames = [];
+
+                const newGame = {
+                    id: Date.now(),
+                    name: name.toUpperCase(),
+                    icon: icon || "🎲",
+                    cards: []
+                };
+                
+                memoryGames.push(newGame);
+                
+                document.getElementById('new-game-modal').style.display = 'none';
+                
+                window.PARKS_DB.save('parks_kids_memory_v2', memoryGames, function() {
+                    alert("OTTIMO! Gioco creato con successo.");
+                    renderKidsMemory();
+                });
+            } catch(err) {
+                alert("ERRORE CRITICO: " + err.message);
+                console.error(err);
+            }
+        }
+
+        function delMemoryGame(idx) {
+            if(confirm("Eliminare definitivamente questo gioco e tutte le sue tessere?")) {
+                memoryGames.splice(idx, 1);
+                window.PARKS_DB.save('parks_kids_memory_v2', memoryGames, renderKidsMemory);
+            }
+        }
+
+        function renderKidsMemory() {
+            try {
+                const container = document.getElementById('memory-games-list');
+                if(!container) return;
+                
+                if(!Array.isArray(memoryGames) || memoryGames.length === 0) {
+                    container.innerHTML = '<div style="padding:4rem; text-align:center; opacity:0.3; font-weight:700; background:rgba(255,255,255,0.02); border-radius:30px; border:1px dashed rgba(255,255,255,0.1);">NESSUN GIOCO CREATO. CLICCA "NUOVO GIOCO" PER INIZIARE.</div>';
+                    return;
+                }
+
+                container.innerHTML = memoryGames.map((game, gIdx) => `
+                    <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:25px; padding:25px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:15px;">
+                            <div style="display:flex; align-items:center; gap:15px;">
+                                <div style="font-size:2rem; background:rgba(0,0,0,0.2); width:60px; height:60px; border-radius:15px; display:flex; align-items:center; justify-content:center;">${game.icon || '🎲'}</div>
+                                <div>
+                                    <div style="font-weight:900; letter-spacing:2px; color:var(--accent);">${game.name}</div>
+                                    <div style="font-size:10px; opacity:0.4; font-weight:700;">${(game.cards || []).length} TESSERE</div>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button onclick="openMemoryEditor(${gIdx}, -1)" class="btn-plus-s" style="margin:0; background:var(--accent); color:black; border:none; padding:10px 20px; font-weight:900;"><i data-lucide="plus"></i> AGGIUNGI TESSERA</button>
+                                <button onclick="delMemoryGame(${gIdx})" style="background:rgba(255,82,82,0.1); border:none; color:#ff5252; padding:10px; border-radius:12px; cursor:pointer;"><i data-lucide="trash-2" style="width:18px;"></i></button>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:15px;">
+                            ${(game.cards || []).map((card, cIdx) => `
+                                <div class="lib-card" style="padding:8px; margin:0; background:rgba(0,0,0,0.2);">
+                                    <div style="background:#fff; border-radius:8px; height:70px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:5px;">
+                                        <img src="${card.image}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <span style="font-weight:900; font-size:8px; color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;">${(card.name || '').toUpperCase()}</span>
+                                        <div style="display:flex; gap:3px;">
+                                            <button onclick="openMemoryEditor(${gIdx}, ${cIdx})" style="background:none; border:none; color:white; cursor:pointer; opacity:0.4; padding:0;"><i data-lucide="edit-3" style="width:10px;"></i></button>
+                                            <button onclick="delKidMemory(${gIdx}, ${cIdx})" style="background:none; border:none; color:#ff5252; cursor:pointer; padding:0;"><i data-lucide="trash-2" style="width:10px;"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
-                </div>
-            `;
+                `).join('');
+                if(window.lucide) lucide.createIcons();
+            } catch(e) {
+                console.error("Errore in renderKidsMemory:", e);
+            }
         }
 
-        function openMemoryEditor(idx = -1) {
+        function openMemoryEditor(gIdx, cIdx = -1) {
             currentKidEditorMode = 'memory';
-            currentMemoryIdx = idx;
+            currentGameIdx = gIdx;
+            currentMemoryIdx = cIdx;
             document.getElementById('kid-editor-modal').style.display = 'flex';
-            document.getElementById('kid-modal-title').innerText = idx === -1 ? "NUOVA TESSERA MEMORY" : "MODIFICA TESSERA";
-            document.getElementById('kid-modal-hint').innerText = "CARICA UN'IMMAGINE QUADRATA PER LA TESSERA DEL GIOCO";
+            document.getElementById('kid-modal-title').innerText = cIdx === -1 ? "NUOVA TESSERA MEMORY" : "MODIFICA TESSERA";
+            document.getElementById('kid-modal-hint').innerText = "CARICA UN'IMMAGINE PER IL GIOCO: " + memoryGames[gIdx].name;
             resetKidEditor();
 
-            if(idx !== -1) {
-                const k = kidsMemory[idx];
+            if(cIdx !== -1) {
+                const k = memoryGames[gIdx].cards[cIdx];
                 document.getElementById('kid-name').value = k.name;
                 document.getElementById('kid-preview').src = k.image;
                 document.getElementById('kid-preview-container').style.display = 'block';
@@ -3344,10 +3500,10 @@
             }
         }
 
-        function delKidMemory(idx) {
+        function delKidMemory(gIdx, cIdx) {
             if(confirm("Eliminare questa tessera?")) {
-                kidsMemory.splice(idx, 1);
-                window.PARKS_DB.save('parks_kids_memory', kidsMemory, renderKidsMemory);
+                memoryGames[gIdx].cards.splice(cIdx, 1);
+                window.PARKS_DB.save('parks_kids_memory_v2', memoryGames, renderKidsMemory);
             }
         }
 
@@ -3654,55 +3810,6 @@
             window.PARKS_DB.save('parks_kids_quiz', kidsQuiz, function() {
                 alert("Caricate " + toAdd.length + " nuove domande!");
                 renderKidsQuiz();
-            });
-        }
-
-        function seedDefaultPuzzles() {
-            if(kidsPuzzles.length > 0) {
-                if(!confirm("Sono già presenti dei puzzle. Vuoi aggiungere quelli predefiniti a quelle esistenti?")) return;
-            }
-
-            const defaultPuzzles = [
-                { id: Date.now(), name: 'LEONE', image: '../assets/kids/puzzle_lion.png' },
-                { id: Date.now() + 1, name: 'ELEFANTE', image: '../assets/kids/puzzle_elephant.png' }
-            ];
-
-            kidsPuzzles = [...kidsPuzzles, ...defaultPuzzles];
-            window.PARKS_DB.save('parks_kids_puzzles', kidsPuzzles, function() {
-                alert("Puzzle predefiniti caricati con successo!");
-                renderKidsPuzzles();
-            });
-        }
-
-        function seedAllMemory() {
-            if(!confirm("Questo cancellerà tutte le tessere attuali e caricherà i due set predefiniti (16 tessere in totale). Procedere?")) return;
-
-            const theme1 = [
-                { name: 'Leone', image: '../assets/kids/memory_lion.png' },
-                { name: 'Zebra', image: '../assets/kids/memory_zebra.png' },
-                { name: 'Elefante', image: '../assets/kids/memory_elephant.png' },
-                { name: 'Giraffa', image: '../assets/kids/memory_giraffe.png' },
-                { name: 'Ippopotamo', image: '../assets/kids/memory_hippo.png' },
-                { name: 'Rinoceronte', image: '../assets/kids/memory_rhino.png' },
-                { name: 'Ghepardo', image: '../assets/kids/memory_cheetah.png' },
-                { name: 'Suricato', image: '../assets/kids/memory_meerkat.png' }
-            ];
-
-            const theme2 = [
-                { name: 'Iena', image: '../assets/kids/savanna_hyena.png' },
-                { name: 'Caracal', image: '../assets/kids/savanna_caracal.png' },
-                { name: 'Segretario', image: '../assets/kids/savanna_secretary.png' },
-                { name: 'Bufalo', image: '../assets/kids/savanna_buffalo.png' },
-                { name: 'Leopardo', image: '../assets/kids/savanna_leopard.png' },
-                { name: 'Coccodrillo', image: '../assets/kids/savanna_crocodile.png' },
-                { name: 'Facocero', image: '../assets/kids/savanna_warthog.png' },
-                { name: 'Struzzo', image: '../assets/kids/savanna_ostrich.png' }
-            ];
-
-            kidsMemory = [...theme1, ...theme2];
-            window.PARKS_DB.save('parks_kids_memory', kidsMemory, function() {
-                alert("Tutte le tessere predefinite sono state caricate correttamente!");
-                renderKidsMemory();
             });
         }
 
