@@ -240,8 +240,15 @@
                 var c2 = el('title-bg-color-2') ? el('title-bg-color-2').value : '#a371f7';
                 grad.addColorStop(0, c1); grad.addColorStop(1, c2);
                 ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.font = 'bold ' + Math.max(32, Math.round(canvas.width*0.12)) + 'px Outfit,sans-serif';
+                
+                // Fondo semi-trasparente per il testo per massimizzare la visibilità
+                var textWidth = ctx.measureText(slide.text).width;
+                var fontSize = Math.max(32, Math.round(canvas.width*0.12));
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(canvas.width/2 - textWidth/2 - 20, canvas.height/2 - fontSize/2 - 10, textWidth + 40, fontSize + 20);
+
                 ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.font = 'bold ' + Math.max(28, Math.round(canvas.width*0.07)) + 'px Outfit,sans-serif';
                 ctx.fillText(slide.text, canvas.width/2, canvas.height/2);
             } else {
                 var zoomData = slide.item.zoom ? slide.item.zoom : null;
@@ -251,7 +258,7 @@
                     ctx.fillStyle = '#fff';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.font = 'bold ' + Math.round(canvas.width*0.06) + 'px Outfit,sans-serif';
+                    ctx.font = 'bold ' + Math.max(28, Math.round(canvas.width*0.08)) + 'px Outfit,sans-serif';
                     
                     // Ombra sottile per leggibilità su sfondi chiari
                     ctx.shadowColor = 'rgba(0,0,0,0.6)';

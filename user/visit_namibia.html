@@ -121,7 +121,7 @@
 
         <main class="content-area">
             <h1 id="main-title" style="color:var(--accent); font-weight:900; margin-bottom:30px; text-transform:uppercase; letter-spacing:3px; font-size: 2.5rem;">Visit Namibia</h1>
-            <button id="back-btn" class="btn-back" onclick="goBack()" style="display:none;">â† INDIETRO</button>
+            <button id="back-btn" class="btn-back" onclick="goBack()" style="display:none;"><i data-lucide="arrow-left"></i> INDIETRO</button>
             <div id="grid-view" class="grid-4"></div>
 
             <div id="fiche-view" style="display: none;">
@@ -136,8 +136,8 @@
                     <div>
                         <div class="fiche-header" style="margin-bottom: 2.5rem;">
                             <img id="slider-img" src="" ondblclick="openFS()">
-                            <button class="slide-btn" style="left:20px;" onclick="prevSlide()">â€¹</button>
-                            <button class="slide-btn" style="right:20px;" onclick="nextSlide()">â€º</button>
+                            <button class="slide-btn" style="left:20px;" onclick="prevSlide()"><i data-lucide="chevron-left"></i></button>
+                            <button class="slide-btn" style="right:20px;" onclick="nextSlide()"><i data-lucide="chevron-right"></i></button>
                             <button class="fs-btn" onclick="openFS()"><i data-lucide="maximize" style="width:20px;"></i> FULL SCREEN</button>
                         </div>
                         <div id="fiche-desc" style="font-size:1.3rem; line-height:1.7; opacity:0.9; margin-bottom: 3rem;"></div>
@@ -152,9 +152,9 @@
 
     <!-- LIGHTBOX FULLSCREEN -->
     <div id="lightbox">
-        <button class="lb-close" onclick="closeFS()">Ã—</button>
-        <button class="lb-arrow" style="left:0;" onclick="prevSlide()">â€¹</button>
-        <button class="lb-arrow" style="right:0;" onclick="nextSlide()">â€º</button>
+        <button class="lb-close" onclick="closeFS()"><i data-lucide="x"></i></button>
+        <button class="lb-arrow" style="left:0;" onclick="prevSlide()"><i data-lucide="chevron-left"></i></button>
+        <button class="lb-arrow" style="right:0;" onclick="nextSlide()"><i data-lucide="chevron-right"></i></button>
         <img id="lightbox-img" src="">
     </div>
 
