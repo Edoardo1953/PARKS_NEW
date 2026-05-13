@@ -71,7 +71,8 @@ window.PARKS_APP = {
             { id: 'visit_namibia.html', icon: 'flag', label: 'Visit Namibia' },
             { id: 'library.html?view=mustsee', icon: 'star', label: 'Must See' },
             { id: 'kids_corner.html', icon: 'baby', label: 'Kid\'s Corner' },
-            { id: 'memory2/index.html', icon: 'film', label: 'Memory Composer' }
+            { id: 'memory2/index.html', icon: 'film', label: 'Memory Composer' },
+            { id: 'forex_light.html', icon: 'trending-up', label: 'Cambi Valute' }
         ];
 
         drawer.innerHTML = `
