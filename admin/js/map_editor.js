@@ -5,19 +5,26 @@
 var curMapCat = 'alert';
 
 function renderMapEditor() {
+    // Ensure data structures exist
+    if(!library) window.library = { categories: [], available_icons: {}, map_markers: [], available_maps: [] };
+    if(!library.available_icons) library.available_icons = {};
+    if(!library.map_markers) library.map_markers = [];
+    if(!library.available_maps) library.available_maps = [];
+
     renderMapList();
     renderMarkerIcons();
     renderMarkersOnMap();
     
-    // Update category label
     const label = document.getElementById('cur-cat');
     if(label) label.innerText = curMapCat.toUpperCase();
 }
 
 function switchX(cat) {
-    curMapCat = cat;
-    document.querySelectorAll('.marker-list .t-btn').forEach(b => b.classList.remove('active'));
-    const btn = document.getElementById('t-' + cat);
+    curMapCat = cat.toLowerCase(); // Ensure lowercase internal state
+    document.querySelectorAll('.tab-grid .t-btn').forEach(b => b.classList.remove('active'));
+    
+    // Support both id=t-alert and id=t-ALERT
+    const btn = document.getElementById('t-' + cat.toLowerCase()) || document.getElementById('t-' + cat.toUpperCase());
     if(btn) btn.classList.add('active');
     
     const label = document.getElementById('cur-cat');
@@ -85,21 +92,35 @@ function renderMarkerIcons() {
     const area = document.getElementById('marker-list-area');
     if(!area) return;
     
-    const icons = library.available_icons[curMapCat] || [];
+    // Case-insensitive lookup
+    if(!library) return;
+    if(!library.available_icons) library.available_icons = {};
+    const icons = library.available_icons[curMapCat.toLowerCase()] || library.available_icons[curMapCat.toUpperCase()] || [];
+    
     if(icons.length === 0) {
-        area.innerHTML = '<div style="opacity:0.3; font-size:10px; padding:10px;">Nessuna icona caricata per questa categoria</div>';
+        area.innerHTML = `<div style="opacity:0.3; font-size:10px; padding:15px; text-align:center; border:1px dashed rgba(255,255,255,0.1); border-radius:15px; margin:10px;">
+            NESSUNA ICONA PER "${curMapCat.toUpperCase()}"<br><br>
+            <span style="font-size:9px; opacity:0.7;">CARICA UN'IMMAGINE QUI SOTTO PER INIZIARE</span>
+        </div>`;
         return;
     }
 
-    area.innerHTML = icons.map((icon, idx) => `
-        <div class="icon-item" style="display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); padding:8px; border-radius:10px; margin-bottom:5px;">
-            <img src="${icon}" style="width:30px; height:30px; object-fit:contain; background:#000; border-radius:4px; border:1px solid rgba(255,255,255,0.1);">
-            <div style="flex:1;">
-                 <div style="font-size:9px; opacity:0.5;">ICONA ${idx+1}</div>
+    area.innerHTML = icons.map((icon, idx) => {
+        const url = typeof icon === 'object' ? icon.url : icon;
+        const name = typeof icon === 'object' ? icon.name : `ICONA #${idx+1}`;
+        
+        return `
+            <div class="icon-item" style="display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); padding:8px; border-radius:10px; margin-bottom:5px; border:1px solid rgba(255,255,255,0.05);">
+                <div style="width:35px; height:35px; background:#000; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid rgba(255,255,255,0.1);">
+                    <img src="${url}" style="width:100%; height:100%; object-fit:contain;">
+                </div>
+                <div style="flex:1;">
+                     <div style="font-size:10px; color:var(--accent); font-weight:900; letter-spacing:1px;">${name}</div>
+                </div>
+                <button onclick="deleteIcon(${idx})" style="background:none; border:none; color:#ff5252; cursor:pointer; opacity:0.4; transition:0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'"><i data-lucide="trash-2" style="width:14px;"></i></button>
             </div>
-            <button onclick="deleteIcon(${idx})" style="background:none; border:none; color:#ff5252; cursor:pointer;"><i data-lucide="trash-2" style="width:12px;"></i></button>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     if(window.lucide) lucide.createIcons();
 }
 
@@ -107,12 +128,18 @@ async function uploadIcon(event) {
     const file = event.target.files[0];
     if(!file) return;
     
+    const iconName = prompt("Inserisci il nome per questa icona (es. BRACCONIERE):", file.name.split('.')[0].toUpperCase());
+    if(!iconName) return;
+
     const url = await window.PARKS_DB.uploadFile(file, 'icons/' + curMapCat + '/' + Date.now() + '_' + file.name);
     
     if(!library.available_icons) library.available_icons = {};
     if(!library.available_icons[curMapCat]) library.available_icons[curMapCat] = [];
     
-    library.available_icons[curMapCat].push(url);
+    // Store as object if we want name, but for compatibility we might need to check
+    // I'll store it in a way that handles both string URLs and objects
+    library.available_icons[curMapCat].push({ url: url, name: iconName.toUpperCase() });
+    
     save();
     renderMarkerIcons();
     event.target.value = '';
@@ -120,7 +147,9 @@ async function uploadIcon(event) {
 
 function deleteIcon(idx) {
     if(!confirm("Eliminare questa icona?")) return;
-    library.available_icons[curMapCat].splice(idx, 1);
+    const cat = curMapCat.toLowerCase();
+    const icons = library.available_icons[cat] || library.available_icons[cat.toUpperCase()];
+    if(icons) icons.splice(idx, 1);
     save();
     renderMarkerIcons();
 }
@@ -130,20 +159,23 @@ function handleMapClick(event) {
     const x = ((event.clientX - rect.left) / rect.width) * 100;
     const y = ((event.clientY - rect.top) / rect.height) * 100;
     
-    const icons = library.available_icons[curMapCat] || [];
+    const icons = library.available_icons[curMapCat.toLowerCase()] || library.available_icons[curMapCat.toUpperCase()] || [];
     if(icons.length === 0) {
         alert("Carica almeno un'icona per questa categoria prima di posizionare marker.");
         return;
     }
-    
-    const title = prompt("Titolo del Marker:", "Nuovo Punto");
+    const iconData = icons[0];
+    const defaultTitle = typeof iconData === 'object' ? iconData.name : "Nuovo Punto";
+    const iconUrl = typeof iconData === 'object' ? iconData.url : iconData;
+
+    const title = prompt("Titolo del Marker:", defaultTitle);
     if(!title) return;
     
     const newMarker = {
         id: Date.now(),
-        type: curMapCat,
+        type: curMapCat.toLowerCase(),
         title: title,
-        icon: icons[0], // Use first icon by default
+        icon: iconUrl, 
         x: x,
         y: y,
         timestamp: Date.now()
@@ -186,7 +218,8 @@ function editMarker(id) {
     } else {
         marker.title = newTitle;
         // Optionally cycle icon
-        const icons = library.available_icons[marker.type] || [];
+        const cat = marker.type.toLowerCase();
+        const icons = library.available_icons[cat] || library.available_icons[cat.toUpperCase()] || [];
         if(icons.length > 1) {
             const curIdx = icons.indexOf(marker.icon);
             const nextIdx = (curIdx + 1) % icons.length;

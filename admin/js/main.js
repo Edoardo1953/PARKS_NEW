@@ -30,7 +30,10 @@ function switchView(view) {
     const nav = document.getElementById('nav-' + view);
     if(nav) nav.classList.add('active');
     
-    curSection = view;
+    const transientViews = ['fiche-editor', 'tourist-editor', 'itinerary-editor-modal', 'quiz-editor-modal'];
+    if(!transientViews.includes(view)) {
+        curSection = view;
+    }
     
     if(view === 'dashboard' && typeof initDashboardMap === 'function') initDashboardMap();
     if(view === 'library' && typeof renderLib === 'function') renderLib();
@@ -87,10 +90,36 @@ window.PARKS_APP.init(() => {
         });
     };
 
-    loadData('parks_library_v2', {categories:[], available_icons:{}, map_markers:[], available_maps:[]}, 'library', () => {
-        if(typeof renderUI === 'function') renderUI();
-        switchView('dashboard');
+    // Load Library with Migration check
+    window.PARKS_DB.get('parks_library_v2', null, (dataV2) => {
+        if(dataV2 && dataV2.available_icons) {
+            window.library = dataV2;
+            finishLibLoad();
+        } else {
+            // Try fallback to old key
+            window.PARKS_DB.get('parks_library', null, (dataOld) => {
+                if(dataOld) {
+                    console.log("Migrating data from parks_library to parks_library_v2...");
+                    window.library = dataOld;
+                    // Ensure structure
+                    if(!window.library.available_icons) window.library.available_icons = {};
+                    if(!window.library.map_markers) window.library.map_markers = [];
+                    if(!window.library.available_maps) window.library.available_maps = [];
+                    // Save to new key
+                    window.PARKS_DB.save('parks_library_v2', window.library);
+                } else {
+                    window.library = {categories:[], available_icons:{}, map_markers:[], available_maps:[]};
+                }
+                finishLibLoad();
+            });
+        }
     });
+
+    function finishLibLoad() {
+        if(typeof renderUI === 'function') renderUI();
+        if(typeof renderMarkerIcons === 'function') renderMarkerIcons(); // Force refresh for map editor
+        switchView('dashboard');
+    }
 
     loadData('parks_itineraries', [], 'itinerariesList', () => { if(typeof renderAdminItineraries === 'function') renderAdminItineraries(); });
     loadData('parks_users', [], 'users', () => { if(typeof renderUsers === 'function') renderUsers(); });

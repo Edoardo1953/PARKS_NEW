@@ -754,7 +754,7 @@
                             <button class="btn-editor btn-delete" onclick="deleteItem()">
                                 <i data-lucide="trash-2"></i>
                             </button>
-                            <button class="btn-editor btn-close" onclick="switchView(curSection || 'library')" title="Esci senza salvare" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px;">
+                            <button class="btn-editor btn-close" onclick="switchView(curEditContext ? curEditContext.section : 'library')" title="Esci senza salvare" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:40px;">
                                 <i data-lucide="chevron-left"></i> BACK
                             </button>
                         </div>
@@ -848,16 +848,21 @@
                             </label>
                         </div>
 
+                        <!-- CLOUD SYNC SECTION -->
+                        <div class="db-section" style="margin-bottom:1.5rem;">
+                            <div class="stat-card" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(45,122,77,0.2) 0%, rgba(255,171,64,0.1) 100%); border: 1px solid rgba(255,171,64,0.2);">
+                                <div>
+                                    <h3 style="color: var(--accent); margin:0; font-size:12px; letter-spacing:1px;">SINCRONIZZAZIONE CLOUD</h3>
+                                    <p style="font-size:10px; opacity:0.6; margin:5px 0 0 0;">Recupera dati online (Utenti, Itinerari, Turisti)</p>
+                                </div>
+                                <button onclick="forceCloudSync()" class="btn-plus-s" style="margin:0; background:var(--primary-green); border:none; padding:10px 15px; font-size:10px; height:auto;">SINCRONIZZA <i data-lucide="refresh-cw" style="width:12px; margin-left:5px;"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- MARKERS SECTION -->
                         <div class="db-section">
-                            <div class="section-header"><span>MARKERS</span> <i data-lucide="pin"></i></div>
-                            <div class="stat-card" style="grid-column: span 2; display: flex; flex-direction: row; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(45,122,77,0.2) 0%, rgba(255,171,64,0.1) 100%);">
-                <div>
-                    <h3 style="color: var(--accent); margin:0;">SINCRONIZZAZIONE CLOUD</h3>
-                    <p style="font-size:12px; opacity:0.6; margin:5px 0 0 0;">Recupera tutti i dati salvati online (Utenti, Itinerari, Turisti)</p>
-                </div>
-                <button onclick="forceCloudSync()" class="btn-plus-s" style="margin:0; background:var(--primary-green); border:none; padding:12px 25px;">SINCRONIZZA ORA <i data-lucide="refresh-cw" style="width:14px; margin-left:8px;"></i></button>
-            </div>
-            <div class="stat-card">
+                            <div class="section-header"><span>CATEGORIE MARKER</span> <i data-lucide="layers"></i></div>
+                            <div class="tab-grid" style="grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:15px; padding:0 5px;">
                                 <button class="t-btn active" id="t-alert" onclick="switchX('alert')">ALERT</button>
                                 <button class="t-btn" id="t-must_see" onclick="switchX('must_see')">MUST SEE</button>
                                 <button class="t-btn" id="t-com" onclick="switchX('com')">COM</button>
@@ -865,8 +870,8 @@
                                 <button class="t-btn" id="t-anim" onclick="switchX('anim')">ANIM</button>
                                 <button class="t-btn" id="t-pts" onclick="switchX('pts')">PUNTI</button>
                             </div>
-                            <div class="list-scroll marker-list" id="marker-list-area"></div>
-                            <label class="btn-plus-s" id="add-marker-container">
+                            <div class="list-scroll marker-list" id="marker-list-area" style="max-height:250px;"></div>
+                            <label class="btn-plus-s" id="add-marker-container" style="margin-top:10px;">
                                 <i data-lucide="image" style="width:14px;"></i> AGGIUNGI ICONA A <span id="cur-cat">POS</span>
                                 <input type="file" style="display:none;" onchange="uploadIcon(event)">
                             </label>
