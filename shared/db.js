@@ -107,11 +107,20 @@ window.PARKS_DB = {
                  'parks_kids_drawings', 'parks_kids_memory', 'parks_kids_quiz', 'parks_kids_puzzles',
                  'parks_weather_config'],
 
+    _updateIDB: function(key, data) {
+        if (!this._db || data === null || data === undefined) return;
+        try {
+            var wtx = this._db.transaction(['library'], 'readwrite');
+            wtx.objectStore('library').put(data, key);
+        } catch(e) {
+            console.error("[DB] IDB Write Error for " + key, e);
+        }
+    },
+
     get: function(key, fallback, callback) {
         var self = this;
         var isHuge = (key === 'parks_library_v2' || key === 'parks_gallery' || key === 'parks_visit_namibia_v1');
 
-        // Helper: legge da IndexedDB, poi fallback
         function readFromIDB(cb) {
             if (self._db) {
                 var tx = self._db.transaction(['library'], 'readonly');
@@ -125,28 +134,13 @@ window.PARKS_DB = {
             }
         }
 
-        // Helper: aggiorna IndexedDB (solo se il dato è significativo)
-        function updateIDB(data, customKey) {
-            var k = customKey || key;
-            if (!self._db || data === null || data === undefined) return;
-            try {
-                var wtx = self._db.transaction(['library'], 'readwrite');
-                wtx.objectStore('library').put(data, k);
-            } catch(e) {}
-        }
-
-        // Per le chiavi HUGE (libreria 270MB, gallery):
-        // 1. Legge la versione dal Cloud (leggera)
-        // 2. Compara con la versione locale
-        // 3. Se diversa o mancante, scarica il "malloppone" dal Cloud
         if (isHuge) {
             var versionKey = key + '_version';
             function fetchHugeFromFirebase() {
                 self._getFromFirebase(key, fallback, function(data) {
-                    // Dopo aver scaricato i dati, salviamo anche la versione locale
                     firebase.database().ref(versionKey).once('value').then(snap => {
                         var v = snap.val() || Date.now();
-                        updateIDB(v, versionKey);
+                        self._updateIDB(versionKey, v);
                         callback(data);
                     });
                 });
@@ -155,14 +149,13 @@ window.PARKS_DB = {
             if (window.firebase) {
                 firebase.database().ref(versionKey).once('value').then(vSnap => {
                     var cloudV = vSnap.val();
-                    // Legge versione locale da IDB
                     if (self._db) {
                         var tx = self._db.transaction(['library'], 'readonly');
                         var vReq = tx.objectStore('library').get(versionKey);
                         vReq.onsuccess = function() {
                             var localV = vReq.result;
                             if (cloudV && cloudV !== localV) {
-                                console.log("[DB] Nuova versione Cloud per " + key + " (" + cloudV + " vs " + localV + "). Download in corso...");
+                                console.log("[DB] Nuova versione Cloud per " + key + " (" + cloudV + " vs " + localV + "). Download...");
                                 fetchHugeFromFirebase();
                             } else {
                                 readFromIDB(callback);
@@ -181,18 +174,13 @@ window.PARKS_DB = {
             return;
         }
 
-        // Per le chiavi dinamiche (itinerari, alerts, ecc.):
-        // Tenta Firebase → se non ha dati, usa IndexedDB → se vuoto, usa fallback
-        // NON sovrascrivere IndexedDB con dati vuoti da Firebase!
         if (window.firebase) {
             firebase.database().ref(key).once('value').then(function(snap) {
                 if (snap.exists() && snap.val() !== null) {
-                    // Firebase ha dati validi → aggiorna IndexedDB e usa quelli
                     var data = snap.val();
-                    updateIDB(data);
+                    self._updateIDB(key, data);
                     callback(data);
                 } else {
-                    // Firebase non ha il dato → leggi da IndexedDB senza sovrascrivere
                     console.warn('[DB] Firebase vuoto per "' + key + '", uso IndexedDB locale.');
                     readFromIDB(callback);
                 }
@@ -205,10 +193,8 @@ window.PARKS_DB = {
             return;
         }
 
-        // Firebase non disponibile: solo IndexedDB
         readFromIDB(callback);
     },
-
 
     _getFromFirebase: function(key, fallback, callback) {
         var self = this;
@@ -216,12 +202,7 @@ window.PARKS_DB = {
             firebase.database().ref(key).once('value').then(function(snap) {
                 if (snap.exists()) {
                     var data = snap.val();
-                    if(self._db) {
-                        try {
-                            var tx = self._db.transaction(['library'], 'readwrite');
-                            tx.objectStore('library').put(data, key);
-                        } catch(e){}
-                    }
+                    self._updateIDB(key, data);
                     callback(data);
                 } else {
                     callback(fallback);
@@ -237,26 +218,18 @@ window.PARKS_DB = {
     save: async function(key, value, callback, localOnly = false) {
         var self = this;
         
-        // 1. Salva in IndexedDB (ISTANTANEO - Cache locale)
-        if (this._db) {
-            try {
-                var tx = this._db.transaction(['library'], 'readwrite');
-                tx.objectStore('library').put(value, key);
-            } catch(e) { 
-                console.error("[DB] IDB Save Error:", e); 
-            }
-        }
+        // 1. Salva in IndexedDB
+        this._updateIDB(key, value);
 
-        // 2. Salva nel database Cloud Firebase (Sincronizzazione)
+        // 2. Salva nel database Cloud
         if (window.firebase && !localOnly) {
             try {
                 var isHuge = (key === 'parks_library_v2' || key === 'parks_gallery' || key === 'parks_visit_namibia_v1');
                 
-                // Se è una chiave enorme, aggiorniamo il timestamp di versione nel Cloud
                 if (isHuge) {
                     var v = Date.now();
                     await firebase.database().ref(key + '_version').set(v);
-                    updateIDB(v, key + '_version');
+                    this._updateIDB(key + '_version', v);
                 }
 
                 await firebase.database().ref(key).set(value);
@@ -266,7 +239,6 @@ window.PARKS_DB = {
                 if (callback) callback(false);
             }
         } else {
-            // Solo local o firebase non pronto
             if (callback) callback(true);
         }
     }

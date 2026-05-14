@@ -1,0 +1,44 @@
+        function saveMarkerProps(id) {
+            const marker = library.map_markers.find(m => m.id == id);
+            if(marker) {
+                marker.title = document.getElementById('me-title').value.toUpperCase();
+                marker.ficheId = document.getElementById('me-fiche').value;
+                save(false);
+                renderMapLayer();
+                closeMarkerEditor();
+            }
+        }
+    </script>
+
+    <!-- MODULAR SYSTEM -->
+    <script src="js/main.js"></script>
+    <script src="js/system.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/users.js"></script>
+    <script src="js/kids.js"></script>
+    <script src="js/library.js"></script>
+    <script src="js/itineraries.js"></script>
+
+    <script>
+        // Emergency Patch (Windhoek)
+        setTimeout(() => {
+            if(window.PARKS_DB) {
+                window.PARKS_DB.get('parks_visit_namibia_v1', {categories:[]}, (dataVisit) => {
+                    let found = false;
+                    (dataVisit.categories || []).forEach(c => {
+                        (c.subcategories || []).forEach(s => {
+                            (s.items || []).forEach(i => {
+                                if(i.name && i.name.toUpperCase().includes('WINDHOE') && (!i.facts || !i.facts.weight)) {
+                                    i.facts = { label1: "POPOLAZIONE", label2: "SUPERFICIE", label3: "REGIONE", weight: "430.000 ab.", size: "5.133 km²", life: "Khomas" };
+                                    found = true;
+                                }
+                            });
+                        });
+                    });
+                    if(found) window.PARKS_DB.save('parks_visit_namibia_v1', dataVisit);
+                });
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

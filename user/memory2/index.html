@@ -26,11 +26,11 @@
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             font-family: 'Outfit', sans-serif; background: var(--dark-bg); color: white;
-            overflow-x: hidden !important;
+            overflow-x: hidden;
             position: relative;
         }
 
-        .layout { display: flex; height: 100vh; width: 100vw; overflow-x: hidden !important; }
+        .layout { display: flex; height: 100vh; width: 100%; overflow-x: hidden; }
 
         /* SIDEBAR */
         .sidebar {
@@ -108,7 +108,7 @@
         .main-content-scroll {
             flex-grow: 1;
             overflow-y: auto;
-            overflow-x: hidden !important;
+            overflow-x: hidden;
             position: relative;
             background: linear-gradient(to bottom, rgba(13, 30, 26, 0.9), var(--dark-bg)), url('../../assets/bg_homepage_2.JPG');
             background-size: cover;
