@@ -19,23 +19,53 @@ window.PARKS_APP = {
     renderMobileNav: function() {
         // 1. Check if we should render (not in admin, not on login)
         const fullPath = window.location.pathname;
-        const fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1);
+        const pathParts = fullPath.split('/');
+        let fileName = pathParts[pathParts.length - 1] || 'homepage.html';
+        if (fileName.includes('?')) fileName = fileName.split('?')[0];
 
         // Don't render on login/register or admin pages
-        // We allow '' only if we are sure it's not the landing page, 
-        // but since index.html is the landing, we exclude '' to be safe if it's the root.
         if (fullPath.includes('/admin/') || 
             fileName === 'index.html' || 
             fileName === 'login.html' || 
             fileName === 'register.html') {
+            console.log("🚫 PARKS_APP: Navigazione mobile esclusa per questa pagina (" + fileName + ")");
             return;
+        }
+
+        // 1. TOP BAR (Iniezione automatica se manca)
+        if (!document.querySelector('.parks-mobile-topbar') && !document.querySelector('.mobile-header') && window.innerWidth <= 768) {
+            const topBar = document.createElement('div');
+            topBar.className = 'parks-mobile-topbar';
+            topBar.style.cssText = "display:flex; position:fixed; top:0; left:0; right:0; height:60px; background:rgba(13,30,26,0.95); backdrop-filter:blur(20px); border-bottom:1px solid rgba(255,255,255,0.1); z-index:9998; padding:0 15px; justify-content:space-between; align-items:center;";
+            
+            const isHome = fileName === 'homepage.html';
+            
+            topBar.innerHTML = `
+                <div style="display:flex; align-items:center; gap:12px;">
+                    ${!isHome ? `
+                        <button onclick="window.history.back()" style="background:rgba(255,171,64,0.1); border:1px solid rgba(255,171,64,0.3); color:#ffab40; padding:6px 10px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                            <i data-lucide="chevron-left" style="width:18px; height:18px;"></i>
+                        </button>
+                    ` : ''}
+                    <img src="../shared/parks_logo_combined_white.svg" style="height:22px; width:auto;" alt="PARKS">
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button onclick="window.PARKS_APP.toggleDrawer()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; padding:8px 10px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                        <i data-lucide="menu" style="width:20px; height:20px;"></i>
+                    </button>
+                </div>
+            `;
+            document.body.prepend(topBar);
+            // Adjust main content padding to account for fixed top bar
+            const main = document.querySelector('.main-content') || document.querySelector('.layout');
+            if(main) main.style.paddingTop = "70px";
         }
 
         if (document.querySelector('.mobile-nav')) return;
         
-        const currentPage = fileName || 'homepage.html';
+        const currentPage = fileName;
         
-        // 1. Barra Inferiore (Quick Links)
+        // 2. Barra Inferiore (Quick Links)
         const nav = document.createElement('nav');
         nav.className = 'mobile-nav';
         
@@ -57,7 +87,7 @@ window.PARKS_APP = {
             `;
         }).join('');
 
-        // 2. Drawer (Menu Completo)
+        // 3. Drawer (Menu Completo)
         const drawer = document.createElement('div');
         drawer.className = 'mobile-drawer';
         drawer.id = 'mobile-drawer';

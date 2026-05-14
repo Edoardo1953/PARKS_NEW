@@ -371,28 +371,30 @@
         <main class="main-content">
             <!-- Top bar compatta: titolo itinerario + pulsante torna -->
             <header style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem 1.5rem;">
-                <button onclick="window.history.back()" style="background:rgba(255,171,64,0.15); border:1px solid rgba(255,171,64,0.3); color:var(--accent); padding:8px 16px; border-radius:30px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:12px; transition:0.2s;" onmouseover="this.style.background='rgba(255,171,64,0.3)'" onmouseout="this.style.background='rgba(255,171,64,0.15)'">
-                    <i data-lucide="arrow-left" style="width:16px;"></i> TUTTI GLI ITINERARI
-                </button>
+                <div class="header-back">
+                    <button onclick="window.history.back()" style="background:rgba(255,171,64,0.15); border:1px solid rgba(255,171,64,0.3); color:var(--accent); padding:8px 16px; border-radius:30px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:12px; transition:0.2s;" onmouseover="this.style.background='rgba(255,171,64,0.3)'" onmouseout="this.style.background='rgba(255,171,64,0.15)'">
+                        <i data-lucide="arrow-left" style="width:16px;"></i> TUTTI GLI ITINERARI
+                    </button>
+                </div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <div id="route-title" style="font-size:1rem; font-weight:900; color:var(--accent); letter-spacing:3px; text-transform:uppercase;">CARICAMENTO...</div>
                     <div id="route-location" style="font-size:0.65rem; font-weight:700; opacity:0.4; letter-spacing:2px; text-transform:uppercase;"></div>
                 </div>
                 <div id="route-info-inline" style="display:none; flex-direction:row; gap:20px; align-items:center;">
                     <div style="text-align:center;">
-                        <div id="route-dist" style="font-size:1rem; font-weight:900; color:var(--accent);">â€”</div>
+                        <div id="route-dist" style="font-size:1rem; font-weight:900; color:var(--accent);">—</div>
                         <div style="font-size:0.6rem; opacity:0.5; letter-spacing:1px;">KM</div>
                     </div>
                     <div style="text-align:center;">
-                        <div id="route-time" style="font-size:1rem; font-weight:900; color:#4caf50;">â€”</div>
+                        <div id="route-time" style="font-size:1rem; font-weight:900; color:#4caf50;">—</div>
                         <div style="font-size:0.6rem; opacity:0.5; letter-spacing:1px;">TEMPO</div>
                     </div>
                     <div style="text-align:center;">
-                        <div id="route-stops" style="font-size:1rem; font-weight:900; color:white;">â€”</div>
+                        <div id="route-stops" style="font-size:1rem; font-weight:900; color:white;">—</div>
                         <div style="font-size:0.6rem; opacity:0.5; letter-spacing:1px;">TAPPE</div>
                     </div>
                 </div>
-                <div style="width:160px;"></div><!-- spacer per centrare il titolo -->
+                <div class="header-spacer" style="width:160px;"></div><!-- spacer per centrare il titolo -->
             </header>
 
             <div class="map-viewport" id="map-viewport">

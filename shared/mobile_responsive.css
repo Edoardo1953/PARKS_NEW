@@ -260,8 +260,12 @@
         padding: 0.5rem 0.8rem !important;
         flex-shrink: 0;
     }
-    body.itinerary-map-page header div:first-child {
-        display: flex !important; /* show the back button */
+    body.itinerary-map-page header .header-back {
+        display: flex !important; /* show the back button container */
+        z-index: 100;
+    }
+    body.itinerary-map-page header .header-spacer {
+        display: none !important; /* Hide spacer on mobile to save space */
     }
     /* ===== END ITINERARY MAP PAGE ===== */
 
@@ -386,8 +390,8 @@
         padding: 1rem !important;
     }
 
-    header div:first-child {
-        display: none !important; /* Hide empty left gap on mobile */
+    header div:first-child:empty {
+        display: none !important; /* Hide ONLY empty left gap on mobile */
     }
 
     header button {

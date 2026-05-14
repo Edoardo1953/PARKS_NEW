@@ -132,10 +132,11 @@
             position: absolute;
             inset: 0;
             background: var(--dark-bg);
-            z-index: 200;
+            z-index: 2000;
             display: none;
             flex-direction: column;
             padding: 20px;
+            overflow-x: hidden !important; /* Fix horizontal jitter */
         }
 
         .game-header {
@@ -237,6 +238,8 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             border: 1px solid rgba(255,255,255,0.1);
             width: fit-content;
+            max-width: calc(100vw - 40px); /* Constrain within padding */
+            box-sizing: border-box;
         }
 
         .puzzle-tile {
@@ -439,6 +442,7 @@
 
         /* Additional Kids Corner Mobile Fixes */
         @media (max-width: 768px) {
+            .hide-mobile { display: none !important; }
             h1 { font-size: 2.5rem !important; letter-spacing: 4px !important; }
             .btn-play { padding: 15px 25px !important; font-size: 1.1rem !important; width: 90% !important; }
             #home-icons-container { font-size: 5rem !important; margin: 20px 0 !important; }
@@ -478,9 +482,24 @@
             /* Puzzle Mobile Adjustments */
             #puzzle-image-selector { max-height: 140px !important; margin-bottom: 5px !important; }
             #level-selector-wrapper { margin-top: 40px !important; }
-            #puzzle-container { gap: 15px !important; width: 100% !important; }
+            #puzzle-container { gap: 15px !important; width: 100% !important; overflow-x: hidden; }
             .animal-thumb { min-width: 70px !important; height: 70px !important; }
             .animal-selector { gap: 10px !important; padding: 5px !important; }
+
+            /* Puzzle Header Mobile Fix */
+            #puzzle-overlay .game-header-top { 
+                flex-direction: column !important; 
+                gap: 15px !important; 
+                margin-bottom: 20px !important;
+            }
+            #puzzle-overlay .game-header-top h2 { font-size: 1.2rem !important; letter-spacing: 4px !important; }
+            #puzzle-overlay .game-header-top .header-actions { width: 100%; justify-content: center !important; }
+
+            /* Smaller Tiles for very small screens */
+            @media (max-width: 380px) {
+                .puzzle-tile { width: 70px !important; height: 70px !important; }
+                .puzzle-grid { padding: 10px !important; gap: 4px !important; }
+            }
         }
     </style>
 </head>
@@ -605,19 +624,19 @@
 
             <!-- PUZZLE OVERLAY -->
             <div id="puzzle-overlay" class="game-overlay" style="display:none; position:fixed; inset:0; background:var(--dark-bg); z-index:2000; flex-direction:column; align-items:center; padding:20px; overflow-y:auto;">
-                <div style="width:100%; max-width:1100px; display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                <div class="game-header-top" style="width:100%; max-width:1100px; display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
                     <button onclick="closePuzzle()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:12px 25px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:10px;">
                         <i data-lucide="chevron-left"></i> ESCI
                     </button>
                     
-                    <h2 id="puzzle-title" style="margin:0; letter-spacing:8px; color:#4cc9f0; font-size:1.5rem; text-transform:uppercase;">PUZZLE ANIMALE</h2>
+                    <h2 id="puzzle-title" style="margin:0; letter-spacing:8px; color:#4cc9f0; font-size:1.5rem; text-transform:uppercase; text-align:center;">PUZZLE ANIMALE</h2>
 
-                    <div style="display:flex; gap:12px;">
+                    <div class="header-actions" style="display:flex; gap:12px;">
                         <button type="button" onclick="solvePuzzle()" style="background:rgba(76, 201, 240, 0.1); border:1px solid rgba(76, 201, 240, 0.3); color:#4cc9f0; padding:12px 20px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px;">
-                            <i data-lucide="eye"></i> SOLUZIONE
+                            <i data-lucide="eye"></i> <span class="hide-mobile">SOLUZIONE</span>
                         </button>
                         <button type="button" onclick="initPuzzle()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; padding:12px 20px; border-radius:15px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px;">
-                            <i data-lucide="rotate-ccw"></i> RESET
+                            <i data-lucide="rotate-ccw"></i> <span class="hide-mobile">RESET</span>
                         </button>
                     </div>
                 </div>
@@ -1130,7 +1149,7 @@
                 let tileSizePx;
                 
                 if (isMobile) {
-                    tileSizePx = size === 3 ? 100 : 80;
+                    tileSizePx = size === 3 ? 100 : (window.innerWidth < 380 ? 70 : 80);
                 } else {
                     // On desktop, target about 80% of viewport height
                     const availableHeight = window.innerHeight * 0.7;
