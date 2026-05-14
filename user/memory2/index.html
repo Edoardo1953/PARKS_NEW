@@ -9,8 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="../../shared/db.js"></script>
-    <script src="../../shared/app.js"></script>
-    <link rel="stylesheet" href="../../shared/mobile_responsive.css">
+    <script src="../../shared/app.js?v=4.0"></script>
+    <link rel="stylesheet" href="../../shared/mobile_responsive.css?v=4.0">
     <link rel="stylesheet" href="styles.css?v=1.5">
     <style>
         :root { 
@@ -118,7 +118,23 @@
             .sidebar { width: 80px; padding: 30px 10px; }
             .sidebar-menu li span, .sidebar-logo, .logout-btn span { display: none; }
             .sidebar-menu li { justify-content: center; padding: 15px; }
-            .main-content-scroll { padding: 20px; }
+            .main-content-scroll { padding: 10px !important; }
+            
+            /* Compact Header & Upload for Mobile */
+            .header { margin-bottom: 5px !important; padding-top: 0 !important; }
+            .logo-area { display: flex; align-items: center; gap: 8px; justify-content: center; }
+            .header h1 { font-size: 1.4rem !important; margin: 0 !important; }
+            .header .logo-area i { display: inline-block !important; font-size: 1.2rem !important; color: var(--accent); }
+            .subtitle { display: block !important; font-size: 0.75rem !important; margin: 2px 0 5px 0 !important; line-height: 1.1 !important; opacity: 0.7; }
+            
+            .upload-section { padding: 12px !important; margin-bottom: 8px !important; border-width: 1px !important; }
+            .upload-section h2 { font-size: 1rem !important; margin: 2px 0 !important; }
+            .upload-section p { font-size: 0.75rem !important; margin: 0 !important; opacity: 0.6; }
+            .upload-icon { font-size: 1.4rem !important; margin-bottom: 3px !important; }
+            .upload-btn { padding: 8px 15px !important; font-size: 0.8rem !important; margin-top: 5px !important; }
+            
+            .middle-layout { gap: 8px !important; }
+            .glass-panel { padding: 10px !important; }
         }
     </style>
 </head>
