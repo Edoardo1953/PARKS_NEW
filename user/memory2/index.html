@@ -11,7 +11,7 @@
     <script src="../../shared/db.js"></script>
     <script src="../../shared/app.js?v=4.0"></script>
     <link rel="stylesheet" href="../../shared/mobile_responsive.css?v=4.0">
-    <link rel="stylesheet" href="styles.css?v=1.5">
+    <link rel="stylesheet" href="styles.css?v=1.6">
     <style>
         :root { 
             --primary: #2d7a4d; 
@@ -21,13 +21,16 @@
             --sidebar-width: 300px;
         }
         
+        * { box-sizing: border-box; }
+        
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             font-family: 'Outfit', sans-serif; background: var(--dark-bg); color: white;
-            /* overflow: hidden; */ /* Permetti lo scroll naturale */
+            overflow-x: hidden !important;
+            position: relative;
         }
 
-        .layout { display: flex; height: 100vh; width: 100vw; }
+        .layout { display: flex; height: 100vh; width: 100vw; overflow-x: hidden !important; }
 
         /* SIDEBAR */
         .sidebar {
@@ -105,6 +108,7 @@
         .main-content-scroll {
             flex-grow: 1;
             overflow-y: auto;
+            overflow-x: hidden !important;
             position: relative;
             background: linear-gradient(to bottom, rgba(13, 30, 26, 0.9), var(--dark-bg)), url('../../assets/bg_homepage_2.JPG');
             background-size: cover;

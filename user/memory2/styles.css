@@ -30,6 +30,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    overflow-x: hidden !important;
 }
 
 .header {
@@ -80,6 +81,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    width: 100% !important;
+    overflow-x: hidden !important;
 }
 
 /* Glass Panels */
@@ -275,9 +278,11 @@ select.glass-input {
 
 .timeline-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 1rem;
     padding-bottom: 1rem;
+    width: 100% !important;
+    overflow-x: hidden !important;
 }
 
 .timeline-item {
