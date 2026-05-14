@@ -285,9 +285,13 @@
 
             <div id="view-library" class="view-pane">
                 <div class="lib-centered-hub">
-                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
-                        <h1 style="letter-spacing: 5px;">ARCHIVIO PRO</h1>
-                        <button class="btn-plus-s" onclick="addCategory()">+ AGGIUNGI MACRO-CATEGORIA</button>
+                        <div style="display:flex; align-items:center; gap:20px;">
+                            <button class="btn-editor btn-close" onclick="switchView('dashboard')" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:40px;">
+                                <i data-lucide="chevron-left"></i> BACK
+                            </button>
+                            <h1 style="letter-spacing: 5px; margin:0;">ARCHIVIO PRO</h1>
+                        </div>
+                        <button class="btn-plus-s" onclick="addCategory()" style="margin:0;">+ AGGIUNGI MACRO-CATEGORIA</button>
                     </header>
                     <div id="lib-container" style="display:flex; flex-direction:column; gap:2rem; padding-bottom:5rem;"></div>
                 </div>
@@ -295,9 +299,13 @@
 
             <div id="view-visit" class="view-pane">
                 <div class="lib-centered-hub">
-                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
-                        <h1 style="letter-spacing: 5px;">VISIT NAMIBIA PRO</h1>
-                        <button class="btn-plus-s" onclick="addCategory()">+ AGGIUNGI MACRO-CATEGORIA</button>
+                        <div style="display:flex; align-items:center; gap:20px;">
+                            <button class="btn-editor btn-close" onclick="switchView('dashboard')" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:40px;">
+                                <i data-lucide="chevron-left"></i> BACK
+                            </button>
+                            <h1 style="letter-spacing: 5px; margin:0;">VISIT NAMIBIA PRO</h1>
+                        </div>
+                        <button class="btn-plus-s" onclick="addCategory()" style="margin:0;">+ AGGIUNGI MACRO-CATEGORIA</button>
                     </header>
                     <div id="visit-container" style="display:flex; flex-direction:column; gap:2rem; padding-bottom:5rem;"></div>
                 </div>
@@ -311,11 +319,14 @@
                             <p style="font-size:11px; opacity:0.5; margin-top:5px; font-weight:700; color:var(--accent);">CREA PERCORSI SUGGERITI PER GLI UTENTI</p>
                         </div>
                         <div style="display:flex; gap:12px;">
+                            <button class="btn-editor btn-close" onclick="switchView('dashboard')" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px;">
+                                <i data-lucide="chevron-left"></i> BACK
+                            </button>
                             <button class="btn-editor" onclick="forceSyncItineraries()" style="background:rgba(255,171,64,0.1); border:1px solid var(--accent); color:var(--accent); padding:10px 20px; border-radius:12px; font-weight:900; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:8px;">
-                                <i data-lucide="refresh-cw" style="width:14px;"></i> SINCRONIZZA CLOUD
+                                <i data-lucide="refresh-cw" style="width:14px;"></i> SYNC
                             </button>
                             <button class="btn-editor btn-save" onclick="addItinerary()" style="padding:10px 20px;">
-                                <i data-lucide="plus" style="width:14px;"></i> NUOVO ITINERARIO
+                                <i data-lucide="plus" style="width:14px;"></i> NUOVO
                             </button>
                         </div>
                     </header>
@@ -327,8 +338,12 @@
 
             <div id="view-home" class="view-pane">
                 <div class="lib-centered-hub">
-                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
-                        <h1 style="letter-spacing: 5px;">HOME CONTROLLO PRO</h1>
+                        <div style="display:flex; align-items:center; gap:20px;">
+                            <button class="btn-editor btn-close" onclick="switchView('dashboard')" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:40px;">
+                                <i data-lucide="chevron-left"></i> BACK
+                            </button>
+                            <h1 style="letter-spacing: 5px; margin:0;">HOME CONTROLLO PRO</h1>
+                        </div>
                         <button class="btn-editor btn-save" onclick="saveHomeAll()">
                             <i data-lucide="check"></i> SALVA TUTTO
                         </button>
@@ -368,8 +383,12 @@
                 </div>
             </div>
 
-            <div id="view-weather" class="view-pane">
-                <header style="margin-bottom:1rem;"><h1>CONFIGURAZIONE METEO NAMIBIA</h1></header>
+                <header style="margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem; display:flex; align-items:center; gap:20px;">
+                    <button class="btn-editor btn-close" onclick="switchView('dashboard')" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:40px;">
+                        <i data-lucide="chevron-left"></i> BACK
+                    </button>
+                    <h1 style="margin:0;">CONFIGURAZIONE METEO</h1>
+                </header>
                 <div style="background:rgba(255,255,255,0.05); padding:2rem; border-radius:20px; text-align:center;">
                     <i data-lucide="cloud-sun" style="width:64px; height:64px; color:var(--accent); margin-bottom:1rem;"></i>
                     <p>Modulo Meteo Live sincronizzato tramite Open-Meteo & Windy.</p>
@@ -379,9 +398,14 @@
 
             <div id="view-kids" class="view-pane">
                 <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
-                    <div>
-                        <h1 style="letter-spacing: 5px; margin:0;">KIDS CORNER PRO</h1>
-                        <p style="font-size:11px; opacity:0.5; margin-top:5px; font-weight:700; color:var(--accent);">GESTIONE CONTENUTI MULTIMEDIALI PER BAMBINI</p>
+                    <div style="display:flex; align-items:center; gap:20px;">
+                        <button class="btn-editor btn-close" onclick="switchView('dashboard')" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:40px;">
+                            <i data-lucide="chevron-left"></i> BACK
+                        </button>
+                        <div>
+                            <h1 style="letter-spacing: 5px; margin:0;">KIDS CORNER PRO</h1>
+                            <p style="font-size:11px; opacity:0.5; margin-top:5px; font-weight:700; color:var(--accent);">GESTIONE CONTENUTI MULTIMEDIALI PER BAMBINI</p>
+                        </div>
                     </div>
                 </header>
 
@@ -477,9 +501,13 @@
 
             <!-- MODAL EDITOR FOR KIDS DRAWINGS -->
             <div id="kid-editor-modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
-                <div class="modal-content" style="max-width:500px; width:90%; background:#1a1a1a; padding:40px; border-radius:30px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 20px 50px rgba(0,0,0,0.5);">
-                    <h2 id="kid-modal-title" style="letter-spacing:5px; margin:0; color:var(--accent); font-size:1.5rem;">NUOVO DISEGNO</h2>
-                    <p id="kid-modal-hint" style="font-size:11px; opacity:0.5; margin:10px 0 30px 0; font-weight:700;">CARICA UN'IMMAGINE IN BIANCO E NERO DA FAR COLORARE AI BIMBI</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h2 id="kid-modal-title" style="letter-spacing:5px; margin:0; color:var(--accent); font-size:1.5rem;">NUOVO DISEGNO</h2>
+                        <button class="btn-editor btn-close" onclick="closeKidEditor()" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:35px; font-size:10px;">
+                            <i data-lucide="chevron-left" style="width:14px;"></i> BACK
+                        </button>
+                    </div>
+                    <p id="kid-modal-hint" style="font-size:11px; opacity:0.5; margin:0 0 30px 0; font-weight:700;">CARICA UN'IMMAGINE IN BIANCO E NERO DA FAR COLORARE AI BIMBI</p>
                     
                     <div style="display:flex; flex-direction:column; gap:20px;">
                         <div class="input-group">
@@ -508,9 +536,13 @@
 
             <!-- MODAL EDITOR FOR QUIZ -->
             <div id="quiz-editor-modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
-                <div class="modal-content" style="max-width:600px; width:95%; background:#1a1a1a; padding:40px; border-radius:30px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 20px 50px rgba(0,0,0,0.5); max-height:90vh; overflow-y:auto;">
-                    <h2 style="letter-spacing:5px; margin:0; color:var(--accent); font-size:1.5rem;">NUOVA DOMANDA QUIZ</h2>
-                    <p style="font-size:11px; opacity:0.5; margin:10px 0 30px 0; font-weight:700;">IMPOSTA LA DOMANDA, LE OPZIONI E CARICA UN'IMMAGINE DI RIFERIMENTO</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h2 style="letter-spacing:5px; margin:0; color:var(--accent); font-size:1.5rem;">NUOVA DOMANDA QUIZ</h2>
+                        <button class="btn-editor btn-close" onclick="closeQuizEditor()" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:35px; font-size:10px;">
+                            <i data-lucide="chevron-left" style="width:14px;"></i> BACK
+                        </button>
+                    </div>
+                    <p style="font-size:11px; opacity:0.5; margin:0 0 30px 0; font-weight:700;">IMPOSTA LA DOMANDA, LE OPZIONI E CARICA UN'IMMAGINE DI RIFERIMENTO</p>
                     
                     <div style="display:flex; flex-direction:column; gap:20px;">
                         <div class="input-group">
@@ -569,8 +601,13 @@
                     
                     <!-- LEFT PANEL: FORM -->
                     <div style="flex:1; display:flex; flex-direction:column; overflow-y:auto; max-height:80vh; padding-right:10px;">
-                        <h2 id="iti-modal-title" style="letter-spacing:5px; margin:0; color:var(--accent); font-size:1.5rem;">NUOVO ITINERARIO</h2>
-                        <p style="font-size:11px; opacity:0.5; margin:10px 0 30px 0; font-weight:700;">COMPILA I DATI E CLICCA SULLA MAPPA PER CREARE LE TAPPE</p>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h2 id="iti-modal-title" style="letter-spacing:5px; margin:0; color:var(--accent); font-size:1.5rem;">NUOVO ITINERARIO</h2>
+                            <button class="btn-editor btn-close" onclick="closeItineraryEditor()" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:35px; font-size:10px;">
+                                <i data-lucide="chevron-left" style="width:14px;"></i> BACK
+                            </button>
+                        </div>
+                        <p style="font-size:11px; opacity:0.5; margin:0 0 30px 0; font-weight:700;">COMPILA I DATI E CLICCA SULLA MAPPA PER CREARE LE TAPPE</p>
                         
                         <div style="display:flex; flex-direction:column; gap:20px;">
                             <div class="input-group">
@@ -629,7 +666,7 @@
                                     <!-- Waypoints here -->
                                 </div>
                             </div>
-                            <div style="display:flex; gap:15px; margin-top:10px;">
+                            <div style="display:flex; gap:15px; margin-top:20px;">
                                 <button class="btn-editor btn-save" onclick="saveItinerary()" style="flex:2; justify-content:center;">SALVA ITINERARIO</button>
                                 <button class="btn-editor btn-close" onclick="closeItineraryEditor()" style="flex:1; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1);"><i data-lucide="x"></i></button>
                             </div>
@@ -657,13 +694,8 @@
 
                 </div>
             </div>
-                        <div style="display:flex; gap:15px; margin-top:10px;">
-                            <button class="btn-editor btn-save" onclick="saveItinerary()" style="flex:2; justify-content:center;">SALVA ITINERARIO</button>
-                            <button class="btn-editor btn-close" onclick="closeItineraryEditor()" style="flex:1; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1);"><i data-lucide="x"></i></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
+
 
             <div id="view-fiche-editor" class="view-pane">
                 <div class="lib-centered-hub">
@@ -676,13 +708,13 @@
                         </div>
                         <div style="display:flex; gap:12px; align-items:center;">
                             <button class="btn-editor btn-save" onclick="saveFiche()">
-                                <i data-lucide="check"></i> SALVA SCHEDA
+                                <i data-lucide="check"></i> SALVA
                             </button>
                             <button class="btn-editor btn-delete" onclick="deleteItem()">
-                                <i data-lucide="trash-2"></i> ELIMINA
+                                <i data-lucide="trash-2"></i>
                             </button>
-                            <button class="btn-editor btn-close" onclick="switchView(curSection || 'library')" title="Esci senza salvare">
-                                <i data-lucide="x"></i>
+                            <button class="btn-editor btn-close" onclick="switchView(curSection || 'library')" title="Esci senza salvare" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px;">
+                                <i data-lucide="chevron-left"></i> BACK
                             </button>
                         </div>
                     </header>
@@ -1289,15 +1321,29 @@
             }
 
             document.getElementById('itinerary-editor-modal').style.display = 'flex';
+            
+            // Wait for modal transition to finish or at least for display:flex to take effect
             setTimeout(() => {
                 initItiLeafletMap();
-                if(currentItiWaypoints.length > 0) {
-                    var bounds = L.latLngBounds(currentItiWaypoints.map(w => [w.lat, w.lng]));
-                    itiLeafletMap.fitBounds(bounds, {padding: [50, 50]});
+                
+                // Force map to recognize its container size
+                if(itiLeafletMap) {
+                    itiLeafletMap.invalidateSize();
+                    
+                    if(currentItiWaypoints && currentItiWaypoints.length > 0) {
+                        try {
+                            var validWaypoints = currentItiWaypoints.filter(w => w && typeof w.lat === 'number' && typeof w.lng === 'number');
+                            if(validWaypoints.length > 0) {
+                                var bounds = L.latLngBounds(validWaypoints.map(w => [w.lat, w.lng]));
+                                itiLeafletMap.fitBounds(bounds, {padding: [50, 50]});
+                            }
+                        } catch(e) {
+                            console.error("Error fitting bounds:", e);
+                        }
+                    }
                 }
-            }, 100);
-            
-            renderItiWaypoints();
+                renderItiWaypoints();
+            }, 300);
         }
 
         async function saveItinerary() {
