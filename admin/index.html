@@ -62,11 +62,34 @@
         .row-input { flex: 1; background: none; border: none; color: white; font-weight: 800; font-size: 12px; text-transform: uppercase; outline: none; }
         .btn-plus-s { background: var(--primary-green); color: white; padding: 12px; border-radius: 10px; border: none; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11px; margin: 8px; }
 
-        /* MARKERS ON CANVAS */
-        .marker-wrapper { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; cursor: move; z-index: 10; padding: 5px; }
-        .marker-wrapper img { width: 28px; height: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); pointer-events: none; }
-        .marker-label { margin-top: 3px; background: rgba(0,0,0,0.8); color: white; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap; pointer-events: none; }
-        .marker-label { margin-top: 3px; background: rgba(0,0,0,0.8); color: white; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap; pointer-events: none; }
+        /* MARKERS ON CANVAS (ADMIN MAP) */
+        .map-marker { 
+            position: absolute; 
+            transform: translate(-50%, -100%); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            cursor: move; 
+            z-index: 100; 
+            pointer-events: auto !important;
+            transition: transform 0.1s ease-out;
+        }
+        .map-marker:active { transform: translate(-50%, -100%) scale(1.1); z-index: 1000; }
+        .map-marker img { width: 32px; height: 32px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.8)); pointer-events: none; }
+        .map-marker .marker-label { 
+            margin-top: 3px; 
+            background: rgba(0,0,0,0.9); 
+            color: white; 
+            font-size: 10px; 
+            font-weight: 900; 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            border: 1px solid var(--accent); 
+            white-space: nowrap; 
+            pointer-events: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            text-transform: uppercase;
+        }
 
         /* LIBRARY CENTERED REFINEMENTS */
         .lib-centered-hub { max-width: 1400px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 1.5rem; }
@@ -842,8 +865,8 @@
             <div id="view-map" class="view-pane">
                 <div class="map-editor-grid">
                     
-                    <div class="map-viewport" id="map-vp" onclick="handleMapClick(event)">
-                        <div class="map-inner" id="map-inner">
+                    <div class="map-viewport" id="map-vp">
+                        <div class="map-inner" id="map-inner" onclick="handleMapClick(event)">
                             <img id="map-img-bg" src="../assets/library/MAPS/Etosha map 02.jpg" style="height:80vh; width:auto; display:block; border-radius:15px;" ondragstart="return false">
                             <div id="marker-layer"></div>
                         </div>

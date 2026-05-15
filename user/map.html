@@ -194,24 +194,7 @@
             box-sizing: border-box;
         }
 
-        .close-fiche {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 5001;
-            transition: 0.3s;
-        }
-        .close-fiche:hover { background: #ff5252; border-color: #ff5252; transform: rotate(90deg); }
+        .close-fiche:hover { background: #ff5252 !important; border-color: #ff5252 !important; transform: rotate(90deg); }
 
         .fiche-header { 
             height: 450px; 
@@ -258,24 +241,9 @@
             z-index: 9999; 
         }
         #lightbox-img { width: 100%; height: 100%; object-fit: contain; }
-        .lb-close { 
-            position: absolute; 
-            top: 30px; 
-            right: 30px; 
-            background: white; 
-            color: black; 
-            border: none; 
-            width: 50px; 
-            height: 50px; 
-            border-radius: 50%; 
-            font-size: 24px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            z-index: 10001; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .lb-close { z-index: 20000; }
+        .lb-close:hover { background: #ff5252 !important; border-color: #ff5252 !important; transform: rotate(90deg); }
+        .lb-close i { color: black !important; }
         .lb-arrow { 
             position: absolute; 
             top: 50%; 
@@ -290,21 +258,21 @@
         }
         .fs-btn { 
             position: absolute; 
-            bottom: 20px; 
-            right: 20px; 
-            background: rgba(0,0,0,0.7); 
+            top: 10px; 
+            right: 10px; 
+            background: rgba(0,0,0,0.8); 
             color: var(--accent); 
-            border: 2px solid var(--accent); 
-            padding: 10px 18px; 
-            border-radius: 30px; 
+            border: 1px solid var(--accent); 
+            padding: 6px 12px; 
+            border-radius: 20px; 
             cursor: pointer; 
             z-index: 10; 
             font-weight: 800; 
-            font-size: 11px; 
+            font-size: 10px; 
             transition: 0.2s; 
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
         .fs-btn:hover { background: var(--accent); color: #000; }
     </style>
@@ -373,6 +341,12 @@
 
     <!-- OVERLAY SCHEDA ANIMALE -->
     <div id="fiche-overlay">
+        <div class="mobile-fiche-header">
+            <button class="btn-back-fiche" onclick="closeFiche()">
+                <i data-lucide="chevron-left"></i> CHIUDI
+            </button>
+            <span id="mobile-fiche-title" style="font-weight:900; letter-spacing:1px; font-size:12px; flex:1; text-align:right; opacity:0.6;">ETOSHA EXPLORER</span>
+        </div>
         <button class="close-fiche" onclick="closeFiche()"><i data-lucide="x"></i></button>
         <div class="fiche-content">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 20px; flex-wrap: wrap;">
@@ -392,6 +366,10 @@
                 </button>
             </div>
             <div id="f-desc" style="font-size:1.3rem; line-height:1.7; opacity:0.9; margin-bottom: 2rem; white-space: pre-wrap;"></div>
+            
+            <!-- Secondary close button for mobile -->
+            <button class="btn-close-bottom" onclick="closeFiche()" style="width:100%; padding:20px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--accent); border-radius:15px; font-weight:900; letter-spacing:2px; cursor:pointer; margin-top:20px; display:none;">CHIUDI SCHEDA</button>
+        </div>
         </div>
     </div>
 
@@ -399,7 +377,7 @@
     <div id="map-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; flex-direction:column; padding:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h2 id="map-modal-title" style="color:var(--accent); margin:0; letter-spacing:2px; text-transform:uppercase;">Posizione GPS</h2>
-            <button class="lb-close" onclick="closeMapModal()" style="position:static; width:40px; height:40px; font-size:20px;"><i data-lucide="x"></i></button>
+            <button class="btn-orange-circle" onclick="closeMapModal()" style="position:static; width:40px; height:40px; font-size:20px;"><i data-lucide="x"></i></button>
         </div>
         <div id="map-container" style="flex:1; border-radius:15px; overflow:hidden; background:#111; border:1px solid rgba(255,255,255,0.1);"></div>
         <div style="padding:15px; text-align:center; font-size:11px; opacity:0.6; letter-spacing:1px;">
@@ -508,6 +486,7 @@
         }
 
         function handleMarkerClick(e, id) {
+            if(e) e.stopPropagation(); // Previeni che il click passi alla mappa sottostante
             const m = library.map_markers.find(x => x.id == id);
             if(!m) return;
 
@@ -624,8 +603,16 @@
             updateSlider();
             renderStats();
             
-            document.getElementById('fiche-overlay').style.display = 'flex';
-            lucide.createIcons();
+            const overlay = document.getElementById('fiche-overlay');
+            overlay.style.display = 'flex';
+            overlay.scrollTop = 0;
+            
+            // Set mobile title if exists
+            const mobTitle = document.getElementById('mobile-fiche-title');
+            if(mobTitle) mobTitle.innerText = activeItem.name.toUpperCase();
+            
+            // Ensure icons are created
+            if(window.lucide) lucide.createIcons();
         }
 
         function updateSlider() {
@@ -643,17 +630,30 @@
 
         function renderStats() {
             const f = activeItem.facts || {};
-            
-            // Check if all fields are empty
-            const hasData = (f.weight && f.weight !== '-') || (f.size && f.size !== '-') || (f.life && f.life !== '-') || (f.speed && f.speed !== '-');
             const statsContainer = document.getElementById('fiche-stats');
             
-            if (!hasData) {
-                statsContainer.style.display = 'none';
-                return;
-            } else {
-                statsContainer.style.display = 'block';
-            }
+            // Determina la categoria per i label corretti
+            let catName = "";
+            [library, (typeof visitNamibia !== 'undefined' ? visitNamibia : {categories:[]})].forEach(db => {
+                (db.categories || []).forEach(c => (c.subcategories || []).forEach(s => {
+                    if(s.items.find(it => it.id === activeItem.id)) catName = (c.name || "").toUpperCase();
+                }));
+            });
+
+            const isPeople = catName.includes("POPOLI") || catName.includes("PEOPLES") || catName.includes("GENTE") || catName.includes("POPOLAZIONI");
+            const isFlora = catName.includes("FLORA") || catName.includes("PIANTE") || catName.includes("ALBERI") || catName.includes("PLANTS");
+            const isCity = catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("VILLAGGI") || catName.includes("CITIES") || catName.includes("TOWNS");
+            const isGeo = catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO") || catName.includes("PLACES");
+
+            var l1 = f.label1, l2 = f.label2, l3 = f.label3;
+            let d1 = "PESO", d2 = "DIMENSIONI", d3 = "LONGEVITÀ";
+            
+            if (isFlora) { d1 = "ALTEZZA"; d2 = "SPECIE"; d3 = "HABITAT"; }
+            else if (isPeople) { d1 = "POPOLAZIONE"; d2 = "PERCENTUALE"; d3 = "AREA GEOGRAFICA"; }
+            else if (isCity) { d1 = "POPOLAZIONE"; d2 = "SUPERFICIE"; d3 = "REGIONE"; }
+            else if (isGeo) { d1 = "TIPOLOGIA"; d2 = "ESTENSIONE"; d3 = "INFO"; }
+
+            if(!l1) l1 = d1; if(!l2) l2 = d2; if(!l3) l3 = d3;
 
             function fmt(val) {
                 if (!val || val === '-') return '-';
@@ -662,12 +662,25 @@
                     .replace(/\b(\d{4,})\b/g, m => m.replace(/\B(?=(\d{3})+(?!\d))/g, "."));
             }
 
-            document.getElementById('stats-list').innerHTML = `
-                <p><b>${f.label1 || 'Peso'}</b> <span>${fmt(f.weight)}</span></p>
-                <p><b>${f.label2 || 'Dimens.'}</b> <span>${fmt(f.size)}</span></p>
-                <p><b>${f.label3 || 'Longev.'}</b> <span>${fmt(f.life)}</span></p>
-                ${f.speed ? `<p><b>VelocitÃ </b> <span>${fmt(f.speed)}</span></p>` : ''}
+            var v1 = f.weight || f.popolazione || "";
+            var v2 = f.size || f.superficie || "";
+            var v3 = f.life || f.regione || "";
+
+            // Se non c'è proprio nulla, nascondiamo
+            const hasAnyData = v1 || v2 || v3 || f.speed;
+            if (!hasAnyData) {
+                statsContainer.style.display = 'none';
+                return;
+            }
+            statsContainer.style.display = 'block';
+
+            let html = `
+                <p><b>${l1}</b> <span>${fmt(v1)}</span></p>
+                <p><b>${l2}</b> <span>${fmt(v2)}</span></p>
+                <p><b>${l3}</b> <span>${fmt(v3)}</span></p>
             `;
+            if (f.speed) { html += `<p><b>Velocità</b> <span>${fmt(f.speed)}</span></p>`; }
+            document.getElementById('stats-list').innerHTML = html;
         }
 
         function closeFiche() {

@@ -16,7 +16,6 @@
         :root { --primary-green: #1a3c34; --darker-green: #0d1e1a; --accent: #ffab40; }
         body { 
             background-color: var(--darker-green); color: white; height: 100vh; margin: 0; 
-            /* overflow: hidden; */ /* Permetti lo scroll naturale */
             font-family: sans-serif; display: flex; flex-direction: column; 
         }
         
@@ -52,7 +51,7 @@
         .fiche-header img { width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; }
         .slide-btn { position: absolute; top:50%; transform:translateY(-50%); background: var(--accent); color: #000; border:none; width: 50px; height: 50px; cursor:pointer; border-radius:50%; z-index: 10; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: 0.3s; }
         .slide-btn:hover { transform: translateY(-50%) scale(1.1); background: white; }
-        .fs-btn { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); color: var(--accent); border: 2px solid var(--accent); padding: 10px 18px; border-radius: 30px; cursor: pointer; z-index: 10; font-weight: 800; font-size: 11px; transition: 0.2s; }
+        .fs-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: var(--accent); border: 1px solid var(--accent); padding: 6px 12px; border-radius: 20px; cursor: pointer; z-index: 10; font-weight: 800; font-size: 10px; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
         .fs-btn:hover { background: var(--accent); color: #000; }
 
         .btn-back { background: var(--accent); color: #000; border: none; padding: 12px 24px; border-radius: 30px; cursor: pointer; margin-bottom: 25px; font-weight: 900; font-size: 14px; box-shadow: 0 5px 15px rgba(255,171,64,0.4); display: flex; align-items: center; gap: 8px; width: max-content; transition: 0.3s; }
@@ -61,7 +60,9 @@
         /* FULLSCREEN LIGHTBOX */
         #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 9999; }
         #lightbox-img { width: 100%; height: 100%; object-fit: contain; }
-        .lb-close { position: absolute; top: 30px; right: 30px; background: white; color: black; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 24px; cursor: pointer; font-weight: bold; z-index: 10001; }
+        .lb-close { z-index: 20000; }
+        .lb-close:hover { background: #ff5252 !important; border-color: #ff5252 !important; transform: rotate(90deg); }
+        .lb-close i { color: black !important; }
         .lb-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); border: none; color: white; padding: 2rem; cursor: pointer; font-size: 40px; }
 
         #fiche-desc { white-space: pre-wrap; font-family: 'Inter', sans-serif; font-weight: 300; }
@@ -77,14 +78,12 @@
         b, strong { font-weight: 900; color: var(--accent); }
 
         /* MOBILE ADAPTATION - Handled by shared/mobile_responsive.css */
-
     </style>
 </head>
 <body>
 
     <header>
         <div style="display: flex; align-items: center; gap: 40px;">
-            <!-- Meteo rimosso da qui (ora in Homepage) -->
         </div>
         <div style="display: flex; align-items: center; gap: 15px;">
             <button id="admin-btn" onclick="window.location.href='../admin/index.html'" style="display:none; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; padding: 8px 16px; border-radius: 30px; font-weight:bold; cursor:pointer; font-size:11px;">ADMIN ACCESS</button>
@@ -114,7 +113,7 @@
                 <li onclick="window.location.href='library.html'">
                     <i data-lucide="book-open"></i> <span>Libreria</span>
                 </li>
-                <li onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
+                <li class="active" onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
                 <li onclick="window.location.href='library.html?view=mustsee'">
                     <i data-lucide="star"></i> <span>Must See</span>
                 </li>
@@ -132,6 +131,12 @@
             <div id="grid-view" class="grid-4"></div>
 
             <div id="fiche-view" style="display: none;">
+                <div class="mobile-fiche-header">
+                    <button class="btn-back-fiche" onclick="goBack()">
+                        <i data-lucide="chevron-left"></i> INDIETRO
+                    </button>
+                    <span id="mobile-fiche-title" style="font-weight:900; letter-spacing:1px; font-size:12px; flex:1; text-align:right; opacity:0.6;">NAMIBIA GUIDE</span>
+                </div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 20px; max-width: 1200px; flex-wrap: wrap;">
                     <h1 id="fiche-title" style="color:var(--accent); font-size:3rem; margin:0; word-break: break-word; flex: 1; min-width: 250px;">TITOLO</h1>
                     <div id="fiche-stats" style="background:rgba(255,255,255,0.05); padding:20px 30px; border-radius:15px; border:1px solid rgba(255,255,255,0.05); width: 100%; max-width: 450px; flex-shrink: 0; align-self: flex-start;">
@@ -158,22 +163,14 @@
         </main>
     </div>
 
-    <!-- MAP MODAL -->
     <div id="map-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; flex-direction:column; padding:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h2 id="map-modal-title" style="color:var(--accent); margin:0; letter-spacing:2px; text-transform:uppercase;">Posizione Luogo</h2>
             <button class="lb-close" onclick="closeMapModal()" style="position:static; width:40px; height:40px; font-size:20px;"><i data-lucide="x"></i></button>
         </div>
         <div id="map-container" style="flex:1; border-radius:15px; overflow:hidden; background:#111; border:1px solid rgba(255,255,255,0.1);"></div>
-        <div style="padding:15px; text-align:center; font-size:11px; opacity:0.6; letter-spacing:1px;">
-            <span style="display:inline-block; width:12px; height:12px; background:#ffab40; border-radius:50%; margin-right:5px;"></span> LUOGO MUST SEE &nbsp;&nbsp;&nbsp;
-            <span style="display:inline-block; width:12px; height:12px; background:#4caf50; border-radius:50%; margin-right:5px;"></span> TUA POSIZIONE
-        </div>
     </div>
 
-    <!-- BOTTOM TAB BAR rimosso (ora iniettato da app.js) -->
-
-    <!-- LIGHTBOX FULLSCREEN -->
     <div id="lightbox">
         <button class="lb-close" onclick="closeFS()"><i data-lucide="x"></i></button>
         <button class="lb-arrow" style="left:0;" onclick="prevSlide()"><i data-lucide="chevron-left"></i></button>
@@ -182,7 +179,7 @@
     </div>
 
     <script>
-        var library = { categories: [] };
+        var visitNamibia = { categories: [] };
         var navState = { level: 'home', catId: null, subId: null };
         var activeItem = null;
         var itemImages = [];
@@ -198,19 +195,20 @@
             var mainTitle = document.getElementById('main-title');
             grid.style.display = 'grid';
             fiche.style.display = 'none';
-            back.style.display = (navState.level === 'home') ? 'none' : 'block';
+            back.style.display = (navState.level === 'home') ? 'none' : 'flex';
+            if (navState.level === 'home') back.classList.remove('active-mobile');
             if (mainTitle) mainTitle.style.display = 'block';
 
             if (navState.level === 'home') {
-                document.getElementById('sidebar-title').innerText = "Namibia Guide";
-                grid.innerHTML = (library.categories || []).map(c => `
+                document.getElementById('sidebar-title').innerText = "Visit Namibia";
+                grid.innerHTML = (visitNamibia.categories || []).map(c => `
                     <div class="card" onclick="navToSub('${c.id}')">
                         <img src="${c.image || 'https://images.unsplash.com/photo-1516422317518-3ee0f01192e2?q=20&w=300'}">
                         <div class="card-label">${c.name}</div>
                     </div>
                 `).join('');
             } else if (navState.level === 'sub') {
-                var cat = library.categories.find(x => x.id === navState.catId);
+                var cat = visitNamibia.categories.find(x => x.id === navState.catId);
                 document.getElementById('sidebar-title').innerText = cat.name;
                 grid.innerHTML = (cat.subcategories || []).map(s => `
                     <div class="card" onclick="navToItems('${cat.id}', '${s.id}')">
@@ -219,7 +217,7 @@
                     </div>
                 `).join('');
             } else if (navState.level === 'items') {
-                var cat = library.categories.find(x => x.id === navState.catId);
+                var cat = visitNamibia.categories.find(x => x.id === navState.catId);
                 var sub = cat.subcategories.find(x => x.id === navState.subId);
                 document.getElementById('sidebar-title').innerText = sub.name;
                 grid.innerHTML = (sub.items || []).filter(it => it.isVisible !== false).map(it => {
@@ -240,10 +238,9 @@
         function navToItems(c, s) { navState = {level: 'items', catId: c, subId: s}; render(); }
         
         function openFiche(id) {
-            var sub = library.categories.find(x => x.id === navState.catId).subcategories.find(x => x.id === navState.subId);
+            var sub = visitNamibia.categories.find(x => x.id === navState.catId).subcategories.find(x => x.id === navState.subId);
             activeItem = sub.items.find(i => i.id === id);
             
-            // Separate Images from PDFs
             itemImages = (activeItem.photos || []).filter(p => {
                 var isPdf = (typeof p === 'object' && p.type === 'application/pdf') || (typeof p === 'string' && p.startsWith('data:application/pdf'));
                 return !isPdf;
@@ -272,6 +269,9 @@
             document.getElementById('fiche-title').innerText = activeItem.name;
             document.getElementById('fiche-desc').innerText = activeItem.description || "In attesa di descrizione...";
             
+            const mobTitle = document.getElementById('mobile-fiche-title');
+            if(mobTitle) mobTitle.innerText = activeItem.name.toUpperCase();
+
             var mapBtn = document.getElementById('map-btn-gps');
             if (activeItem.lat && activeItem.lng) {
                 mapBtn.style.display = 'flex';
@@ -285,6 +285,7 @@
             renderVideos();
             renderPresentations();
             lucide.createIcons();
+            document.querySelector('.content-area').scrollTop = 0;
         }
 
         function renderVideos() {
@@ -332,7 +333,6 @@
                     </div>
                 `;
             }
-            // Check if we already added docs or need to append
             var existingDocs = document.getElementById('docs-list');
             if(existingDocs) existingDocs.remove();
             if(docsHtml) extrasDiv.insertAdjacentHTML('beforeend', docsHtml);
@@ -356,7 +356,6 @@
                                 </div>
                             `).join('')}
                         </div>
-                        <p style="font-size:10px; opacity:0.5; margin-top:10px; font-style:italic;">Nota: Ã¨ necessario Microsoft PowerPoint o un visualizzatore compatibile per aprire questi file.</p>
                     </div>
                 `;
             }
@@ -408,33 +407,13 @@
         function renderStats() {
             var f = activeItem.facts || {};
             const title = (activeItem.name || "").toUpperCase();
-            
-            // BRUTAL FORCE FOR SPECIFIC ITEMS
             const isKnownPeople = title.includes("HERERO") || title.includes("HIMBA") || title.includes("BUSHMAN") || title.includes("POPOLO");
             
-            // ULTRA-COMPATIBLE DATA CHECK
-            const hasData = Object.keys(f).some(k => !k.startsWith('label') && f[k] && f[k] !== '-' && f[k] !== '');
-            const statsContainer = document.getElementById('fiche-stats');
-            
-            if (!hasData) {
-                if(statsContainer) statsContainer.style.display = 'none';
-                return;
-            } else {
-                if(statsContainer) statsContainer.style.display = 'block';
-            }
-
-            // ROBUST CATEGORY DETECTION (Using flexible ID comparison)
             var catName = "";
-            var dbs = [];
-            if(typeof library !== 'undefined' && library.categories) dbs.push(library);
-            if(typeof visitNamibia !== 'undefined' && visitNamibia.categories) dbs.push(visitNamibia);
-
-            dbs.forEach(db => {
-                db.categories.forEach(c => {
-                    if(c.subcategories.some(s => s.items.some(it => String(it.id) == String(activeItem.id)))) {
-                        catName = c.name.toUpperCase();
-                    }
-                });
+            (visitNamibia.categories || []).forEach(c => {
+                if(c.subcategories.some(s => s.items.some(it => String(it.id) == String(activeItem.id)))) {
+                    catName = c.name.toUpperCase();
+                }
             });
 
             const isPeople = isKnownPeople || catName.includes("POPOLI") || catName.includes("PEOPLES") || catName.includes("GENTE") || catName.includes("POPOLAZIONI");
@@ -443,38 +422,32 @@
             const isGeo = catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO") || catName.includes("PLACES");
 
             var l1 = f.label1, l2 = f.label2, l3 = f.label3;
-            
-            // Define defaults per category
             let d1 = "PESO", d2 = "DIMENSIONI", d3 = "LONGEVITÀ";
             if (isFlora) { d1 = "ALTEZZA"; d2 = "SPECIE"; d3 = "HABITAT"; }
             else if (isPeople) { d1 = "POPOLAZIONE"; d2 = "PERCENTUALE"; d3 = "AREA GEOGRAFICA"; }
             else if (isCity) { d1 = "POPOLAZIONE"; d2 = "SUPERFICIE"; d3 = "REGIONE"; }
             else if (isGeo) { d1 = "TIPOLOGIA"; d2 = "ESTENSIONE"; d3 = "INFO"; }
 
-            // BRUTAL OVERRIDE
-            if (isKnownPeople) {
-                l1 = "POPOLAZIONE"; l2 = "PERCENTUALE"; l3 = "AREA GEOGRAFICA";
-            } else {
-                const currentL1 = (l1 || "").toUpperCase().trim();
-                const currentL2 = (l2 || "").toUpperCase().trim();
-                const isAnimalLabel = !l1 || currentL1 === "PESO" || currentL1 === "WEIGHT" || currentL2 === "DIMENSIONI" || currentL2 === "DIMENS." || currentL2 === "SIZE";
-                if (isAnimalLabel && (isPeople || isCity || isFlora || isGeo)) {
-                    l1 = d1; l2 = d2; l3 = d3;
-                } else {
-                    if(!l1) l1 = d1; if(!l2) l2 = d2; if(!l3) l3 = d3;
-                }
-            }
-            
+            if (isKnownPeople) { l1 = "POPOLAZIONE"; l2 = "PERCENTUALE"; l3 = "AREA GEOGRAFICA"; }
+            else if (!l1) { l1 = d1; l2 = d2; l3 = d3; }
+
             function fmt(val) {
                 if (!val || val === '-') return '-';
-                return String(val).trim()
-                    .replace(/([\d])([a-zA-Z])/g, '$1 $2')
-                    .replace(/\b(\d{4,})\b/g, m => m.replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+                return String(val).trim().replace(/([\d])([a-zA-Z])/g, '$1 $2').replace(/\b(\d{4,})\b/g, m => m.replace(/\B(?=(\d{3})+(?!\d))/g, "."));
             }
 
             var v1 = f.weight || f.popolazione || "";
             var v2 = f.size || f.superficie || "";
             var v3 = f.life || f.regione || "";
+
+            const hasData = v1 || v2 || v3 || f.speed;
+            const statsContainer = document.getElementById('fiche-stats');
+            if (!hasData) {
+                if(statsContainer) statsContainer.style.display = 'none';
+                return;
+            } else {
+                if(statsContainer) statsContainer.style.display = 'block';
+            }
 
             var html = `
                 <p><b>${l1}</b> <span>${fmt(v1)}</span></p>
@@ -489,14 +462,11 @@
             var src = itemImages[slideIdx] || "";
             document.getElementById('slider-img').src = src;
             document.getElementById('lightbox-img').src = src;
-            
-            // Hide slider if no images
             document.querySelector('.fiche-header').style.display = (itemImages.length > 0) ? 'block' : 'none';
         }
 
         function nextSlide() { if(itemImages.length === 0) return; slideIdx = (slideIdx + 1) % itemImages.length; updateSlider(); }
         function prevSlide() { if(itemImages.length === 0) return; slideIdx = (slideIdx - 1 + itemImages.length) % itemImages.length; updateSlider(); }
-
         function openFS() { document.getElementById('lightbox').style.display = 'block'; }
         function closeFS() { document.getElementById('lightbox').style.display = 'none'; }
 
@@ -515,94 +485,29 @@
         function openMapModal() {
             document.getElementById('map-modal').style.display = 'flex';
             document.getElementById('map-modal-title').innerText = activeItem.name;
-            
             setTimeout(() => {
                 if (!mapInstance) {
                     mapInstance = L.map('map-container').setView([activeItem.lat, activeItem.lng], 13);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; OpenStreetMap'
-                    }).addTo(mapInstance);
-                } else {
-                    mapInstance.setView([activeItem.lat, activeItem.lng], 13);
-                }
-                
-                // Clear existing markers
-                mapInstance.eachLayer((layer) => {
-                    if (layer instanceof L.Marker) mapInstance.removeLayer(layer);
-                });
-
-                // Item marker
-                L.marker([activeItem.lat, activeItem.lng], {
-                    icon: L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div style="background:#ffab40; width:30px; height:30px; border-radius:50%; border:3px solid white; box-shadow:0 5px 15px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; color:black;"><i data-lucide="star" style="width:16px; fill:black;"></i></div>`,
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    })
-                }).addTo(mapInstance).bindPopup(`<b>${activeItem.name}</b>`).openPopup();
-
-                // User marker
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition((pos) => {
-                        const userLat = pos.coords.latitude;
-                        const userLng = pos.coords.longitude;
-                        
-                        L.marker([userLat, userLng], {
-                            icon: L.divIcon({
-                                className: 'custom-div-icon',
-                                html: `<div style="background:#4caf50; width:30px; height:30px; border-radius:50%; border:3px solid white; box-shadow:0 5px 15px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; color:white;"><i data-lucide="user" style="width:16px;"></i></div>`,
-                                iconSize: [30, 30],
-                                iconAnchor: [15, 15]
-                            })
-                        }).addTo(mapInstance).bindPopup("La tua posizione");
-                        
-                        // Fit bounds to show both
-                        const bounds = L.latLngBounds([[activeItem.lat, activeItem.lng], [userLat, userLng]]);
-                        mapInstance.fitBounds(bounds, { padding: [50, 50] });
-                    });
-                }
-                
-                lucide.createIcons();
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mapInstance);
+                } else { mapInstance.setView([activeItem.lat, activeItem.lng], 13); }
+                mapInstance.eachLayer((layer) => { if (layer instanceof L.Marker) mapInstance.removeLayer(layer); });
+                L.marker([activeItem.lat, activeItem.lng]).addTo(mapInstance).bindPopup(`<b>${activeItem.name}</b>`).openPopup();
                 mapInstance.invalidateSize();
             }, 300);
         }
-
-        function closeMapModal() {
-            document.getElementById('map-modal').style.display = 'none';
-        }
-
-        function navHome() { navState = { level: 'home', catId: null, subId: null }; render(); }
+        function closeMapModal() { document.getElementById('map-modal').style.display = 'none'; }
 
         window.PARKS_APP.init(() => { 
             window.PARKS_APP.getSession(function(session) {
-                // BYPASS LOGIN PER FASE DI CREAZIONE
-                /*
-                if (!session || !session.loggedIn) {
-                    window.location.href = 'index.html';
-                    return;
-                }
-                */
-                
-                if(session.role === 'SUPER_ADMIN' || session.role === 'ADMIN' || true) { // Force show admin button in dev
-                    document.getElementById('admin-btn').style.display = 'block';
-                }
-
+                if(session.role === 'SUPER_ADMIN' || session.role === 'ADMIN') { document.getElementById('admin-btn').style.display = 'block'; }
                 window.PARKS_DB.get('parks_visit_namibia_v1', {categories:[]}, function(vData) {
                     visitNamibia = vData;
-                    window.PARKS_DB.get('parks_library_v2', {categories:[]}, function(lData) {
-                        library = lData;
-                        render();
-                    });
+                    render();
                 });
             });
         });
 
-        function logout() {
-            window.PARKS_APP.setSession({ loggedIn: false }, function() {
-                window.location.href = 'index.html';
-            });
-        }
+        function logout() { window.PARKS_APP.setSession({ loggedIn: false }, function() { window.location.href = 'index.html'; }); }
     </script>
 </body>
 </html>
-

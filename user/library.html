@@ -52,7 +52,7 @@
         .fiche-header img { width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; }
         .slide-btn { position: absolute; top:50%; transform:translateY(-50%); background: var(--accent); color: #000; border:none; width: 50px; height: 50px; cursor:pointer; border-radius:50%; z-index: 10; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: 0.3s; }
         .slide-btn:hover { transform: translateY(-50%) scale(1.1); background: white; }
-        .fs-btn { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); color: var(--accent); border: 2px solid var(--accent); padding: 10px 18px; border-radius: 30px; cursor: pointer; z-index: 10; font-weight: 800; font-size: 11px; transition: 0.2s; }
+        .fs-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: var(--accent); border: 1px solid var(--accent); padding: 6px 12px; border-radius: 20px; cursor: pointer; z-index: 10; font-weight: 800; font-size: 10px; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
         .fs-btn:hover { background: var(--accent); color: #000; }
 
         .btn-back { background: var(--accent); color: #000; border: none; padding: 12px 24px; border-radius: 30px; cursor: pointer; margin-bottom: 25px; font-weight: 900; font-size: 14px; box-shadow: 0 5px 15px rgba(255,171,64,0.4); display: flex; align-items: center; gap: 8px; width: max-content; transition: 0.3s; }
@@ -61,7 +61,9 @@
         /* FULLSCREEN LIGHTBOX */
         #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 9999; }
         #lightbox-img { width: 100%; height: 100%; object-fit: contain; }
-        .lb-close { position: absolute; top: 30px; right: 30px; background: white; color: black; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 24px; cursor: pointer; font-weight: bold; z-index: 10001; }
+        .lb-close { z-index: 20000; }
+        .lb-close:hover { background: #ff5252 !important; border-color: #ff5252 !important; transform: rotate(90deg); }
+        .lb-close i { color: black !important; }
         .lb-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); border: none; color: white; padding: 2rem; cursor: pointer; font-size: 40px; }
 
         #fiche-desc { white-space: pre-wrap; font-family: 'Inter', sans-serif; font-weight: 300; }
@@ -131,6 +133,12 @@
             <div id="grid-view" class="grid-4"></div>
 
             <div id="fiche-view" style="display: none;">
+                <div class="mobile-fiche-header">
+                    <button class="btn-back-fiche" onclick="goBack()">
+                        <i data-lucide="chevron-left"></i> INDIETRO
+                    </button>
+                    <span id="mobile-fiche-title" style="font-weight:900; letter-spacing:1px; font-size:12px; flex:1; text-align:right; opacity:0.6;">LIBRERIA</span>
+                </div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 20px; max-width: 1200px; flex-wrap: wrap;">
                     <h1 id="fiche-title" style="color:var(--accent); font-size:3rem; margin:0; word-break: break-word; flex: 1; min-width: 250px;">TITOLO</h1>
                     <div id="fiche-stats" style="background:rgba(255,255,255,0.05); padding:20px 30px; border-radius:15px; border:1px solid rgba(255,255,255,0.05); width: 100%; max-width: 450px; flex-shrink: 0; align-self: flex-start;">
@@ -197,7 +205,8 @@
             var mainTitle = document.getElementById('main-title');
             grid.style.display = 'grid';
             fiche.style.display = 'none';
-            back.style.display = (navState.level === 'home') ? 'none' : 'block';
+            back.style.display = (navState.level === 'home') ? 'none' : 'flex';
+            if (navState.level === 'home') back.classList.remove('active-mobile');
             mainTitle.style.display = 'block';
 
             if (navState.level === 'home') {
@@ -284,10 +293,15 @@
             var mainTitle = document.getElementById('main-title');
             grid.style.display = 'none';
             fiche.style.display = 'block';
-            back.style.display = 'block';
+            back.style.display = 'flex';
+            back.classList.add('active-mobile'); // Add premium mobile style
             mainTitle.style.display = 'none';
             
             document.getElementById('fiche-desc').innerText = activeItem.description || "Nessuna descrizione disponibile.";
+            
+            // Set mobile title
+            const mobTitle = document.getElementById('mobile-fiche-title');
+            if(mobTitle) mobTitle.innerText = activeItem.name.toUpperCase();
             
             // Show map button if coordinates exist
             var mapBtn = document.getElementById('map-btn-gps');
@@ -353,9 +367,14 @@
             }).map(p => typeof p === 'object' ? p : { url: p, name: 'PRESENTAZIONE', type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
 
             var mainTitle = document.getElementById('main-title');
+            var back = document.getElementById('back-btn');
             slideIdx = 0;
             document.getElementById('grid-view').style.display = 'none';
             document.getElementById('fiche-view').style.display = 'block';
+            if(back) {
+                back.style.display = 'flex';
+                back.classList.add('active-mobile');
+            }
             mainTitle.style.display = 'none';
             document.getElementById('fiche-title').innerText = activeItem.name;
             document.getElementById('fiche-desc').innerText = activeItem.description || "In attesa di descrizione...";
@@ -604,6 +623,7 @@
                 else if (navState.level === 'mustsee') navState.level = 'home';
                 render();
             }
+            document.getElementById('back-btn').classList.remove('active-mobile');
         }
 
         var mapInstance = null;

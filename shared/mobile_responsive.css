@@ -269,27 +269,55 @@
     }
     /* ===== END ITINERARY MAP PAGE ===== */
 
-    /* Fiche Overlay on Mobile */
-    .fiche-content, #fiche-view, #fiche-overlay {
+    /* Fiche Overlay (Modal) specifically for Map pages */
+    #fiche-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: var(--dark-bg) !important;
+        z-index: 5000 !important;
+        display: none; /* JS will change this to flex/block */
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 150px) !important;
+    }
+
+    /* When the overlay is visible on mobile, we prefer block for scrolling reliability */
+    #fiche-overlay[style*="display: flex"], 
+    #fiche-overlay[style*="display: block"] {
+        display: block !important;
+    }
+
+    /* Content containers inside either the overlay or the library page */
+    .fiche-content, #fiche-view {
         padding: 15px !important;
-        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 300px) !important;
-        margin-top: 20px !important;
+        padding-top: 80px !important; /* Space for the close button */
+        padding-bottom: 100px !important;
+        margin-top: 0 !important;
         width: 100% !important;
         box-sizing: border-box !important;
         overflow-x: hidden !important;
-        overflow-y: visible !important; /* Force natural growth */
-        height: auto !important; /* No fixed height */
+        overflow-y: visible !important;
+        height: auto !important;
         min-height: min-content !important;
     }
 
     /* Extra safety for the last elements in fiche */
-    #fiche-desc, #fiche-extras, #stats-list {
+    #fiche-desc, #f-desc, #fiche-extras, #stats-list {
         margin-bottom: 40px !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
     }
 
     .fiche-content > div:last-child, 
     #fiche-view > div:last-child {
         padding-bottom: 200px !important;
+        margin-bottom: 50px !important;
+    }
+
+    .btn-close-bottom {
+        display: block !important;
         margin-bottom: 50px !important;
     }
 
@@ -312,130 +340,246 @@
         box-sizing: border-box !important;
     }
 
-    /* Force Fiche Header to column */
-    .fiche-content > div:first-child, 
-    #fiche-view > div:first-child {
-        flex-direction: column !important;
-        gap: 15px !important;
-        align-items: stretch !important;
+    /* Adjust content to fit below header */
+    .fiche-content, #fiche-view {
+        padding-top: 85px !important;
+    }
+}
+
+/* 3. GLOBAL NAVIGATION & BUTTONS (Active on both Desktop & Mobile) */
+.mobile-fiche-header {
+    display: none !important; /* Hidden by default on Desktop */
+}
+
+/* Visual Style for Orange Circle Buttons (Common) */
+.close-fiche, .fiche-close, .btn-close-fiche, .lb-close, .btn-orange-circle {
+    display: flex !important;
+    width: 50px !important;
+    height: 50px !important;
+    background: #ffab40 !important;
+    color: transparent !important; /* Hide potential text overflow */
+    border: 2px solid white !important;
+    border-radius: 50% !important;
+    z-index: 20000 !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
+    justify-content: center !important;
+    align-items: center !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    overflow: hidden !important;
+}
+
+/* PC Position for Fixed Buttons - Moved to LEFT to avoid header conflicts */
+.close-fiche, .lb-close:not([style*="position:static"]) {
+    position: fixed !important;
+    top: 40px !important;
+    left: 40px !important;
+    right: auto !important;
+}
+
+.close-fiche::before, .fiche-close::before, .lb-close::before {
+    content: '✕';
+    font-size: 24px;
+    font-weight: 900;
+    color: black !important;
+    position: absolute;
+    display: block;
+}
+
+.close-fiche i, .fiche-close i, .btn-close-fiche i, .lb-close i {
+    width: 28px !important;
+    height: 28px !important;
+    stroke-width: 4px !important;
+    z-index: 2;
+}
+
+/* Pulse animation */
+@keyframes pulse-close {
+    0% { box-shadow: 0 0 0 0 rgba(255, 171, 64, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(255, 171, 64, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 171, 64, 0); }
+}
+.close-fiche {
+    animation: pulse-close 2s infinite;
+}
+
+/* MOBILE OVERRIDES */
+@media (max-width: 768px) {
+    .mobile-fiche-header {
+        display: flex !important;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 65px;
+        background: #0d1e1a;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        z-index: 10005 !important;
+        align-items: center;
+        padding: 0 15px;
+        padding-top: env(safe-area-inset-top, 0px);
     }
 
-    /* Language Selector & Meteo overlap fix */
-    .hero {
-        padding-top: 30px !important;
-    }
-
-    .language-selector {
-        top: 100px !important; /* Spostato più in basso */
+    .close-fiche, .lb-close:not([style*="position:static"]), #back-btn.active-mobile {
+        position: fixed !important;
+        top: calc(15px + env(safe-area-inset-top, 0px)) !important;
         right: 15px !important;
     }
 
-    #meteo-card {
-        margin-top: -15px !important; /* Spostato più in alto */
-        margin-left: -10px !important; /* Spostato più a sinistra */
+    #back-btn.active-mobile {
+        display: flex !important;
+        width: 50px !important;
+        height: 50px !important;
+        background: #ffab40 !important;
+        color: transparent !important;
+        border: 2px solid white !important;
+        border-radius: 50% !important;
+        z-index: 20000 !important;
+        justify-content: center !important;
+        align-items: center !important;
     }
-
-    /* 2. LIBRARY & GRID SYSTEMS */
-    h1 {
-        font-size: 2rem !important;
-        letter-spacing: 2px !important;
+    
+    #back-btn.active-mobile::before {
+        content: '✕';
+        color: black;
+        font-size: 24px;
+        font-weight: 900;
+        position: absolute;
     }
-
-    .main-container, .layout {
-        display: block !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        height: auto !important;
-        overflow-x: hidden !important;
-    }
-
-    .content-area, .main-content {
-        padding: 1.5rem 1rem !important;
-        padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 300px) !important;
-        overflow-x: hidden !important;
-        overflow-y: visible !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        height: auto !important;
-        min-height: 100vh !important;
-        display: block !important;
-    }
-
-    .grid-4, .grid-sections, .itinerary-grid {
-        grid-template-columns: 1fr !important;
-        gap: 1.5rem !important;
-        padding-bottom: 40px !important;
-    }
-
-    .grid-4 {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 1rem !important;
-    }
-
-    .card img {
-        height: 140px !important;
-    }
-
-    .card-label {
-        font-size: 0.8rem !important;
-        padding: 0.6rem !important;
-    }
-
-    #main-title {
-        font-size: 1.8rem !important;
-        margin-bottom: 20px !important;
-    }
-
-    header {
-        padding: 1rem !important;
-    }
-
-    header div:first-child:empty {
-        display: none !important; /* Hide ONLY empty left gap on mobile */
-    }
-
-    header button {
-        padding: 6px 12px !important;
-        font-size: 10px !important;
-    }
-
-    /* Fiche adaptation */
-    #fiche-view h1 {
-        font-size: 2rem !important;
-    }
-
-    .fiche-header {
-        height: 250px !important;
-        margin-bottom: 1.5rem !important;
-    }
-
-    #stats-list p {
-        font-size: 0.85rem !important;
-        padding: 6px 0 !important;
-    }
-    #stats-list p span {
-        text-align: right !important;
-        flex: 1 !important;
-        padding-left: 10px !important;
-        word-break: break-word !important;
-    }
-
-    #fiche-desc {
-        font-size: 1rem !important;
-        line-height: 1.5 !important;
-    }
-
-    #fiche-title, #f-title {
-        font-size: 1.8rem !important;
-        min-width: 0 !important;
-        width: 100% !important;
-    }
-
-    #fiche-stats {
-        min-width: 0 !important;
-        width: 100% !important;
-        margin-top: 15px !important;
-        padding: 15px !important;
-        box-sizing: border-box !important;
+    
+    .btn-back-fiche {
+        background: #ffab40 !important;
+        color: black !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        border-radius: 12px !important;
+        font-weight: 900 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        font-size: 13px !important;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.4) !important;
     }
 }
+
+    /* Language Selector & Meteo overlap fix */
+    @media (max-width: 768px) {
+        .hero {
+            padding-top: 30px !important;
+        }
+
+        .language-selector {
+            top: 100px !important; /* Spostato più in basso */
+            right: 15px !important;
+        }
+
+        #meteo-card {
+            margin-top: -15px !important; /* Spostato più in alto */
+            margin-left: -10px !important; /* Spostato più a sinistra */
+        }
+
+        /* 2. LIBRARY & GRID SYSTEMS */
+        h1 {
+            font-size: 2rem !important;
+            letter-spacing: 2px !important;
+        }
+
+        .main-container, .layout {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            overflow-x: hidden !important;
+        }
+
+        .content-area, .main-content {
+            padding: 1.5rem 1rem !important;
+            padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 300px) !important;
+            overflow-x: hidden !important;
+            overflow-y: visible !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            display: block !important;
+        }
+
+        .grid-4, .grid-sections, .itinerary-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+            padding-bottom: 40px !important;
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 1rem !important;
+        }
+
+        .card img {
+            height: 140px !important;
+        }
+
+        .card-label {
+            font-size: 0.8rem !important;
+            padding: 0.6rem !important;
+        }
+
+        #main-title {
+            font-size: 1.8rem !important;
+            margin-bottom: 20px !important;
+        }
+
+        header {
+            padding: 1rem !important;
+        }
+
+        header div:first-child:empty {
+            display: none !important; /* Hide ONLY empty left gap on mobile */
+        }
+
+        header button {
+            padding: 6px 12px !important;
+            font-size: 10px !important;
+        }
+
+        /* Fiche adaptation */
+        #fiche-view h1 {
+            font-size: 2rem !important;
+        }
+
+        .fiche-header {
+            height: 250px !important;
+            margin-bottom: 1.5rem !important;
+        }
+
+        #stats-list p {
+            font-size: 0.85rem !important;
+            padding: 6px 0 !important;
+        }
+        #stats-list p span {
+            text-align: right !important;
+            flex: 1 !important;
+            padding-left: 10px !important;
+            word-break: break-word !important;
+        }
+
+        #fiche-desc, #f-desc {
+            font-size: 1rem !important;
+            line-height: 1.5 !important;
+        }
+
+        #fiche-title, #f-title {
+            font-size: 1.8rem !important;
+            min-width: 0 !important;
+            width: 100% !important;
+        }
+
+        #fiche-stats {
+            min-width: 0 !important;
+            width: 100% !important;
+            margin-top: 15px !important;
+            padding: 15px !important;
+            box-sizing: border-box !important;
+        }
+    }

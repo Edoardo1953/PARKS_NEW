@@ -3,6 +3,11 @@
  */
 
 var curMapCat = 'alert';
+var selectedIconUrl = null;
+var curDragMarkerId = null;
+var isDraggingMarker = false;
+var movedDuringDrag = false;
+var dragStartPos = { x: 0, y: 0 };
 
 function renderMapEditor() {
     // Ensure data structures exist
@@ -10,6 +15,18 @@ function renderMapEditor() {
     if(!library.available_icons) library.available_icons = {};
     if(!library.map_markers) library.map_markers = [];
     if(!library.available_maps) library.available_maps = [];
+
+    // Migration: Assign mapId to legacy markers that don't have one
+    if (library.active_map_id && library.map_markers.length > 0) {
+        let migrated = false;
+        library.map_markers.forEach(m => {
+            if (!m.mapId) {
+                m.mapId = library.active_map_id;
+                migrated = true;
+            }
+        });
+        if (migrated) save();
+    }
 
     renderMapList();
     renderMarkerIcons();
@@ -21,6 +38,7 @@ function renderMapEditor() {
 
 function switchX(cat) {
     curMapCat = cat.toLowerCase(); // Ensure lowercase internal state
+    selectedIconUrl = null; // Reset selection when category changes
     document.querySelectorAll('.tab-grid .t-btn').forEach(b => b.classList.remove('active'));
     
     // Support both id=t-alert and id=t-ALERT
@@ -108,16 +126,18 @@ function renderMarkerIcons() {
     area.innerHTML = icons.map((icon, idx) => {
         const url = typeof icon === 'object' ? icon.url : icon;
         const name = typeof icon === 'object' ? icon.name : `ICONA #${idx+1}`;
+        const isSelected = selectedIconUrl === url || (!selectedIconUrl && idx === 0);
+        if (isSelected && !selectedIconUrl) selectedIconUrl = url; // Set default
         
         return `
-            <div class="icon-item" style="display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); padding:8px; border-radius:10px; margin-bottom:5px; border:1px solid rgba(255,255,255,0.05);">
-                <div style="width:35px; height:35px; background:#000; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid rgba(255,255,255,0.1);">
+            <div class="icon-item" onclick="selectIcon('${url}')" style="display:flex; align-items:center; gap:10px; background:${isSelected ? 'rgba(255,171,64,0.1)' : 'rgba(255,255,255,0.05)'}; padding:8px; border-radius:10px; margin-bottom:5px; border:1px solid ${isSelected ? 'var(--accent)' : 'rgba(255,255,255,0.05)'}; cursor:pointer; transition:0.2s;">
+                <div style="width:35px; height:35px; background:#000; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid ${isSelected ? 'var(--accent)' : 'rgba(255,255,255,0.1)'};">
                     <img src="${url}" style="width:100%; height:100%; object-fit:contain;">
                 </div>
                 <div style="flex:1;">
-                     <div style="font-size:10px; color:var(--accent); font-weight:900; letter-spacing:1px;">${name}</div>
+                     <div style="font-size:10px; color:${isSelected ? 'var(--accent)' : 'rgba(255,255,255,0.8)'}; font-weight:900; letter-spacing:1px;">${name}</div>
                 </div>
-                <button onclick="deleteIcon(${idx})" style="background:none; border:none; color:#ff5252; cursor:pointer; opacity:0.4; transition:0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'"><i data-lucide="trash-2" style="width:14px;"></i></button>
+                <button onclick="event.stopPropagation(); deleteIcon(${idx})" style="background:none; border:none; color:#ff5252; cursor:pointer; opacity:0.4; transition:0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'"><i data-lucide="trash-2" style="width:14px;"></i></button>
             </div>
         `;
     }).join('');
@@ -149,13 +169,25 @@ function deleteIcon(idx) {
     if(!confirm("Eliminare questa icona?")) return;
     const cat = curMapCat.toLowerCase();
     const icons = library.available_icons[cat] || library.available_icons[cat.toUpperCase()];
-    if(icons) icons.splice(idx, 1);
+    if(icons) {
+        const deletedUrl = typeof icons[idx] === 'object' ? icons[idx].url : icons[idx];
+        if (selectedIconUrl === deletedUrl) selectedIconUrl = null;
+        icons.splice(idx, 1);
+    }
     save();
     renderMarkerIcons();
 }
 
+function selectIcon(url) {
+    selectedIconUrl = url;
+    renderMarkerIcons();
+}
+
 function handleMapClick(event) {
-    const rect = event.currentTarget.getBoundingClientRect();
+    // If we are dragging, don't place a new marker
+    if (isDraggingMarker || movedDuringDrag) return;
+    
+    const rect = document.getElementById('map-inner').getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 100;
     const y = ((event.clientY - rect.top) / rect.height) * 100;
     
@@ -164,7 +196,9 @@ function handleMapClick(event) {
         alert("Carica almeno un'icona per questa categoria prima di posizionare marker.");
         return;
     }
-    const iconData = icons[0];
+    
+    // Use selected icon or fallback to first
+    let iconData = icons.find(i => (typeof i === 'object' ? i.url : i) === selectedIconUrl) || icons[0];
     const defaultTitle = typeof iconData === 'object' ? iconData.name : "Nuovo Punto";
     const iconUrl = typeof iconData === 'object' ? iconData.url : iconData;
 
@@ -173,6 +207,7 @@ function handleMapClick(event) {
     
     const newMarker = {
         id: Date.now(),
+        mapId: library.active_map_id, // Essential for filtering in User view
         type: curMapCat.toLowerCase(),
         title: title,
         icon: iconUrl, 
@@ -187,43 +222,115 @@ function handleMapClick(event) {
     renderMarkersOnMap();
 }
 
+function startMarkerDrag(e, id) {
+    e.preventDefault();
+    e.stopPropagation();
+    curDragMarkerId = id;
+    isDraggingMarker = true;
+    movedDuringDrag = false;
+    dragStartPos = { x: e.clientX, y: e.clientY };
+    
+    document.addEventListener('mousemove', onMarkerMouseMove);
+    document.addEventListener('mouseup', stopMarkerDrag);
+}
+
+function onMarkerMouseMove(e) {
+    if (!isDraggingMarker) return;
+    
+    // Check movement threshold
+    if (Math.abs(e.clientX - dragStartPos.x) > 5 || Math.abs(e.clientY - dragStartPos.y) > 5) {
+        movedDuringDrag = true;
+    }
+    
+    const rect = document.getElementById('map-inner').getBoundingClientRect();
+    let x = ((e.clientX - rect.left) / rect.width) * 100;
+    let y = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    // Constrain to map bounds
+    x = Math.max(0, Math.min(100, x));
+    y = Math.max(0, Math.min(100, y));
+    
+    const marker = library.map_markers.find(m => m.id === curDragMarkerId);
+    if (marker) {
+        marker.x = x;
+        marker.y = y;
+        
+        // Live update position in DOM for smoothness
+        const el = document.querySelector(`.map-marker[data-id="${marker.id}"]`);
+        if (el) {
+            el.style.left = x + '%';
+            el.style.top = y + '%';
+        }
+    }
+}
+
+function stopMarkerDrag() {
+    if (isDraggingMarker) {
+        isDraggingMarker = false;
+        save();
+        document.removeEventListener('mousemove', onMarkerMouseMove);
+        document.removeEventListener('mouseup', stopMarkerDrag);
+        
+        // Keep movedDuringDrag true for a moment to block the click event
+        setTimeout(() => { movedDuringDrag = false; }, 200);
+    }
+}
+
 function renderMarkersOnMap() {
     const layer = document.getElementById('marker-layer');
     if(!layer) return;
     
-    const markers = library.map_markers || [];
+    // Filter markers by active map ID
+    const markers = (library.map_markers || []).filter(m => m.mapId === library.active_map_id);
     layer.innerHTML = markers.map(m => `
-        <div class="map-marker" style="position:absolute; left:${m.x}%; top:${m.y}%; transform:translate(-50%, -50%); cursor:pointer; z-index:10;" onclick="event.stopPropagation(); editMarker(${m.id})">
-            <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
-                <img src="${m.icon}" style="width:30px; height:30px; object-fit:contain; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.5));">
-                <div style="background:rgba(0,0,0,0.8); color:white; font-size:8px; padding:2px 6px; border-radius:4px; margin-top:4px; white-space:nowrap; border:1px solid var(--accent); font-weight:900;">${m.title}</div>
-            </div>
+        <div class="map-marker" data-id="${m.id}" 
+             style="left:${m.x}%; top:${m.y}%;" 
+             onmousedown="startMarkerDrag(event, ${m.id})"
+             onclick="event.stopPropagation(); editMarker(${m.id})">
+            <img src="${m.icon}">
+            <div class="marker-label">${m.title}</div>
         </div>
     `).join('');
 }
 
 function editMarker(id) {
+    // If we just moved the marker, don't open the editor
+    if (movedDuringDrag) return;
+    
     const marker = library.map_markers.find(m => m.id === id);
     if(!marker) return;
     
-    const newTitle = prompt("Modifica Titolo:", marker.title);
-    if(newTitle === null) return; // cancel
+    // Explicit Delete check
+    if (confirm(`VUOI ELIMINARE IL MARKER "${marker.title}"?\n\nPremi OK per confermare l'eliminazione.\nPremi ANNULLA se vuoi rinominarlo o cambiare icona.`)) {
+        library.map_markers = library.map_markers.filter(m => m.id !== id);
+        save();
+        renderMarkersOnMap();
+        return;
+    }
+
+    // Rename / Cycle Icon check
+    const newTitle = prompt("MODIFICA TITOLO:\n(Lascia invariato e premi OK per ruotare l'icona)", marker.title);
+    if(newTitle === null) return; // user cancelled prompt
     
-    if(newTitle === "") {
-        if(confirm("Eliminare questo marker?")) {
+    if(newTitle.trim() === "") {
+        // Fallback for empty title: delete
+        if(confirm("Eliminare definitivamente questo marker?")) {
             library.map_markers = library.map_markers.filter(m => m.id !== id);
         } else {
             return;
         }
     } else {
         marker.title = newTitle;
-        // Optionally cycle icon
+        
+        // Cycle icon logic - Improved to handle objects
         const cat = marker.type.toLowerCase();
         const icons = library.available_icons[cat] || library.available_icons[cat.toUpperCase()] || [];
+        
         if(icons.length > 1) {
-            const curIdx = icons.indexOf(marker.icon);
+            const curIdx = icons.findIndex(i => (typeof i === 'object' ? i.url : i) === marker.icon);
             const nextIdx = (curIdx + 1) % icons.length;
-            marker.icon = icons[nextIdx];
+            const nextIcon = icons[nextIdx];
+            marker.icon = typeof nextIcon === 'object' ? nextIcon.url : nextIcon;
         }
     }
     
