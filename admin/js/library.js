@@ -193,23 +193,44 @@ function editItem(cId, sId, iId) {
         if(icon) icon.style.fill = curEditItem.isMustSee ? '#ffeb3b' : 'none';
     }
 
-    // Smart Defaults based on category name
-    var catName = (c && c.name) ? c.name.toUpperCase() : "";
-    var defL1 = "PESO", defL2 = "DIMENSIONI", defL3 = "LONGEVITÀ";
-    
-    if (catName.includes("FLORA") || catName.includes("PIANTE") || catName.includes("ALBERI")) {
-        defL1 = "ALTEZZA"; defL2 = "SPECIE"; defL3 = "HABITAT";
-    } else if (catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("POPOLI") || catName.includes("GENTE") || curSection === 'visit') {
-        defL1 = "POPOLAZIONE"; defL2 = "SUPERFICIE"; defL3 = "REGIONE";
-    } else if (catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO")) {
-        defL1 = "TIPOLOGIA"; defL2 = "ESTENSIONE"; defL3 = "INFO";
-    } else if (catName.includes("LODGE") || catName.includes("STRUTTURE") || catName.includes("HOTEL")) {
-        defL1 = "TIPOLOGIA"; defL2 = "SERVIZI"; defL3 = "FASCIA PREZZO";
-    }
+    try {
+        // Smart Defaults based on category name
+        var catName = (c && c.name) ? String(c.name).toUpperCase() : "";
+        var defL1 = "PESO", defL2 = "DIMENSIONI", defL3 = "LONGEVITÀ";
+        
+        var title = (curEditItem && curEditItem.name) ? String(curEditItem.name).toUpperCase() : "";
+        var isKnownPeople = title.includes("HERERO") || title.includes("HIMBA") || title.includes("PEOPLE") || title.includes("POPOLO");
+        var isPeople = isKnownPeople || catName.includes("POPOLI") || catName.includes("GENTE") || catName.includes("PEOPLE") || section === 'visit';
 
-    document.getElementById('f-label1').value = (curEditItem.facts && curEditItem.facts.label1) || defL1;
-    document.getElementById('f-label2').value = (curEditItem.facts && curEditItem.facts.label2) || defL2;
-    document.getElementById('f-label3').value = (curEditItem.facts && curEditItem.facts.label3) || defL3;
+        if (catName.includes("FLORA") || catName.includes("PIANTE") || catName.includes("ALBERI") || catName.includes("PLANTS")) {
+            defL1 = "ALTEZZA"; defL2 = "SPECIE"; defL3 = "HABITAT";
+        } else if (isPeople || catName.includes("CITTÀ") || catName.includes("LOCALITÀ")) {
+            defL1 = "POPOLAZIONE"; defL2 = "SUPERFICIE"; defL3 = "REGIONE";
+        } else if (catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO") || catName.includes("PLACES")) {
+            defL1 = "TIPOLOGIA"; defL2 = "ESTENSIONE"; defL3 = "INFO";
+        } else if (catName.includes("LODGE") || catName.includes("STRUTTURE") || catName.includes("HOTEL")) {
+            defL1 = "TIPOLOGIA"; defL2 = "SERVIZI"; defL3 = "FASCIA PREZZO";
+        }
+
+        var currentL1 = (curEditItem.facts && curEditItem.facts.label1) || "";
+        var currentL2 = (curEditItem.facts && curEditItem.facts.label2) || "";
+        
+        // Force smart labels if current labels are generic
+        if (isPeople || catName.includes("CITY") || catName.includes("CITTA") || catName.includes("PLACES")) {
+            if (!currentL1 || currentL1.toUpperCase() === "PESO" || currentL1.toUpperCase() === "WEIGHT") currentL1 = defL1;
+            if (!currentL2 || currentL2.toUpperCase() === "DIMENSIONI" || currentL2.toUpperCase() === "SIZE") currentL2 = defL2;
+        } else {
+            if (!currentL1) currentL1 = defL1;
+            if (!currentL2) currentL2 = defL2;
+        }
+
+        document.getElementById('f-label1').value = currentL1;
+        document.getElementById('f-label2').value = currentL2;
+        document.getElementById('f-label3').value = (curEditItem.facts && curEditItem.facts.label3) || defL3;
+    } catch (e) {
+        console.error("Error in editFiche smart labels:", e);
+    }
+    
     renderEditPhotos();
     switchView('fiche-editor');
 }

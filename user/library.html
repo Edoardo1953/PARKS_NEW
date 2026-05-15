@@ -19,7 +19,6 @@
             /* overflow: hidden; */ /* Permetti lo scroll naturale */
             font-family: sans-serif; display: flex; flex-direction: column; 
         }
-        }
         
         header { padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.05); }
         .main-container { flex: 1; display: grid; grid-template-columns: 300px 1fr; overflow: hidden; }
@@ -514,17 +513,23 @@
             if(typeof visitNamibia !== 'undefined' && visitNamibia.categories) dbs.push(visitNamibia);
 
             dbs.forEach(db => {
+                if(!db.categories) return;
                 db.categories.forEach(c => {
-                    if(c.subcategories.some(s => s.items.some(it => String(it.id) == String(activeItem.id)))) {
-                        catName = c.name.toUpperCase();
-                    }
+                    if(!c.subcategories) return;
+                    c.subcategories.forEach(sub => {
+                        if(sub.items && sub.items.some(it => String(it.id) == String(activeItem.id))) {
+                            catName = c.name.toUpperCase();
+                        }
+                    });
                 });
             });
 
-            const isPeople = isKnownPeople || catName.includes("POPOLI") || catName.includes("GENTE") || catName.includes("POPOLAZIONI");
-            const isFlora = catName.includes("FLORA") || catName.includes("PIANTE") || catName.includes("ALBERI");
-            const isCity = catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("VILLAGGI");
-            const isGeo = catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO");
+            const isPeople = isKnownPeople || catName.includes("POPOLI") || catName.includes("PEOPLES") || catName.includes("GENTE") || catName.includes("POPOLAZIONI");
+            const isFlora = catName.includes("FLORA") || catName.includes("PIANTE") || catName.includes("ALBERI") || catName.includes("PLANTS");
+            const isCity = catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("VILLAGGI") || catName.includes("CITIES") || catName.includes("TOWNS");
+            const isGeo = catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO") || catName.includes("PLACES");
+            
+            var debugInfo = `Nome="${title}" Cat="${catName}" ID="${activeItem.id}"`;
 
             var l1 = f.label1, l2 = f.label2, l3 = f.label3;
             
