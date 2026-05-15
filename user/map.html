@@ -9,6 +9,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="../shared/db.js"></script>
     <script src="../shared/app.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="../shared/mobile_responsive.css?v=2.2">
     <style>
         :root { 
@@ -385,8 +387,24 @@
                 <button class="slide-btn" style="left:20px;" onclick="prevSlide()"><i data-lucide="chevron-left"></i></button>
                 <button class="slide-btn" style="right:20px;" onclick="nextSlide()"><i data-lucide="chevron-right"></i></button>
                 <button class="fs-btn" onclick="openFS()"><i data-lucide="maximize" style="width:20px;"></i> FULL SCREEN</button>
+                <button id="map-btn-gps" class="fs-btn" style="right:auto; left:20px; display:none;" onclick="openMapModal()">
+                    <i data-lucide="map-pin" style="width:20px;"></i> VEDI POSIZIONE GPS
+                </button>
             </div>
-            <div id="f-desc" style="font-size:1.3rem; line-height:1.7; opacity:0.9; margin-bottom: 3rem; white-space: pre-wrap;"></div>
+            <div id="f-desc" style="font-size:1.3rem; line-height:1.7; opacity:0.9; margin-bottom: 2rem; white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <!-- MAP MODAL (GPS) -->
+    <div id="map-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; flex-direction:column; padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h2 id="map-modal-title" style="color:var(--accent); margin:0; letter-spacing:2px; text-transform:uppercase;">Posizione GPS</h2>
+            <button class="lb-close" onclick="closeMapModal()" style="position:static; width:40px; height:40px; font-size:20px;"><i data-lucide="x"></i></button>
+        </div>
+        <div id="map-container" style="flex:1; border-radius:15px; overflow:hidden; background:#111; border:1px solid rgba(255,255,255,0.1);"></div>
+        <div style="padding:15px; text-align:center; font-size:11px; opacity:0.6; letter-spacing:1px;">
+            <span style="display:inline-block; width:12px; height:12px; background:#ffab40; border-radius:50%; margin-right:5px;"></span> LUOGO MUST SEE &nbsp;&nbsp;&nbsp;
+            <span style="display:inline-block; width:12px; height:12px; background:#4caf50; border-radius:50%; margin-right:5px;"></span> TUA POSIZIONE
         </div>
     </div>
 
@@ -585,6 +603,13 @@
             document.getElementById('f-desc').innerText = activeItem.description || "";
             document.getElementById('fiche-stats').style.display = 'block';
             
+            var mapBtn = document.getElementById('map-btn-gps');
+            if (activeItem.lat && activeItem.lng) {
+                mapBtn.style.display = 'flex';
+            } else {
+                mapBtn.style.display = 'none';
+            }
+
             // Ripristina dimensioni originali per SCHEDA ANIMALE
             document.querySelector('.fiche-content').style.maxWidth = '1000px';
             document.querySelector('.fiche-header').style.height = '450px';
@@ -619,6 +644,17 @@
         function renderStats() {
             const f = activeItem.facts || {};
             
+            // Check if all fields are empty
+            const hasData = (f.weight && f.weight !== '-') || (f.size && f.size !== '-') || (f.life && f.life !== '-') || (f.speed && f.speed !== '-');
+            const statsContainer = document.getElementById('fiche-stats');
+            
+            if (!hasData) {
+                statsContainer.style.display = 'none';
+                return;
+            } else {
+                statsContainer.style.display = 'block';
+            }
+
             function fmt(val) {
                 if (!val || val === '-') return '-';
                 return String(val).trim()
@@ -636,6 +672,66 @@
 
         function closeFiche() {
             document.getElementById('fiche-overlay').style.display = 'none';
+        }
+
+        var mapInstance = null;
+        function openMapModal() {
+            document.getElementById('map-modal').style.display = 'flex';
+            document.getElementById('map-modal-title').innerText = activeItem.name;
+            
+            setTimeout(() => {
+                if (!mapInstance) {
+                    mapInstance = L.map('map-container').setView([activeItem.lat, activeItem.lng], 13);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap'
+                    }).addTo(mapInstance);
+                } else {
+                    mapInstance.setView([activeItem.lat, activeItem.lng], 13);
+                }
+                
+                // Clear existing markers
+                mapInstance.eachLayer((layer) => {
+                    if (layer instanceof L.Marker) mapInstance.removeLayer(layer);
+                });
+
+                // Item marker
+                L.marker([activeItem.lat, activeItem.lng], {
+                    icon: L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div style="background:#ffab40; width:30px; height:30px; border-radius:50%; border:3px solid white; box-shadow:0 5px 15px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; color:black;"><i data-lucide="star" style="width:16px; fill:black;"></i></div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    })
+                }).addTo(mapInstance).bindPopup(`<b>${activeItem.name}</b>`).openPopup();
+
+                // User marker
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        const userLat = pos.coords.latitude;
+                        const userLng = pos.coords.longitude;
+                        
+                        L.marker([userLat, userLng], {
+                            icon: L.divIcon({
+                                className: 'custom-div-icon',
+                                html: `<div style="background:#4caf50; width:30px; height:30px; border-radius:50%; border:3px solid white; box-shadow:0 5px 15px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; color:white;"><i data-lucide="user" style="width:16px;"></i></div>`,
+                                iconSize: [30, 30],
+                                iconAnchor: [15, 15]
+                            })
+                        }).addTo(mapInstance).bindPopup("La tua posizione");
+                        
+                        // Fit bounds to show both
+                        const bounds = L.latLngBounds([[activeItem.lat, activeItem.lng], [userLat, userLng]]);
+                        mapInstance.fitBounds(bounds, { padding: [50, 50] });
+                    });
+                }
+                
+                lucide.createIcons();
+                mapInstance.invalidateSize();
+            }, 300);
+        }
+
+        function closeMapModal() {
+            document.getElementById('map-modal').style.display = 'none';
         }
 
         function showTooltip(e, title) { 

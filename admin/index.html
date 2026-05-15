@@ -773,9 +773,21 @@
                         <div style="display:flex; flex-direction:column; gap:1.5rem;">
                             <div class="db-section" style="padding:1.5rem;">
                                 <div class="section-header" style="background:none; border:none; padding:0 0 10px 0;">SCHEDA TECNICA</div>
-                                <div class="input-group"><input type="text" id="f-label1" value="PESO" class="label" style="background:none; border:none; width:100%; outline:none; font-family:inherit; padding:0; margin-bottom:5px; text-transform:uppercase;"><input id="f-weight" type="text" class="f-input"></div>
-                                <div class="input-group"><input type="text" id="f-label2" value="DIMENSIONI" class="label" style="background:none; border:none; width:100%; outline:none; font-family:inherit; padding:0; margin-bottom:5px; text-transform:uppercase;"><input id="f-size" type="text" class="f-input"></div>
-                                <div class="input-group"><input type="text" id="f-label3" value="LONGEVITÀ" class="label" style="background:none; border:none; width:100%; outline:none; font-family:inherit; padding:0; margin-bottom:5px; text-transform:uppercase;"><input id="f-life" type="text" class="f-input"></div>
+                                <div class="input-group"><input type="text" id="f-label1" value="PESO" class="label" style="background:none; border:none; width:100%; outline:none; font-family:inherit; padding:5px; margin-bottom:5px; text-transform:uppercase; cursor:text; transition:0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='none'"><input id="f-weight" type="text" class="f-input"></div>
+                                <div class="input-group"><input type="text" id="f-label2" value="DIMENSIONI" class="label" style="background:none; border:none; width:100%; outline:none; font-family:inherit; padding:5px; margin-bottom:5px; text-transform:uppercase; cursor:text; transition:0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='none'"><input id="f-size" type="text" class="f-input"></div>
+                                <div class="input-group"><input type="text" id="f-label3" value="LONGEVITÀ" class="label" style="background:none; border:none; width:100%; outline:none; font-family:inherit; padding:5px; margin-bottom:5px; text-transform:uppercase; cursor:text; transition:0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='none'"><input id="f-life" type="text" class="f-input"></div>
+                                
+                                <div style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.05); display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                                    <div class="input-group" style="margin:0;">
+                                        <span class="label">LATITUDINE</span>
+                                        <input id="f-lat" type="text" class="f-input" placeholder="Es: -18.756">
+                                    </div>
+                                    <div class="input-group" style="margin:0;">
+                                        <span class="label">LONGITUDINE</span>
+                                        <input id="f-lng" type="text" class="f-input" placeholder="Es: 16.234">
+                                    </div>
+                                </div>
+                                <p style="font-size:10px; opacity:0.4; margin-top:10px; font-style:italic;">Necessarie per mostrare il luogo sulla mappa (Must See).</p>
                             </div>
                             <div class="db-section" style="padding:1.5rem;">
                                 <div class="section-header" style="background:none; border:none; padding:0 0 10px 0;">MULTIMEDIA HUB (IMG/PDF/VIDEO)</div>

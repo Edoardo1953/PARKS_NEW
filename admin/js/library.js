@@ -168,7 +168,7 @@ function delSub(cId, sId) {
 }
 function addItem(cId, sId) { 
     var data = (curSection === 'visit') ? visitNamibia : library;
-    var n = prompt("Nome Elemento:"); if(n) { var c = data.categories.find(x=>x.id===cId); var s = c.subcategories.find(x=>x.id===sId); s.items.push({ id:'it_'+Date.now(), name:n.toUpperCase(), photos:[], description:'', facts:{} }); save(); } 
+    var n = prompt("Nome Elemento:"); if(n) { var c = data.categories.find(x=>x.id===cId); var s = c.subcategories.find(x=>x.id===sId); s.items.push({ id:'it_'+Date.now(), name:n.toUpperCase(), photos:[], description:'', facts:{}, lat:'', lng:'' }); save(); } 
 }
 
 function editItem(cId, sId, iId) { 
@@ -183,6 +183,8 @@ function editItem(cId, sId, iId) {
     document.getElementById('f-weight').value = (curEditItem.facts && curEditItem.facts.weight) || "";
     document.getElementById('f-size').value = (curEditItem.facts && curEditItem.facts.size) || "";
     document.getElementById('f-life').value = (curEditItem.facts && curEditItem.facts.life) || "";
+    document.getElementById('f-lat').value = curEditItem.lat || "";
+    document.getElementById('f-lng').value = curEditItem.lng || "";
     
     var star = document.getElementById('f-star');
     if(star) {
@@ -191,9 +193,19 @@ function editItem(cId, sId, iId) {
         if(icon) icon.style.fill = curEditItem.isMustSee ? '#ffeb3b' : 'none';
     }
 
-    var defL1 = (curSection === 'visit') ? "POPOLAZIONE" : "PESO";
-    var defL2 = (curSection === 'visit') ? "SUPERFICIE" : "DIMENSIONI";
-    var defL3 = (curSection === 'visit') ? "REGIONE" : "LONGEVITÀ";
+    // Smart Defaults based on category name
+    var catName = (c && c.name) ? c.name.toUpperCase() : "";
+    var defL1 = "PESO", defL2 = "DIMENSIONI", defL3 = "LONGEVITÀ";
+    
+    if (catName.includes("FLORA") || catName.includes("PIANTE") || catName.includes("ALBERI")) {
+        defL1 = "ALTEZZA"; defL2 = "SPECIE"; defL3 = "HABITAT";
+    } else if (catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("POPOLI") || catName.includes("GENTE") || curSection === 'visit') {
+        defL1 = "POPOLAZIONE"; defL2 = "SUPERFICIE"; defL3 = "REGIONE";
+    } else if (catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO")) {
+        defL1 = "TIPOLOGIA"; defL2 = "ESTENSIONE"; defL3 = "INFO";
+    } else if (catName.includes("LODGE") || catName.includes("STRUTTURE") || catName.includes("HOTEL")) {
+        defL1 = "TIPOLOGIA"; defL2 = "SERVIZI"; defL3 = "FASCIA PREZZO";
+    }
 
     document.getElementById('f-label1').value = (curEditItem.facts && curEditItem.facts.label1) || defL1;
     document.getElementById('f-label2').value = (curEditItem.facts && curEditItem.facts.label2) || defL2;
@@ -266,6 +278,8 @@ function saveFiche() {
         label2: document.getElementById('f-label2').value.toUpperCase(),
         label3: document.getElementById('f-label3').value.toUpperCase()
     };
+    curEditItem.lat = document.getElementById('f-lat').value;
+    curEditItem.lng = document.getElementById('f-lng').value;
     var section = (curEditContext && curEditContext.section) ? curEditContext.section : 'library';
     var prev = curSection; curSection = section; save(); curSection = prev;
     switchView(section);
