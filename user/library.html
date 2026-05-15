@@ -66,9 +66,14 @@
 
         #fiche-desc { white-space: pre-wrap; font-family: 'Inter', sans-serif; font-weight: 300; }
         #stats-list { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-        #stats-list p { margin: 0; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
+        #stats-list p { 
+            margin: 0; font-size: 1.1rem; display: flex; flex-direction: column; 
+            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; 
+            align-items: flex-start;
+        }
         #stats-list p:last-child { border-bottom: none; padding-bottom: 0; }
-        #stats-list span { text-align: right; font-weight: 600; opacity: 0.9; }
+        #stats-list p b { margin-bottom: 4px; font-size: 0.8rem; letter-spacing: 1px; display: block; }
+        #stats-list span { display: block; text-align: left; font-weight: 600; opacity: 0.9; line-height: 1.4; word-break: break-word; width: 100%; }
         b, strong { font-weight: 900; color: var(--accent); }
 
         /* MOBILE ADAPTATION - Handled by shared/mobile_responsive.css */
@@ -128,7 +133,7 @@
             <div id="fiche-view" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 20px; max-width: 1200px; flex-wrap: wrap;">
                     <h1 id="fiche-title" style="color:var(--accent); font-size:3rem; margin:0; word-break: break-word; flex: 1; min-width: 250px;">TITOLO</h1>
-                    <div id="fiche-stats" style="background:rgba(255,255,255,0.05); padding:20px 30px; border-radius:15px; border:1px solid rgba(255,255,255,0.05); min-width: 300px; flex-shrink: 0;">
+                    <div id="fiche-stats" style="background:rgba(255,255,255,0.05); padding:20px 30px; border-radius:15px; border:1px solid rgba(255,255,255,0.05); width: 100%; max-width: 450px; flex-shrink: 0; align-self: flex-start;">
                         <h4 style="color:var(--accent); margin-top:0; margin-bottom:15px; letter-spacing:2px; font-weight:900; font-size: 0.9rem;">SCHEDA TECNICA</h4>
                         <div id="stats-list"></div>
                     </div>
@@ -536,12 +541,13 @@
             // Define defaults per category
             let d1 = "PESO", d2 = "DIMENSIONI", d3 = "LONGEVITÀ";
             if (isFlora) { d1 = "ALTEZZA"; d2 = "SPECIE"; d3 = "HABITAT"; }
-            else if (isPeople || isCity) { d1 = "POPOLAZIONE"; d2 = "SUPERFICIE"; d3 = "REGIONE"; }
+            else if (isPeople) { d1 = "POPOLAZIONE"; d2 = "PERCENTUALE"; d3 = "AREA GEOGRAFICA"; }
+            else if (isCity) { d1 = "POPOLAZIONE"; d2 = "SUPERFICIE"; d3 = "REGIONE"; }
             else if (isGeo) { d1 = "TIPOLOGIA"; d2 = "ESTENSIONE"; d3 = "INFO"; }
 
             // BRUTAL OVERRIDE
             if (isKnownPeople) {
-                l1 = "POPOLAZIONE"; l2 = "SUPERFICIE"; l3 = "REGIONE";
+                l1 = "POPOLAZIONE"; l2 = "PERCENTUALE"; l3 = "AREA GEOGRAFICA";
             } else {
                 const currentL1 = (l1 || "").toUpperCase().trim();
                 const currentL2 = (l2 || "").toUpperCase().trim();

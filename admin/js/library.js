@@ -204,7 +204,9 @@ function editItem(cId, sId, iId) {
 
         if (catName.includes("FLORA") || catName.includes("PIANTE") || catName.includes("ALBERI") || catName.includes("PLANTS")) {
             defL1 = "ALTEZZA"; defL2 = "SPECIE"; defL3 = "HABITAT";
-        } else if (isPeople || catName.includes("CITTÀ") || catName.includes("LOCALITÀ")) {
+        } else if (isPeople) {
+            defL1 = "POPOLAZIONE"; defL2 = "PERCENTUALE"; defL3 = "AREA GEOGRAFICA";
+        } else if (catName.includes("CITTÀ") || catName.includes("LOCALITÀ")) {
             defL1 = "POPOLAZIONE"; defL2 = "SUPERFICIE"; defL3 = "REGIONE";
         } else if (catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO") || catName.includes("PLACES")) {
             defL1 = "TIPOLOGIA"; defL2 = "ESTENSIONE"; defL3 = "INFO";
@@ -214,19 +216,22 @@ function editItem(cId, sId, iId) {
 
         var currentL1 = (curEditItem.facts && curEditItem.facts.label1) || "";
         var currentL2 = (curEditItem.facts && curEditItem.facts.label2) || "";
+        var currentL3 = (curEditItem.facts && curEditItem.facts.label3) || "";
         
         // Force smart labels if current labels are generic
         if (isPeople || catName.includes("CITY") || catName.includes("CITTA") || catName.includes("PLACES")) {
-            if (!currentL1 || currentL1.toUpperCase() === "PESO" || currentL1.toUpperCase() === "WEIGHT") currentL1 = defL1;
-            if (!currentL2 || currentL2.toUpperCase() === "DIMENSIONI" || currentL2.toUpperCase() === "SIZE") currentL2 = defL2;
+            if (!currentL1 || currentL1.toUpperCase() === "PESO" || currentL1.toUpperCase() === "WEIGHT" || currentL1.toUpperCase() === "POPOLAZIONE") currentL1 = defL1;
+            if (!currentL2 || currentL2.toUpperCase() === "DIMENSIONI" || currentL2.toUpperCase() === "SIZE" || currentL2.toUpperCase() === "SUPERFICIE") currentL2 = defL2;
+            if (!currentL3 || currentL3.toUpperCase() === "LONGEVITÀ" || currentL3.toUpperCase() === "REGIONE") currentL3 = defL3;
         } else {
             if (!currentL1) currentL1 = defL1;
             if (!currentL2) currentL2 = defL2;
+            if (!currentL3) currentL3 = defL3;
         }
 
         document.getElementById('f-label1').value = currentL1;
         document.getElementById('f-label2').value = currentL2;
-        document.getElementById('f-label3').value = (curEditItem.facts && curEditItem.facts.label3) || defL3;
+        document.getElementById('f-label3').value = currentL3;
     } catch (e) {
         console.error("Error in editFiche smart labels:", e);
     }
