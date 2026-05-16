@@ -378,10 +378,46 @@
             box-shadow: 0 10px 30px rgba(255, 171, 64, 0.2);
         }
 
-        /* MOBILE ADAPTATION - Handled by shared/mobile_responsive.css */
+        /* APP LOADER */
+        #app-loader {
+            position: fixed;
+            inset: 0;
+            background: #0d1e1a;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+        #app-loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 171, 64, 0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 0.6; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1); } }
+        
+        .sidebar-menu li img { transition: 0.3s; }
+        .sidebar-menu li:hover img { transform: scale(1.2); }
     </style>
 </head>
 <body>
+
+    <!-- APP LOADER (Splash Screen) -->
+    <div id="app-loader">
+        <img src="../shared/parks_logo_combined_white.svg" alt="PARKS" style="width: 250px; filter: drop-shadow(0 0 20px rgba(45,122,77,0.4)); animation: pulse 2s infinite;">
+        <div class="loader-spinner"></div>
+    </div>
 
     <div class="layout">
         <aside class="sidebar">
@@ -443,22 +479,19 @@
                     </div>
                 </div>
 
-                <h1 id="home-title" style="color:var(--accent); font-weight:900; letter-spacing:-2px;">ETOSHA</h1>
-                <p class="tagline" id="home-tagline" style="font-weight:300; letter-spacing:4px; opacity:0.6; text-transform:uppercase; margin-bottom: 30px;">National Park · Namibia</p>
+                <h1 id="home-title" style="color:var(--accent); font-weight:900; letter-spacing:-2px; min-height: 1.2em;">&nbsp;</h1>
+                <p class="tagline" id="home-tagline" style="font-weight:300; letter-spacing:4px; opacity:0.6; text-transform:uppercase; margin-bottom: 30px; min-height: 1.2em;">&nbsp;</p>
 
                 <!-- QUICK GALLERY -->
                 <div class="quick-gallery-container">
                     <h3><i data-lucide="camera"></i> GALLERIA</h3>
                     <div class="quick-gallery" id="quick-gallery-list">
                         <!-- Populated by JS -->
-                        <img src="../assets/bg_homepage_1.jpg" alt="Gallery 1" onclick="openSlideshow(this.src)">
-                        <img src="../assets/bg_homepage_3.jpg" alt="Gallery 2" onclick="openSlideshow(this.src)">
                     </div>
                 </div>
 
-                <div class="description-card" id="home-description" style="margin-bottom: 40px; max-width: 900px;">
-                    L'Etosha National Park è una delle riserve naturali più importanti d'Africa, situata nel nord della Namibia.                Il suo nome significa "grande luogo bianco", in riferimento all'Etosha Pan, una vastissima depressione salina che copre circa un quarto dell'area del parco. 
-                    Questo ecosistema unico attrae una fauna straordinaria: elefanti, rinoceronti neri, leoni e innumerevoli specie di antilopi si radunano attorno alle pozze d'acqua, offrendo uno degli spettacoli naturali più emozionanti del continente.
+                <div class="description-card" id="home-description" style="margin-bottom: 40px; max-width: 900px; min-height: 100px;">
+                    <!-- Caricamento... -->
                 </div>
 
                 <div class="grid-sections">
@@ -477,10 +510,7 @@
                         </div>
                         <p>Scatti mozzafiato dal cuore selvaggio dell'Etosha.</p>
                         <div class="photo-strip" id="gallery-container">
-                            <img src="../assets/bg_homepage_1.jpg" alt="Etosha 1" onclick="openSlideshow(this.src)">
-                            <img src="../assets/bg_homepage_3.jpg" alt="Etosha 3" onclick="openSlideshow(this.src)">
-                            <img src="../assets/bg_homepage_4.JPG" alt="Etosha 4" onclick="openSlideshow(this.src)">
-                            <img src="../assets/bg_homepage_5.jpg" alt="Etosha 5" onclick="openSlideshow(this.src)">
+                            <!-- Populated by JS -->
                         </div>
                     </div>
                 </div>
@@ -638,24 +668,45 @@
             window.PARKS_APP.getSession(function(session) {
                 if (!session || !session.loggedIn) {
                     window.location.href = 'index.html';
+                    return;
                 }
-            });
+                
+                // Caricamento Contenuti Dinamici Home
+                let contentLoaded = false;
+                let galleryLoaded = false;
 
-            // Caricamento Contenuti Dinamici Home
-            window.PARKS_DB.get('parks_home_content', null, function(content) {
-                if(content) {
-                    if(content.title) document.getElementById('home-title').innerText = content.title;
-                    if(content.tagline) document.getElementById('home-tagline').innerText = content.tagline;
-                    if(content.description) document.getElementById('home-description').innerText = content.description;
+                function checkAllLoaded() {
+                    if (contentLoaded && galleryLoaded) {
+                        setTimeout(() => {
+                            document.getElementById('app-loader').classList.add('hidden');
+                        }, 500);
+                    }
                 }
-            });
 
-            window.PARKS_DB.get('parks_gallery', null, function(images) {
-                if(images && images.length > 0) {
-                    renderGallery(images);
-                } else {
-                    startMeteoSlideshow();
-                }
+                window.PARKS_DB.get('parks_home_content', null, function(content) {
+                    if(content) {
+                        if(content.title) document.getElementById('home-title').innerText = content.title;
+                        if(content.tagline) document.getElementById('home-tagline').innerText = content.tagline;
+                        if(content.description) document.getElementById('home-description').innerText = content.description;
+                    } else {
+                        // Fallback se non c'è nulla nel DB (valori di default)
+                        document.getElementById('home-title').innerText = "ETOSHA";
+                        document.getElementById('home-tagline').innerText = "National Park · Namibia";
+                        document.getElementById('home-description').innerText = "Benvenuti nel Parco Nazionale Etosha.";
+                    }
+                    contentLoaded = true;
+                    checkAllLoaded();
+                });
+
+                window.PARKS_DB.get('parks_gallery', null, function(images) {
+                    if(images && images.length > 0) {
+                        renderGallery(images);
+                    } else {
+                        startMeteoSlideshow();
+                    }
+                    galleryLoaded = true;
+                    checkAllLoaded();
+                });
             });
         });
     </script>

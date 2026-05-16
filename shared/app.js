@@ -26,19 +26,16 @@ window.PARKS_APP = {
         // Don't render on login/register or the ROOT index.html
         // We check if we are in the /user/ directory to be safe
         const isUserPage = fullPath.includes('/user/');
+        const isLoginRegister = fileName === 'login.html' || fileName === 'register.html';
+        const isRootIndex = (fileName === 'index.html' || fileName === '') && !fullPath.includes('/user/');
         
-        if (!isUserPage || 
-            fullPath.endsWith('/index.html') && !fullPath.includes('/user/') ||
-            fileName === 'login.html' || 
-            fileName === 'register.html') {
-            
-            // Special case: if it's a user sub-page named index.html (like memory2/index.html), we SHOULD render
-            if (isUserPage) {
-                // Continue to rendering
-            } else {
-                console.log("🚫 PARKS_APP: Navigazione mobile esclusa per questa pagina (" + fileName + ")");
-                return;
-            }
+        // EXCLUDE if:
+        // - We are in the admin panel
+        // - We are on the root index.html (landing page)
+        // - We are on login.html or register.html
+        if (fullPath.includes('/admin/') || isRootIndex || isLoginRegister) {
+            console.log("🚫 PARKS_APP: Navigazione mobile esclusa per questa pagina (" + fileName + ")");
+            return;
         }
 
         // Robust path handling for shared assets and subdirectories
