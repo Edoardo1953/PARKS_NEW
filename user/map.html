@@ -135,7 +135,7 @@
             position: relative;
         }
 
-        .map-canvas { position: relative; width: max-content; }
+        .map-canvas { position: relative; width: max-content; height: max-content; min-width: max-content; min-height: max-content; flex-shrink: 0; }
         .map-base { display: block; height: 85vh; width: auto; box-shadow: 0 0 100px rgba(0,0,0,0.8); }
         
         .marker { 
@@ -419,14 +419,19 @@
         }
 
         function renderMap() {
-            var mActive = (library.available_maps || []).find(m => m.id === library.active_map_id);
+            var mActive = (library.available_maps || []).find(m => String(m.id) === String(library.active_map_id));
             if(mActive) { 
                 document.getElementById('map-base').src = mActive.url; 
             } else { 
                 document.getElementById('map-base').src = "../assets/library/MAPS/Etosha map 02.jpg"; 
             }
             
-            var filtered = (library.map_markers || []).filter(m => m.mapId == library.active_map_id);
+            var filtered = (library.map_markers || []).filter(m => {
+                if (!library.active_map_id || library.active_map_id === 'default') {
+                    return !m.mapId || m.mapId === 'default';
+                }
+                return String(m.mapId) === String(library.active_map_id);
+            });
             document.getElementById('markers-layer').innerHTML = filtered.map(m => {
                 // Determine label color/style based on type
                 let labelStyle = "background:rgba(0,0,0,0.7); color:white; border:1px solid rgba(255,255,255,0.2);";

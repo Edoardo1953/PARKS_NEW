@@ -16,17 +16,7 @@ function renderMapEditor() {
     if(!library.map_markers) library.map_markers = [];
     if(!library.available_maps) library.available_maps = [];
 
-    // Migration: Assign mapId to legacy markers that don't have one
-    if (library.active_map_id && library.map_markers.length > 0) {
-        let migrated = false;
-        library.map_markers.forEach(m => {
-            if (!m.mapId) {
-                m.mapId = library.active_map_id;
-                migrated = true;
-            }
-        });
-        if (migrated) save();
-    }
+    // Migration script removed to prevent stealing markers from the base map
 
     renderMapList();
     renderMarkerIcons();
@@ -56,13 +46,22 @@ function renderMapList() {
     if(!area) return;
     
     const maps = library.available_maps || [];
+
+    // Always include the default Etosha Map
+    const defaultMapItem = `
+        <div class="map-item ${!library.active_map_id || library.active_map_id === 'default' ? 'active' : ''}" onclick="setActiveMap('default', event)" style="display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); padding:8px; border-radius:10px; margin-bottom:5px; cursor:pointer; border:1px solid ${!library.active_map_id || library.active_map_id === 'default' ? 'var(--accent)' : 'transparent'};">
+            <img src="../assets/library/MAPS/Etosha map 02.jpg" style="width:40px; height:30px; object-fit:cover; border-radius:4px;">
+            <span style="font-size:10px; font-weight:800; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--accent);">MAPPA ETOSHA (BASE)</span>
+        </div>
+    `;
+
     if(maps.length === 0) {
-        area.innerHTML = '<div style="opacity:0.3; font-size:10px; padding:10px;">Nessuna mappa caricata</div>';
+        area.innerHTML = defaultMapItem;
         return;
     }
 
-    area.innerHTML = maps.map(m => `
-        <div class="map-item ${library.active_map_id === m.id ? 'active' : ''}" onclick="setActiveMap('${m.id}')" style="display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); padding:8px; border-radius:10px; margin-bottom:5px; cursor:pointer; border:1px solid ${library.active_map_id === m.id ? 'var(--accent)' : 'transparent'};">
+    area.innerHTML = defaultMapItem + maps.map(m => `
+        <div class="map-item ${String(library.active_map_id) === String(m.id) ? 'active' : ''}" onclick="setActiveMap('${m.id}', event)" style="display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); padding:8px; border-radius:10px; margin-bottom:5px; cursor:pointer; border:1px solid ${String(library.active_map_id) === String(m.id) ? 'var(--accent)' : 'transparent'};">
             <img src="${m.url}" style="width:40px; height:30px; object-fit:cover; border-radius:4px;">
             <span style="font-size:10px; font-weight:800; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.name}</span>
             <button onclick="event.stopPropagation(); deleteMap('${m.id}')" style="background:none; border:none; color:#ff5252; cursor:pointer;"><i data-lucide="trash-2" style="width:12px;"></i></button>
@@ -71,14 +70,45 @@ function renderMapList() {
     if(window.lucide) lucide.createIcons();
 }
 
-function setActiveMap(id) {
-    library.active_map_id = id;
-    const map = library.available_maps.find(m => m.id === id);
-    if(map) {
-        document.getElementById('map-img-bg').src = map.url;
+function setActiveMap(id, event) {
+    try {
+        console.log("Switching to map:", id);
+        
+        if (id === 'default') {
+            library.active_map_id = null;
+            document.getElementById('map-img-bg').src = "../assets/library/MAPS/Etosha map 02.jpg";
+        } else {
+            library.active_map_id = id;
+            const maps = library.available_maps || [];
+            const map = maps.find(m => String(m.id) === String(id));
+            if(map) {
+                document.getElementById('map-img-bg').src = map.url;
+            }
+        }
+        // Aggiorna visivamente lo stato "active" senza distruggere e ricreare il DOM
+        document.querySelectorAll('.map-item').forEach(el => {
+            el.classList.remove('active');
+            el.style.border = '1px solid transparent';
+        });
+        
+        // Trova l'elemento cliccato e lo evidenzia
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
+            event.currentTarget.style.border = '1px solid var(--accent)';
+        } else {
+            // Fallback se l'evento non è disponibile
+            setTimeout(() => renderMapList(), 100);
+        }
+
+        renderMarkersOnMap();
+        
+        setTimeout(() => {
+            save(false);
+        }, 50);
+    } catch(e) {
+        alert("ERROR: " + e.message);
+        console.error("Error switching map:", e);
     }
-    save();
-    renderMapList();
 }
 
 async function uploadMap(event) {
@@ -100,8 +130,8 @@ async function uploadMap(event) {
 
 function deleteMap(id) {
     if(!confirm("Eliminare questa mappa?")) return;
-    library.available_maps = library.available_maps.filter(m => m.id !== id);
-    if(library.active_map_id === id) library.active_map_id = null;
+    library.available_maps = library.available_maps.filter(m => String(m.id) !== String(id));
+    if(String(library.active_map_id) === String(id)) library.active_map_id = null;
     save();
     renderMapList();
 }
@@ -280,8 +310,13 @@ function renderMarkersOnMap() {
     const layer = document.getElementById('marker-layer');
     if(!layer) return;
     
-    // Filter markers by active map ID
-    const markers = (library.map_markers || []).filter(m => m.mapId === library.active_map_id);
+    // Filter markers by active map ID (null matches 'default')
+    const markers = (library.map_markers || []).filter(m => {
+        if (!library.active_map_id || library.active_map_id === 'default') {
+            return !m.mapId || m.mapId === 'default';
+        }
+        return String(m.mapId) === String(library.active_map_id);
+    });
     layer.innerHTML = markers.map(m => `
         <div class="map-marker" data-id="${m.id}" 
              style="left:${m.x}%; top:${m.y}%;" 
