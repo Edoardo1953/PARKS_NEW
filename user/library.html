@@ -518,6 +518,7 @@
             
             // BRUTAL FORCE FOR SPECIFIC ITEMS
             const isKnownPeople = title.includes("HERERO") || title.includes("HIMBA") || title.includes("BUSHMAN") || title.includes("POPOLO");
+            const isKnownCity = title.includes("WINDHOEK") || title.includes("WINDHOECK") || title.includes("SWAKOPMUND") || title.includes("WALVIS") || title.includes("LUDERITZ");
             
             // ULTRA-COMPATIBLE DATA CHECK
             const hasData = Object.keys(f).some(k => !k.startsWith('label') && f[k] && f[k] !== '-' && f[k] !== '');
@@ -550,7 +551,7 @@
 
             const isPeople = isKnownPeople || catName.includes("POPOLI") || catName.includes("PEOPLES") || catName.includes("GENTE") || catName.includes("POPOLAZIONI");
             const isFlora = catName.includes("FLORA") || catName.includes("PIANTE") || catName.includes("ALBERI") || catName.includes("PLANTS");
-            const isCity = catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("VILLAGGI") || catName.includes("CITIES") || catName.includes("TOWNS");
+            const isCity = isKnownCity || catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("VILLAGGI") || catName.includes("CITIES") || catName.includes("TOWNS");
             const isGeo = catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO") || catName.includes("PLACES");
             
             var debugInfo = `Nome="${title}" Cat="${catName}" ID="${activeItem.id}"`;
@@ -567,6 +568,8 @@
             // BRUTAL OVERRIDE
             if (isKnownPeople) {
                 l1 = "POPOLAZIONE"; l2 = "PERCENTUALE"; l3 = "AREA GEOGRAFICA";
+            } else if (isKnownCity) {
+                l1 = "POPOLAZIONE"; l2 = "SUPERFICIE"; l3 = "REGIONE";
             } else {
                 const currentL1 = (l1 || "").toUpperCase().trim();
                 const currentL2 = (l2 || "").toUpperCase().trim();
