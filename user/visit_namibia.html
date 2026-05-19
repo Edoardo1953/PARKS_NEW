@@ -262,10 +262,15 @@
             }).map(p => typeof p === 'object' ? p : { url: p, name: 'PRESENTAZIONE', type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
 
             var mainTitle = document.getElementById('main-title');
+            var back = document.getElementById('back-btn');
             slideIdx = 0;
             document.getElementById('grid-view').style.display = 'none';
             document.getElementById('fiche-view').style.display = 'block';
             if (mainTitle) mainTitle.style.display = 'none';
+            if(back) {
+                back.style.display = 'flex';
+                back.classList.add('active-mobile');
+            }
             document.getElementById('fiche-title').innerText = activeItem.name;
             document.getElementById('fiche-desc').innerText = activeItem.description || "In attesa di descrizione...";
             
@@ -492,6 +497,8 @@
                 else if (navState.level === 'sub') navState.level = 'home';
                 render();
             }
+            var backBtn = document.getElementById('back-btn');
+            if(backBtn) backBtn.classList.remove('active-mobile');
         }
 
         var mapInstance = null;
