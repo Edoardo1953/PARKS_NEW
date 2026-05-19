@@ -270,11 +270,15 @@
             background: rgba(255,255,255,0.1); 
             border: none; 
             color: white; 
-            padding: 2rem; 
+            padding: 2.5rem; 
             cursor: pointer; 
-            font-size: 40px; 
+            font-size: 60px; 
             z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        .lb-arrow svg { width: 50px; height: 50px; }
         .fs-btn { 
             position: absolute; 
             top: 10px; 
@@ -585,7 +589,8 @@
 
             const hasAnyData = v1 || v2 || v3 || f.speed;
             const hasCoords = activeItem.lat && activeItem.lng;
-            if (!hasAnyData && !hasCoords) {
+            const hasImages = itemImages && itemImages.length > 0;
+            if (!hasAnyData && !hasCoords && !hasImages) {
                 statsContainer.style.display = 'none';
                 return;
             }
@@ -594,6 +599,8 @@
             if (h4) h4.style.display = hasAnyData ? 'block' : 'none';
             const sList = document.getElementById('stats-list');
             if (sList) sList.style.display = hasAnyData ? 'flex' : 'none';
+            const fsBtn = statsContainer.querySelector('button[onclick="openFS()"]');
+            if (fsBtn) fsBtn.style.display = hasImages ? 'flex' : 'none';
 
             let html = `
                 <p><b>${l1}</b> <span>${fmt(v1)}</span></p>

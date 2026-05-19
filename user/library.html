@@ -51,7 +51,7 @@
         .fiche-header { height: 450px; border-radius: 20px; overflow: hidden; position: relative; background: #000; margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.1); }
         .fiche-header img { width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; }
         .slide-btn { position: absolute; top:50%; transform:translateY(-50%); background: var(--accent); color: #000; border:none; width: 50px; height: 50px; cursor:pointer; border-radius:50%; z-index: 10; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: 0.3s; }
-        .slide-btn:hover { transform: translateY(-50%) scale(1.1); background: white; }
+        .slide-btn:hover { transform: translateY(-50%) scale(1.1); }
         .fs-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: var(--accent); border: 1px solid var(--accent); padding: 6px 12px; border-radius: 20px; cursor: pointer; z-index: 10; font-weight: 800; font-size: 10px; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
         .fs-btn:hover { background: var(--accent); color: #000; }
 
@@ -64,7 +64,8 @@
         .lb-close { z-index: 20000; }
         .lb-close:hover { background: #ff5252 !important; border-color: #ff5252 !important; transform: rotate(90deg); }
         .lb-close i { color: black !important; }
-        .lb-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); border: none; color: white; padding: 2rem; cursor: pointer; font-size: 40px; }
+        .lb-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); border: none; color: white; padding: 2.5rem; cursor: pointer; font-size: 60px; z-index: 10001; display: flex; align-items: center; justify-content: center; }
+        .lb-arrow svg { width: 50px; height: 50px; }
 
         #fiche-desc { white-space: pre-wrap; font-family: 'Inter', sans-serif; font-weight: 300; }
         #stats-list { display: flex; flex-direction: column; gap: 12px; width: 100%; }
@@ -528,8 +529,9 @@
             const hasData = Object.keys(f).some(k => !k.startsWith('label') && f[k] && f[k] !== '-' && f[k] !== '');
             const statsContainer = document.getElementById('fiche-stats');
             const hasCoords = activeItem.lat && activeItem.lng;
+            const hasImages = itemImages && itemImages.length > 0;
             
-            if (!hasData && !hasCoords) {
+            if (!hasData && !hasCoords && !hasImages) {
                 if(statsContainer) statsContainer.style.display = 'none';
                 return;
             } else {
@@ -539,6 +541,8 @@
                     if (h4) h4.style.display = hasData ? 'block' : 'none';
                     const sList = document.getElementById('stats-list');
                     if (sList) sList.style.display = hasData ? 'flex' : 'none';
+                    const fsBtn = statsContainer.querySelector('button[onclick="openFS()"]');
+                    if (fsBtn) fsBtn.style.display = hasImages ? 'flex' : 'none';
                 }
             }
 
