@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Rinomina Categorie PARKS</title>
+    <!-- Usa i path corretti per raggiungere i file condivisi -->
+    <script src="shared/db.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 50px; background: #111; color: white; text-align: center; }
+        .log { margin-top: 20px; padding: 20px; background: #222; border-radius: 10px; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>Rinomina Categorie in Libreria</h1>
+    <p>Attendere... rinomina di ANIMALS e PLANTS in corso.</p>
+    <div class="log" id="log">Avvio...</div>
+
+    <script>
+        function log(msg) {
+            console.log(msg);
+            document.getElementById('log').innerHTML += '<div>' + msg + '</div>';
+        }
+
+        window.onload = function() {
+            if(!window.PARKS_DB) {
+                log("ERRORE: db.js non caricato.");
+                return;
+            }
+
+            window.PARKS_DB.init(function() {
+                log("Database inizializzato. Recupero Libreria...");
+                
+                window.PARKS_DB.get('parks_library_v2', {categories:[]}, function(lib) {
+                    if (!lib || !lib.categories) {
+                        log("Libreria vuota o non trovata.");
+                        return;
+                    }
+
+                    var renamed = false;
+                    
+                    lib.categories.forEach(c => {
+                        if (c.name === 'ANIMALS') {
+                            c.name = 'ANIMALI';
+                            log("Categoria ANIMALS rinominata in ANIMALI");
+                            renamed = true;
+                        }
+                        if (c.name === 'PLANTS') {
+                            c.name = 'PIANTE';
+                            log("Categoria PLANTS rinominata in PIANTE");
+                            renamed = true;
+                        }
+                    });
+
+                    if (!renamed) {
+                        log("Nessuna categoria ANIMALS o PLANTS trovata (forse sono già state rinominate?).");
+                        return;
+                    }
+
+                    log("Salvataggio Libreria aggiornata...");
+                    window.PARKS_DB.save('parks_library_v2', lib, function(ok1) {
+                        if(ok1) { 
+                            log("<strong style='color:#4caf50'>RINOMINA COMPLETATA CON SUCCESSO!</strong>");
+                            log("Ora puoi chiudere questa finestra e ricaricare l'app.");
+                        } else {
+                            log("Errore salvataggio Libreria."); 
+                        }
+                    });
+                });
+            });
+        };
+    </script>
+</body>
+</html>

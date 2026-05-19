@@ -99,9 +99,9 @@ window.PARKS_APP = {
 
         const quickItems = [
             { id: 'homepage.html', icon: 'home', label: 'Home' },
-            { id: 'map.html', icon: 'map', label: 'Mappa' },
-            { id: 'itineraries.html', icon: 'milestone', label: 'Percorsi' },
             { id: 'library.html', icon: 'book-open', label: 'Libreria' },
+            { id: 'visit_namibia.html', icon: 'flag', label: 'Visit Namibia' },
+            { id: 'itineraries.html', icon: 'milestone', label: 'Itinerari' },
             { id: 'drawer-toggle', icon: 'menu', label: 'Menu', isToggle: true }
         ];
 
