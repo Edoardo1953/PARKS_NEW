@@ -740,14 +740,12 @@
                         return;
                     }
 
-                        // 2. Carica il resto in background (Priorità Bassa)
-                        window.PARKS_DB.get('parks_visit_namibia_v1', {categories:[]}, function(vData) { visitNamibia = vData; });
-                        window.PARKS_DB.get('parks_library_v2', {categories:[]}, function(data) { 
-                            if(data) {
-                                library = data; 
-                                if(!library.available_maps) library.available_maps = [];
-                            }
-                        });
+                        // 2. Carica libreria e Visit Namibia PRIMA di rendere i marker interattivi
+                        //    Così openFiche() trova sempre i dati anche su connessione lenta (mobile/Internet)
+                        var dbLoaded = 0;
+                        function onDbReady() {
+                            dbLoaded++;
+                            if (dbLoaded < 2) return; // Aspetta entrambi i DB
 
                                 // Road tiles (OpenStreetMap) — shows cities, roads, labels — DEFAULT
                                 var roadLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -837,7 +835,20 @@
                                         }
                                     });
                                 }
-                });
+                        } // fine onDbReady
+
+                        // Avvia il caricamento dei due DB — i marker si attivano solo quando entrambi sono pronti
+                        window.PARKS_DB.get('parks_visit_namibia_v1', {categories:[]}, function(vData) {
+                            visitNamibia = vData || {categories:[]};
+                            onDbReady();
+                        });
+                        window.PARKS_DB.get('parks_library_v2', {categories:[]}, function(data) {
+                            if(data) {
+                                library = data;
+                                if(!library.available_maps) library.available_maps = [];
+                            }
+                            onDbReady();
+                        });
             }
         });
 
