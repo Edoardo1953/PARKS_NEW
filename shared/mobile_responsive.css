@@ -421,32 +421,18 @@
         padding-top: env(safe-area-inset-top, 0px);
     }
 
-    .close-fiche, .lb-close:not([style*="position:static"]), #back-btn.active-mobile {
+    .lb-close:not([style*="position:static"]) {
         position: fixed !important;
         top: calc(15px + env(safe-area-inset-top, 0px)) !important;
         right: 15px !important;
+        left: auto !important;
     }
 
-    #back-btn.active-mobile {
-        display: flex !important;
-        width: 50px !important;
-        height: 50px !important;
-        background: #ffab40 !important;
-        color: transparent !important;
-        border: 2px solid white !important;
-        border-radius: 50% !important;
-        z-index: 20000 !important;
-        justify-content: center !important;
-        align-items: center !important;
+    .close-fiche, #back-btn.active-mobile {
+        display: none !important;
     }
-    
-    #back-btn.active-mobile::before {
-        content: '✕';
-        color: black;
-        font-size: 24px;
-        font-weight: 900;
-        position: absolute;
-    }
+
+
     
     .btn-back-fiche {
         background: #ffab40 !important;
