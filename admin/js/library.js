@@ -200,15 +200,15 @@ function editItem(cId, sId, iId) {
         
         var title = (curEditItem && curEditItem.name) ? String(curEditItem.name).toUpperCase() : "";
         var isKnownPeople = title.includes("HERERO") || title.includes("HIMBA") || title.includes("PEOPLE") || title.includes("POPOLO");
-        var isPeople = isKnownPeople || catName.includes("POPOLI") || catName.includes("GENTE") || catName.includes("PEOPLE") || section === 'visit';
+        var isPeople = isKnownPeople || catName.includes("POPOLI") || catName.includes("GENTE") || catName.includes("PEOPLE");
 
         if (catName.includes("FLORA") || catName.includes("PIANTE") || catName.includes("ALBERI") || catName.includes("PLANTS")) {
             defL1 = "ALTEZZA"; defL2 = "SPECIE"; defL3 = "HABITAT";
         } else if (isPeople) {
             defL1 = "POPOLAZIONE"; defL2 = "PERCENTUALE"; defL3 = "AREA GEOGRAFICA";
-        } else if (catName.includes("CITTÀ") || catName.includes("LOCALITÀ")) {
+        } else if (catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("LUOGHI") || catName.includes("AREE TURISTICHE") || catName.includes("PLACES")) {
             defL1 = "POPOLAZIONE"; defL2 = "SUPERFICIE"; defL3 = "REGIONE";
-        } else if (catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO") || catName.includes("PLACES")) {
+        } else if (catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("FIUMI") || catName.includes("DESERT")) {
             defL1 = "TIPOLOGIA"; defL2 = "ESTENSIONE"; defL3 = "INFO";
         } else if (catName.includes("LODGE") || catName.includes("STRUTTURE") || catName.includes("HOTEL")) {
             defL1 = "TIPOLOGIA"; defL2 = "SERVIZI"; defL3 = "FASCIA PREZZO";
@@ -219,10 +219,10 @@ function editItem(cId, sId, iId) {
         var currentL3 = (curEditItem.facts && curEditItem.facts.label3) || "";
         
         // Force smart labels if current labels are generic
-        if (isPeople || catName.includes("CITY") || catName.includes("CITTA") || catName.includes("PLACES")) {
-            if (!currentL1 || currentL1.toUpperCase() === "PESO" || currentL1.toUpperCase() === "WEIGHT" || currentL1.toUpperCase() === "POPOLAZIONE") currentL1 = defL1;
-            if (!currentL2 || currentL2.toUpperCase() === "DIMENSIONI" || currentL2.toUpperCase() === "SIZE" || currentL2.toUpperCase() === "SUPERFICIE") currentL2 = defL2;
-            if (!currentL3 || currentL3.toUpperCase() === "LONGEVITÀ" || currentL3.toUpperCase() === "REGIONE") currentL3 = defL3;
+        if (isPeople || catName.includes("CITY") || catName.includes("CITTA") || catName.includes("LUOGHI") || catName.includes("AREE TURISTICHE") || catName.includes("PLACES")) {
+            if (!currentL1 || currentL1.toUpperCase() === "PESO" || currentL1.toUpperCase() === "WEIGHT" || currentL1.toUpperCase() === "POPOLAZIONE" || currentL1.toUpperCase() === "TIPOLOGIA") currentL1 = defL1;
+            if (!currentL2 || currentL2.toUpperCase() === "DIMENSIONI" || currentL2.toUpperCase() === "SIZE" || currentL2.toUpperCase() === "SUPERFICIE" || currentL2.toUpperCase() === "ESTENSIONE") currentL2 = defL2;
+            if (!currentL3 || currentL3.toUpperCase() === "LONGEVITÀ" || currentL3.toUpperCase() === "REGIONE" || currentL3.toUpperCase() === "INFO") currentL3 = defL3;
         } else {
             if (!currentL1) currentL1 = defL1;
             if (!currentL2) currentL2 = defL2;

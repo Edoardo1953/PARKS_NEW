@@ -545,8 +545,8 @@
 
             const isPeople = isKnownPeople || catName.includes("POPOLI") || catName.includes("PEOPLES") || catName.includes("GENTE") || catName.includes("POPOLAZIONI");
             const isFlora = catName.includes("FLORA") || catName.includes("PIANTE") || catName.includes("ALBERI") || catName.includes("PLANTS");
-            const isCity = isKnownCity || catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("VILLAGGI") || catName.includes("CITIES") || catName.includes("TOWNS");
-            const isGeo = catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO") || catName.includes("PLACES");
+            const isCity = isKnownCity || catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("VILLAGGI") || catName.includes("CITIES") || catName.includes("TOWNS") || catName.includes("LUOGHI") || catName.includes("AREE TURISTICHE");
+            const isGeo = catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("FIUMI") || catName.includes("DESERT") || catName.includes("PLACES");
 
             var l1 = f.label1, l2 = f.label2, l3 = f.label3;
             let d1 = "PESO", d2 = "DIMENSIONI", d3 = "LONGEVITÀ";
@@ -582,13 +582,17 @@
             var v2 = f.size || f.superficie || "";
             var v3 = f.life || f.regione || "";
 
-            // Se non c'è proprio nulla, nascondiamo
             const hasAnyData = v1 || v2 || v3 || f.speed;
-            if (!hasAnyData) {
+            const hasCoords = activeItem.lat && activeItem.lng;
+            if (!hasAnyData && !hasCoords) {
                 statsContainer.style.display = 'none';
                 return;
             }
             statsContainer.style.display = 'block';
+            const h4 = statsContainer.querySelector('h4');
+            if (h4) h4.style.display = hasAnyData ? 'block' : 'none';
+            const sList = document.getElementById('stats-list');
+            if (sList) sList.style.display = hasAnyData ? 'flex' : 'none';
 
             let html = `
                 <p><b>${l1}</b> <span>${fmt(v1)}</span></p>

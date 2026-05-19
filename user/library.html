@@ -527,12 +527,19 @@
             // ULTRA-COMPATIBLE DATA CHECK
             const hasData = Object.keys(f).some(k => !k.startsWith('label') && f[k] && f[k] !== '-' && f[k] !== '');
             const statsContainer = document.getElementById('fiche-stats');
+            const hasCoords = activeItem.lat && activeItem.lng;
             
-            if (!hasData) {
+            if (!hasData && !hasCoords) {
                 if(statsContainer) statsContainer.style.display = 'none';
                 return;
             } else {
-                if(statsContainer) statsContainer.style.display = 'block';
+                if(statsContainer) {
+                    statsContainer.style.display = 'block';
+                    const h4 = statsContainer.querySelector('h4');
+                    if (h4) h4.style.display = hasData ? 'block' : 'none';
+                    const sList = document.getElementById('stats-list');
+                    if (sList) sList.style.display = hasData ? 'flex' : 'none';
+                }
             }
 
             // ROBUST CATEGORY DETECTION (Using flexible ID comparison)
@@ -555,8 +562,8 @@
 
             const isPeople = isKnownPeople || catName.includes("POPOLI") || catName.includes("PEOPLES") || catName.includes("GENTE") || catName.includes("POPOLAZIONI");
             const isFlora = catName.includes("FLORA") || catName.includes("PIANTE") || catName.includes("ALBERI") || catName.includes("PLANTS");
-            const isCity = isKnownCity || catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("VILLAGGI") || catName.includes("CITIES") || catName.includes("TOWNS");
-            const isGeo = catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("LUOGHI") || catName.includes("FIUMI") || catName.includes("DESERTO") || catName.includes("PLACES");
+            const isCity = isKnownCity || catName.includes("CITTÀ") || catName.includes("LOCALITÀ") || catName.includes("VILLAGGI") || catName.includes("CITIES") || catName.includes("TOWNS") || catName.includes("LUOGHI") || catName.includes("AREE TURISTICHE");
+            const isGeo = catName.includes("GEOGRAFIA") || catName.includes("SITI") || catName.includes("FIUMI") || catName.includes("DESERT") || catName.includes("PLACES");
             
             var debugInfo = `Nome="${title}" Cat="${catName}" ID="${activeItem.id}"`;
 
