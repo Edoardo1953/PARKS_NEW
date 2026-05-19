@@ -41,24 +41,49 @@ window.PARKS_DB = {
         var self = this;
         if (window.firebase) return done();
 
-        // Carica Firebase dinamicamente
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            console.log("[DB] Navigatore offline. Procedo con la cache locale IndexedDB.");
+            return done();
+        }
+
+        // Timeout globale di 4 secondi per evitare blocchi infiniti se la connessione è instabile
+        var timeoutTriggered = false;
+        var globalTimeout = setTimeout(function() {
+            if (!timeoutTriggered) {
+                timeoutTriggered = true;
+                console.warn("[DB] Timeout globale caricamento Firebase (4s). Fallback su cache locale.");
+                done();
+            }
+        }, 4000);
+
         function loadScript(src, cb) {
+            if (timeoutTriggered) return;
             var s = document.createElement('script');
             s.src = src;
-            s.onload = cb;
-            s.onerror = function() { cb(); };
+            s.onload = function() {
+                if (!timeoutTriggered) cb();
+            };
+            s.onerror = function() {
+                if (!timeoutTriggered) cb();
+            };
             document.head.appendChild(s);
         }
 
         loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js", function() {
             loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js", function() {
                 loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js", function() {
-                    if (window.firebase && !firebase.apps.length) {
-                        try {
-                            firebase.initializeApp(self._firebaseConfig);
-                        } catch(e) { }
+                    clearTimeout(globalTimeout);
+                    if (!timeoutTriggered) {
+                        if (window.firebase && !firebase.apps.length) {
+                            try {
+                                firebase.initializeApp(self._firebaseConfig);
+                                console.log("[DB] Firebase inizializzato correttamente.");
+                            } catch(e) { 
+                                console.error("[DB] Errore inizializzazione Firebase:", e);
+                            }
+                        }
+                        done();
                     }
-                    done();
                 });
             });
         });
@@ -137,17 +162,46 @@ window.PARKS_DB = {
         if (isHuge) {
             var versionKey = key + '_version';
             function fetchHugeFromFirebase() {
+                var callbackCalled = false;
+                var versionTimeout = setTimeout(function() {
+                    if (!callbackCalled) {
+                        callbackCalled = true;
+                        console.warn("[DB] Timeout download dati pesanti '" + key + "'. Uso cache locale.");
+                        readFromIDB(callback);
+                    }
+                }, 3000); // 3 secondi timeout per dati pesanti
+
                 self._getFromFirebase(key, fallback, function(data) {
-                    firebase.database().ref(versionKey).once('value').then(snap => {
-                        var v = snap.val() || Date.now();
-                        self._updateIDB(versionKey, v);
-                        callback(data);
-                    });
+                    clearTimeout(versionTimeout);
+                    if (callbackCalled) return;
+                    callbackCalled = true;
+                    
+                    // Ottieni e aggiorna versione in background
+                    if (window.firebase) {
+                        firebase.database().ref(versionKey).once('value').then(snap => {
+                            var v = snap.val() || Date.now();
+                            self._updateIDB(versionKey, v);
+                        }).catch(() => {});
+                    }
+                    callback(data);
                 });
             }
 
             if (window.firebase) {
+                var callbackCalled = false;
+                var checkTimeout = setTimeout(function() {
+                    if (!callbackCalled) {
+                        callbackCalled = true;
+                        console.warn("[DB] Timeout controllo versione per '" + key + "'. Uso cache locale.");
+                        readFromIDB(callback);
+                    }
+                }, 2000); // 2 secondi timeout per controllo versione
+
                 firebase.database().ref(versionKey).once('value').then(vSnap => {
+                    clearTimeout(checkTimeout);
+                    if (callbackCalled) return;
+                    callbackCalled = true;
+
                     var cloudV = vSnap.val();
                     if (self._db) {
                         var tx = self._db.transaction(['library'], 'readonly');
@@ -166,6 +220,9 @@ window.PARKS_DB = {
                         fetchHugeFromFirebase();
                     }
                 }).catch(() => {
+                    clearTimeout(checkTimeout);
+                    if (callbackCalled) return;
+                    callbackCalled = true;
                     readFromIDB(callback);
                 });
             } else {
@@ -175,7 +232,25 @@ window.PARKS_DB = {
         }
 
         if (window.firebase) {
+            var callbackCalled = false;
+            var queryTimeout = setTimeout(function() {
+                if (!callbackCalled) {
+                    callbackCalled = true;
+                    console.warn("[DB] Firebase GET timeout per '" + key + "'. Uso cache locale.");
+                    readFromIDB(callback);
+                }
+            }, 2000); // 2 secondi timeout
+
             firebase.database().ref(key).once('value').then(function(snap) {
+                clearTimeout(queryTimeout);
+                if (callbackCalled) {
+                    // Aggiorna solo IndexedDB in background
+                    if (snap.exists() && snap.val() !== null) {
+                        self._updateIDB(key, snap.val());
+                    }
+                    return;
+                }
+                callbackCalled = true;
                 if (snap.exists() && snap.val() !== null) {
                     var data = snap.val();
                     self._updateIDB(key, data);
@@ -185,6 +260,9 @@ window.PARKS_DB = {
                     readFromIDB(callback);
                 }
             }).catch(function(err) {
+                clearTimeout(queryTimeout);
+                if (callbackCalled) return;
+                callbackCalled = true;
                 console.warn('[DB] Firebase error per "' + key + '":', err);
                 readFromIDB(function(idbResult) {
                     callback(idbResult || fallback);
@@ -199,7 +277,25 @@ window.PARKS_DB = {
     _getFromFirebase: function(key, fallback, callback) {
         var self = this;
         if (window.firebase) {
+            var callbackCalled = false;
+            var t = setTimeout(function() {
+                if (!callbackCalled) {
+                    callbackCalled = true;
+                    console.warn("[DB] Timeout _getFromFirebase per '" + key + "'. Uso fallback.");
+                    callback(fallback);
+                }
+            }, 2500); // 2.5 secondi timeout
+
             firebase.database().ref(key).once('value').then(function(snap) {
+                clearTimeout(t);
+                if (callbackCalled) {
+                    // Aggiorna solo IndexedDB in background
+                    if (snap.exists() && snap.val() !== null) {
+                        self._updateIDB(key, snap.val());
+                    }
+                    return;
+                }
+                callbackCalled = true;
                 if (snap.exists()) {
                     var data = snap.val();
                     self._updateIDB(key, data);
@@ -208,6 +304,9 @@ window.PARKS_DB = {
                     callback(fallback);
                 }
             }).catch(function() {
+                clearTimeout(t);
+                if (callbackCalled) return;
+                callbackCalled = true;
                 callback(fallback);
             });
         } else {

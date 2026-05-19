@@ -441,6 +441,57 @@
     </div>
 
     <script>
+        // Debug logger on screen
+        (function() {
+            var logContainer = document.createElement('div');
+            logContainer.id = 'debug-console';
+            logContainer.style.position = 'fixed';
+            logContainer.style.bottom = '10px';
+            logContainer.style.right = '10px';
+            logContainer.style.width = '350px';
+            logContainer.style.maxHeight = '250px';
+            logContainer.style.overflowY = 'auto';
+            logContainer.style.background = 'rgba(0,0,0,0.9)';
+            logContainer.style.color = '#ffeb3b';
+            logContainer.style.fontFamily = 'monospace';
+            logContainer.style.fontSize = '11px';
+            logContainer.style.padding = '12px';
+            logContainer.style.borderRadius = '8px';
+            logContainer.style.border = '2px solid #ff5252';
+            logContainer.style.zIndex = '99999';
+            logContainer.style.display = 'none';
+            document.body.appendChild(logContainer);
+
+            function showLog(msg, type) {
+                logContainer.style.display = 'block';
+                var div = document.createElement('div');
+                div.style.marginBottom = '5px';
+                div.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+                div.style.paddingBottom = '3px';
+                div.innerText = '[' + type + '] ' + msg;
+                logContainer.appendChild(div);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+
+            window.onerror = function(message, source, lineno, colno, error) {
+                showLog(message + ' (' + source + ':' + lineno + ')', 'ERROR');
+            };
+
+            var originalError = console.error;
+            console.error = function() {
+                var args = Array.prototype.slice.call(arguments);
+                showLog(args.join(' '), 'CONSOLE.ERROR');
+                originalError.apply(console, arguments);
+            };
+
+            var originalWarn = console.warn;
+            console.warn = function() {
+                var args = Array.prototype.slice.call(arguments);
+                showLog(args.join(' '), 'CONSOLE.WARN');
+                originalWarn.apply(console, arguments);
+            };
+        })();
+
         lucide.createIcons();
 
         var library = { categories: [], available_maps: [] };
@@ -539,9 +590,18 @@
             // Determina la categoria per i label corretti
             let catName = "";
             [library, (typeof visitNamibia !== 'undefined' ? visitNamibia : {categories:[]})].forEach(db => {
-                (db.categories || []).forEach(c => (c.subcategories || []).forEach(s => {
-                    if(s.items.find(it => it.id === activeItem.id)) catName = (c.name || "").toUpperCase();
-                }));
+                if (db && db.categories) {
+                    db.categories.forEach(c => {
+                        if (c.subcategories) {
+                            c.subcategories.forEach(s => {
+                                if (s.items) {
+                                    var foundIt = s.items.find(it => it.id === activeItem.id);
+                                    if (foundIt) catName = (c.name || "").toUpperCase();
+                                }
+                            });
+                        }
+                    });
+                }
             });
 
             const title = (activeItem.name || "").toUpperCase();
@@ -727,125 +787,126 @@
                         document.getElementById('route-location').textContent = iti.location || '';
 
                         // Inizializza Mappa
+                        if (typeof L === 'undefined') {
+                            console.error("Errore: La libreria Leaflet non è caricata. Verifica la tua connessione Internet o il caricamento di unpkg.com.");
+                            document.getElementById('route-title').textContent = "LEAFLET LOAD ERROR";
+                            document.getElementById('route-title').style.color = "#ff5252";
+                            alert("Impossibile caricare la mappa interattiva perché la libreria Leaflet non è accessibile. Assicurati che il tuo computer sia connesso a Internet.");
+                            return;
+                        }
                         leafMap = L.map('iti-map').setView([-22.56, 17.06], 6);
                         // Multiple invalidateSize retries for mobile rendering
                         setTimeout(() => { if(leafMap) leafMap.invalidateSize(); }, 300);
                         setTimeout(() => { if(leafMap) leafMap.invalidateSize(); }, 700);
                         setTimeout(() => { if(leafMap) leafMap.invalidateSize(); }, 1500);
-                    } else {
-                        document.getElementById('route-title').textContent = "ERRORE CARICAMENTO";
-                        document.getElementById('route-title').style.color = "#ff5252";
-                        alert("Itinerario non trovato. Verifica che i dati siano stati salvati correttamente nell'Admin.");
-                        window.location.href = 'itineraries.html';
-                        return;
-                    }
 
-                        // 2. Carica libreria e Visit Namibia PRIMA di rendere i marker interattivi
-                        //    Così openFiche() trova sempre i dati anche su connessione lenta (mobile/Internet)
+                        // Carica i layer cartografici stradali/satellitari
+                        var roadLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; OpenStreetMap contributors',
+                            maxZoom: 19
+                        });
+                        var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                            attribution: 'Tiles &copy; Esri',
+                            maxZoom: 19
+                        });
+                        var hybridLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                            attribution: 'Labels &copy; Esri',
+                            maxZoom: 19,
+                            pane: 'overlayPane'
+                        });
+
+                        roadLayer.addTo(leafMap);
+
+                        L.control.layers({
+                            '🗺️ Mappa Stradale (Città)': roadLayer,
+                            '🛰️ Satellite': satelliteLayer,
+                        }, {
+                            '🏷️ Etichette su Satellite': hybridLabels
+                        }, { position: 'topright' }).addTo(leafMap);
+
+                        // Disegna i Waypoint sulla mappa immediatamente
+                        var latlngs = [];
+                        var dbReady = false;
+
+                        iti.waypoints.forEach((wp, idx) => {
+                            latlngs.push([wp.lat, wp.lng]);
+                            var color = idx === 0 ? "#4caf50" : (idx === iti.waypoints.length - 1 ? "#ff5252" : "#ffab40");
+                            var label = idx === 0 ? "PARTENZA" : (idx === iti.waypoints.length - 1 ? "ARRIVO" : "TAPPA");
+                            var num = idx + 1;
+                            var emoji = idx === 0 ? "🏁" : (idx === iti.waypoints.length - 1 ? "🚩" : "📍");
+                            
+                            var icon = L.divIcon({
+                                className: 'custom-iti-marker',
+                                html: `<div class="marker-icon-container" style="background:${color}; cursor:${wp.ficheId ? 'pointer' : 'default'};">
+                                    <span style="font-size:14px; font-weight:900; color:#000;">${num}</span>
+                                </div>`,
+                                iconSize: [44, 44],
+                                iconAnchor: [22, 22]
+                            });
+
+                            var m = L.marker([wp.lat, wp.lng], {icon: icon}).addTo(leafMap);
+                            
+                            if (wp.ficheId) {
+                                m.on('click', function(e) {
+                                    L.DomEvent.stopPropagation(e);
+                                    if (dbReady) {
+                                        openFiche(wp.ficheId);
+                                    } else {
+                                        alert("Caricamento dettagli e libreria in corso. Riprova tra pochissimi secondi...");
+                                    }
+                                });
+                            }
+
+                            var tooltipContent = `<b style="font-size:12px;">${emoji} ${label} ${num}</b><br><span style="font-size:11px; color:#555;">${wp.title || ''}</span>${wp.ficheId ? '<br><span style="font-size:10px; color:#2d7a4d; font-weight:800;">📋 Tocca per la scheda</span>' : ''}`;
+                            m.bindTooltip(tooltipContent, {direction: 'top', offset: [0, -22], className: 'iti-tooltip'});
+                        });
+
+                        // Fit bounds immediately
+                        var bounds = L.latLngBounds(latlngs);
+                        leafMap.fitBounds(bounds, {padding: [80, 80]});
+
+                        // Calcola percorso stradale tramite OSRM
+                        if(latlngs.length > 1) {
+                            fetchOSRMRoute(iti.waypoints, function(routeResult) {
+                                document.getElementById('route-loading').style.display = 'none';
+                                if(routeResult) {
+                                    L.geoJSON(routeResult.geometry, {
+                                        style: {
+                                            color: '#ffab40',
+                                            weight: 5,
+                                            opacity: 0.9,
+                                            lineJoin: 'round',
+                                            lineCap: 'round'
+                                        }
+                                    }).addTo(leafMap);
+                                    
+                                    var totalDist = (routeResult.distance / 1000).toFixed(1);
+                                    var totalTime = Math.round(routeResult.duration / 60);
+                                    var hours = Math.floor(totalTime / 60);
+                                    var mins = totalTime % 60;
+                                    var timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                                    
+                                    document.getElementById('route-dist').textContent = totalDist;
+                                    document.getElementById('route-time').textContent = timeStr;
+                                    document.getElementById('route-stops').textContent = iti.waypoints.length;
+                                    document.getElementById('route-info-inline').style.display = 'flex';
+                                } else {
+                                    L.polyline(latlngs, {color: '#ffab40', weight: 4, dashArray: '12, 8', opacity: 0.8}).addTo(leafMap);
+                                    document.getElementById('route-info-inline').style.display = 'none';
+                                }
+                            });
+                        }
+
+                        // Carica i DB in background
                         var dbLoaded = 0;
                         function onDbReady() {
                             dbLoaded++;
-                            if (dbLoaded < 2) return; // Aspetta entrambi i DB
+                            if (dbLoaded >= 2) {
+                                dbReady = true;
+                                console.log("[DB] Librerie caricate in background. Schede attive.");
+                            }
+                        }
 
-                                // Road tiles (OpenStreetMap) — shows cities, roads, labels — DEFAULT
-                                var roadLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                    attribution: '&copy; OpenStreetMap contributors',
-                                    maxZoom: 19
-                                });
-                                // Satellite tiles (Esri) — no labels but great imagery
-                                var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                                    attribution: 'Tiles &copy; Esri',
-                                    maxZoom: 19
-                                });
-                                // Satellite + labels hybrid
-                                var hybridLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-                                    attribution: 'Labels &copy; Esri',
-                                    maxZoom: 19,
-                                    pane: 'overlayPane'
-                                });
-                                
-                                // Start with road map (shows cities/labels)
-                                roadLayer.addTo(leafMap);
-                                
-                                // Layer control
-                                L.control.layers({
-                                    '🗺️ Mappa Stradale (Città)': roadLayer,
-                                    '🛰️ Satellite': satelliteLayer,
-                                }, {
-                                    '🏷️ Etichette su Satellite': hybridLabels
-                                }, { position: 'topright' }).addTo(leafMap);
-
-                                var latlngs = [];
-                                iti.waypoints.forEach((wp, idx) => {
-                                    latlngs.push([wp.lat, wp.lng]);
-                                    var color = idx === 0 ? "#4caf50" : (idx === iti.waypoints.length - 1 ? "#ff5252" : "#ffab40");
-                                    var label = idx === 0 ? "PARTENZA" : (idx === iti.waypoints.length - 1 ? "ARRIVO" : "TAPPA");
-                                    var num = idx + 1;
-                                    var emoji = idx === 0 ? "🏁" : (idx === iti.waypoints.length - 1 ? "🚩" : "📍");
-                                    
-                                    var icon = L.divIcon({
-                                        className: 'custom-iti-marker',
-                                        html: `<div class="marker-icon-container" style="background:${color}; cursor:${wp.ficheId ? 'pointer' : 'default'};">
-                                            <span style="font-size:14px; font-weight:900; color:#000;">${num}</span>
-                                        </div>`,
-                                        iconSize: [44, 44],
-                                        iconAnchor: [22, 22]
-                                    });
-
-                                    var m = L.marker([wp.lat, wp.lng], {icon: icon}).addTo(leafMap);
-                                    
-                                    if (wp.ficheId) {
-                                        m.on('click', function(e) {
-                                            L.DomEvent.stopPropagation(e);
-                                            openFiche(wp.ficheId);
-                                        });
-                                    }
-
-                                    var tooltipContent = `<b style="font-size:12px;">${emoji} ${label} ${num}</b><br><span style="font-size:11px; color:#555;">${wp.title || ''}</span>${wp.ficheId ? '<br><span style="font-size:10px; color:#2d7a4d; font-weight:800;">📋 Tocca per la scheda</span>' : ''}`;
-                                    m.bindTooltip(tooltipContent, {direction: 'top', offset: [0, -22], className: 'iti-tooltip'});
-                                });
-
-                                // Fit bounds with straight line first
-                                var bounds = L.latLngBounds(latlngs);
-                                leafMap.fitBounds(bounds, {padding: [80, 80]});
-
-                                // Fetch OSRM road routing
-                                if(latlngs.length > 1) {
-                                    fetchOSRMRoute(iti.waypoints, function(routeResult) {
-                                        document.getElementById('route-loading').style.display = 'none';
-                                        if(routeResult) {
-                                            // Draw the real road route
-                                            L.geoJSON(routeResult.geometry, {
-                                                style: {
-                                                    color: '#ffab40',
-                                                    weight: 5,
-                                                    opacity: 0.9,
-                                                    lineJoin: 'round',
-                                                    lineCap: 'round'
-                                                }
-                                            }).addTo(leafMap);
-                                            
-                                            // Show route info
-                                            var totalDist = (routeResult.distance / 1000).toFixed(1);
-                                            var totalTime = Math.round(routeResult.duration / 60);
-                                            var hours = Math.floor(totalTime / 60);
-                                            var mins = totalTime % 60;
-                                            var timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-                                            
-                                            document.getElementById('route-dist').textContent = totalDist;
-                                            document.getElementById('route-time').textContent = timeStr;
-                                            document.getElementById('route-stops').textContent = iti.waypoints.length;
-                                            document.getElementById('route-info-inline').style.display = 'flex';
-                                        } else {
-                                            // Fallback: dashed straight line
-                                            L.polyline(latlngs, {color: '#ffab40', weight: 4, dashArray: '12, 8', opacity: 0.8}).addTo(leafMap);
-                                            document.getElementById('route-info-inline').style.display = 'none';
-                                        }
-                                    });
-                                }
-                        } // fine onDbReady
-
-                        // Avvia il caricamento dei due DB — i marker si attivano solo quando entrambi sono pronti
                         window.PARKS_DB.get('parks_visit_namibia_v1', {categories:[]}, function(vData) {
                             visitNamibia = vData || {categories:[]};
                             onDbReady();
@@ -857,6 +918,15 @@
                             }
                             onDbReady();
                         });
+
+                    } else {
+                        document.getElementById('route-title').textContent = "ERRORE CARICAMENTO";
+                        document.getElementById('route-title').style.color = "#ff5252";
+                        alert("Itinerario non trovato. Verifica che i dati siano stati salvati correttamente nell'Admin.");
+                        window.location.href = 'itineraries.html';
+                        return;
+                    }
+                });
             }
         });
 
