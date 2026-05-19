@@ -140,7 +140,7 @@ async function pushLocalToCloud() {
         if(key === 'parks_home_v1') data = window.homeContent;
         if(key === 'parks_kids_memory_v2') data = window.memoryGames;
         
-        if(data && window.firebase) {
+        if(data && window.firebase && firebase.apps && firebase.apps.length && typeof firebase.database === 'function') {
             await firebase.database().ref(key).set(data);
         }
     }
@@ -167,26 +167,35 @@ function cloudRecovery() {
     let completed = 0;
     for(let key of keys) {
         progText.innerText = "Recupero " + key.toUpperCase() + "...";
-        window.firebase.database().ref(key).once('value', (snapshot) => {
-            const data = snapshot.val();
-            if(data) {
-                window.PARKS_DB.save(key, data, () => {
+        if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.database === 'function') {
+            firebase.database().ref(key).once('value', (snapshot) => {
+                const data = snapshot.val();
+                if(data) {
+                    window.PARKS_DB.save(key, data, () => {
+                        completed++;
+                        if(completed === keys.length) {
+                            loader.remove();
+                            alert("Sincronizzazione completata! La pagina verrà ricaricata.");
+                            location.reload();
+                        }
+                    }, true);
+                } else {
                     completed++;
                     if(completed === keys.length) {
                         loader.remove();
-                        alert("Sincronizzazione completata! La pagina verrà ricaricata.");
+                        alert("Recupero terminato. Alcune chiavi erano vuote.");
                         location.reload();
                     }
-                }, true);
-            } else {
-                completed++;
-                if(completed === keys.length) {
-                    loader.remove();
-                    alert("Recupero terminato. Alcune chiavi erano vuote.");
-                    location.reload();
                 }
+            });
+        } else {
+            completed++;
+            if(completed === keys.length) {
+                loader.remove();
+                alert("Firebase non inizializzato. Impossibile sincronizzare.");
+                location.reload();
             }
-        });
+        }
     }
 }
 

@@ -39,7 +39,7 @@ window.PARKS_DB = {
 
     _loadFirebase: function(done) {
         var self = this;
-        if (window.firebase) return done();
+        if (window.firebase && firebase.apps && firebase.apps.length) return done();
 
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
             console.log("[DB] Navigatore offline. Procedo con la cache locale IndexedDB.");
@@ -98,6 +98,9 @@ window.PARKS_DB = {
 
     _uploadBase64ToStorage: async function(base64Str, filename = null) {
         return new Promise((resolve, reject) => {
+            if (!window.firebase || !firebase.apps || !firebase.apps.length || typeof firebase.storage !== 'function') {
+                return reject("Firebase storage not initialized");
+            }
             var uuid = this._generateUUID();
             var name = filename || (uuid + '.png');
             var ref = firebase.storage().ref().child('uploads/' + name);
@@ -109,7 +112,9 @@ window.PARKS_DB = {
 
     uploadFile: async function(file) {
         return new Promise((resolve, reject) => {
-            if (!window.firebase) return reject("Firebase not initialized");
+            if (!window.firebase || !firebase.apps || !firebase.apps.length || typeof firebase.storage !== 'function') {
+                return reject("Firebase storage not initialized");
+            }
             var uuid = this._generateUUID();
             var ext = file.name.split('.').pop();
             var name = uuid + '.' + ext;
@@ -177,7 +182,7 @@ window.PARKS_DB = {
                     callbackCalled = true;
                     
                     // Ottieni e aggiorna versione in background
-                    if (window.firebase) {
+                    if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.database === 'function') {
                         firebase.database().ref(versionKey).once('value').then(snap => {
                             var v = snap.val() || Date.now();
                             self._updateIDB(versionKey, v);
@@ -187,7 +192,7 @@ window.PARKS_DB = {
                 });
             }
 
-            if (window.firebase) {
+            if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.database === 'function') {
                 var callbackCalled = false;
                 var checkTimeout = setTimeout(function() {
                     if (!callbackCalled) {
@@ -231,7 +236,7 @@ window.PARKS_DB = {
             return;
         }
 
-        if (window.firebase) {
+        if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.database === 'function') {
             var callbackCalled = false;
             var queryTimeout = setTimeout(function() {
                 if (!callbackCalled) {
@@ -276,7 +281,7 @@ window.PARKS_DB = {
 
     _getFromFirebase: function(key, fallback, callback) {
         var self = this;
-        if (window.firebase) {
+        if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.database === 'function') {
             var callbackCalled = false;
             var t = setTimeout(function() {
                 if (!callbackCalled) {
@@ -321,7 +326,7 @@ window.PARKS_DB = {
         this._updateIDB(key, value);
 
         // 2. Salva nel database Cloud
-        if (window.firebase && !localOnly) {
+        if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.database === 'function' && !localOnly) {
             try {
                 var isHuge = (key === 'parks_library_v2' || key === 'parks_gallery' || key === 'parks_visit_namibia_v1');
                 
