@@ -105,7 +105,7 @@ window.PARKS_DB = {
 
     _smallKeys: ['parks_itineraries', 'parks_alerts', 'parks_home_v1', 'parks_users', 'parks_tourists',
                  'parks_kids_drawings', 'parks_kids_memory', 'parks_kids_quiz', 'parks_kids_puzzles',
-                 'parks_weather_config'],
+                 'parks_weather_config', 'parks_session'],
 
     _updateIDB: function(key, data) {
         if (!this._db || data === null || data === undefined) return;

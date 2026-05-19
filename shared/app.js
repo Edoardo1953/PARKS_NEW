@@ -183,16 +183,35 @@ window.PARKS_APP = {
         });
     },
 
-    // Gestione Sessione
+    // Gestione Sessione (LOCALE ONLY - mai su Firebase!)
     getSession: function(callback) {
-        window.PARKS_DB.get('parks_session', { loggedIn: false, role: 'PUBLIC' }, function(data) {
-            if(callback) callback(data);
-        });
+        // Legge SEMPRE solo da IndexedDB locale, bypass Firebase
+        if (window.PARKS_DB && window.PARKS_DB._db) {
+            try {
+                var tx = window.PARKS_DB._db.transaction(['library'], 'readonly');
+                var req = tx.objectStore('library').get('parks_session');
+                req.onsuccess = function() {
+                    var result = req.result !== undefined && req.result !== null ? req.result : { loggedIn: false, role: 'PUBLIC' };
+                    if(callback) callback(result);
+                };
+                req.onerror = function() {
+                    if(callback) callback({ loggedIn: false, role: 'PUBLIC' });
+                };
+            } catch(e) {
+                if(callback) callback({ loggedIn: false, role: 'PUBLIC' });
+            }
+        } else {
+            // IDB non ancora pronta, aspetta e riprova
+            setTimeout(function() {
+                window.PARKS_APP.getSession(callback);
+            }, 200);
+        }
     },
 
     setSession: function(user, callback) {
+        // Salva SOLO in locale (IndexedDB), mai su Firebase
         window.PARKS_DB.save('parks_session', user, function() {
             if(callback) callback();
-        });
+        }, true); // localOnly = true
     }
 };
