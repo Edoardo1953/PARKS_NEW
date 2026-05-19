@@ -785,15 +785,23 @@
                                     
                                     var icon = L.divIcon({
                                         className: 'custom-iti-marker',
-                                        html: `<div class="marker-icon-container" style="background:${color}; cursor:${wp.ficheId ? 'pointer' : 'default'};" onclick="handleWaypointClick(event, '${wp.ficheId || ''}', '${(wp.title||'').replace(/'/g,"\\'")}')">
-                                            <span style="font-size:14px; font-weight:900; color:${idx===0?'#000':'#000'};">${num}</span>
+                                        html: `<div class="marker-icon-container" style="background:${color}; cursor:${wp.ficheId ? 'pointer' : 'default'};">
+                                            <span style="font-size:14px; font-weight:900; color:#000;">${num}</span>
                                         </div>`,
                                         iconSize: [44, 44],
                                         iconAnchor: [22, 22]
                                     });
 
                                     var m = L.marker([wp.lat, wp.lng], {icon: icon}).addTo(leafMap);
-                                    var tooltipContent = `<b style="font-size:12px;">${emoji} ${label} ${num}</b><br><span style="font-size:11px; color:#555;">${wp.title || ''}</span>${wp.ficheId ? '<br><span style="font-size:10px; color:#2d7a4d; font-weight:800;">ðŸ“‹ Clicca per la scheda</span>' : ''}`;
+                                    
+                                    if (wp.ficheId) {
+                                        m.on('click', function(e) {
+                                            L.DomEvent.stopPropagation(e);
+                                            openFiche(wp.ficheId);
+                                        });
+                                    }
+
+                                    var tooltipContent = `<b style="font-size:12px;">${emoji} ${label} ${num}</b><br><span style="font-size:11px; color:#555;">${wp.title || ''}</span>${wp.ficheId ? '<br><span style="font-size:10px; color:#2d7a4d; font-weight:800;">📋 Tocca per la scheda</span>' : ''}`;
                                     m.bindTooltip(tooltipContent, {direction: 'top', offset: [0, -22], className: 'iti-tooltip'});
                                 });
 
