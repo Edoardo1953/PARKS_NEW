@@ -370,6 +370,10 @@
     overflow: hidden !important;
 }
 
+.btn-orange-circle {
+    position: relative !important;
+}
+
 /* PC Position for Fixed Buttons - Moved to LEFT to avoid header conflicts */
 .close-fiche, .lb-close:not([style*="position:static"]) {
     position: fixed !important;
@@ -378,7 +382,7 @@
     right: auto !important;
 }
 
-.close-fiche::before, .fiche-close::before, .lb-close::before {
+.close-fiche::before, .fiche-close::before, .lb-close::before, .btn-orange-circle::before {
     content: '✕';
     font-size: 24px;
     font-weight: 900;
@@ -387,7 +391,7 @@
     display: block;
 }
 
-.close-fiche i, .fiche-close i, .btn-close-fiche i, .lb-close i {
+.close-fiche i, .fiche-close i, .btn-close-fiche i, .lb-close i, .btn-orange-circle i {
     width: 28px !important;
     height: 28px !important;
     stroke-width: 4px !important;
