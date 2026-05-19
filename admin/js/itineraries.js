@@ -126,13 +126,7 @@ function removeItiWaypoint(idx) {
     renderItiWaypoints();
 }
 
-function moveItiWaypoint(idx, dir) {
-    if(idx + dir < 0 || idx + dir >= currentItiWaypoints.length) return;
-    var temp = currentItiWaypoints[idx];
-    currentItiWaypoints[idx] = currentItiWaypoints[idx + dir];
-    currentItiWaypoints[idx + dir] = temp;
-    renderItiWaypoints();
-}
+
 
 function updateItiWaypointTitle(idx, val) {
     if(currentItiWaypoints[idx]) currentItiWaypoints[idx].title = val;
@@ -353,6 +347,52 @@ function closeGeoResults() {
     if(box) box.style.display = 'none';
 }
 
+let itiDraggedIdx = null;
+
+function itiDragStart(e, idx) {
+    itiDraggedIdx = idx;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", idx);
+    setTimeout(() => {
+        if(e.target) e.target.style.opacity = '0.4';
+    }, 0);
+}
+
+function itiDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    let target = e.target.closest('.iti-waypoint-item');
+    if (target) {
+        target.style.border = '1px dashed var(--accent)';
+        target.style.background = 'rgba(255,171,64,0.1)';
+    }
+}
+
+function itiDragLeave(e) {
+    let target = e.target.closest('.iti-waypoint-item');
+    if (target) {
+        target.style.border = '1px solid rgba(255,255,255,0.1)';
+        target.style.background = 'rgba(255,255,255,0.05)';
+    }
+}
+
+function itiDrop(e, targetIdx) {
+    e.preventDefault();
+    let fromIdx = itiDraggedIdx;
+    if(fromIdx !== null && fromIdx !== targetIdx) {
+        let item = currentItiWaypoints.splice(fromIdx, 1)[0];
+        currentItiWaypoints.splice(targetIdx, 0, item);
+    }
+    itiDraggedIdx = null;
+    renderItiWaypoints();
+}
+
+function itiDragEnd(e) {
+    if(e.target) e.target.style.opacity = '1';
+    itiDraggedIdx = null;
+    renderItiWaypoints();
+}
+
 function renderItiWaypoints() {
     var container = document.getElementById('iti-waypoints-list');
     if(currentItiWaypoints.length === 0) {
@@ -364,16 +404,17 @@ function renderItiWaypoints() {
         var label = idx === 0 ? "PARTENZA" : (idx === currentItiWaypoints.length - 1 ? "ARRIVO" : "TAPPA");
         var color = idx === 0 ? "#4caf50" : (idx === currentItiWaypoints.length - 1 ? "#ff5252" : "var(--accent)");
         return `
-        <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; display:flex; flex-direction:column; gap:10px; border:1px solid rgba(255,255,255,0.1);">
+        <div class="iti-waypoint-item" draggable="true" ondragstart="itiDragStart(event, ${idx})" ondragover="itiDragOver(event)" ondragleave="itiDragLeave(event)" ondrop="itiDrop(event, ${idx})" ondragend="itiDragEnd(event)" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; display:flex; flex-direction:column; gap:10px; border:1px solid rgba(255,255,255,0.1); cursor:grab; transition: all 0.2s;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="background:${color}; color:#000; font-size:10px; font-weight:900; padding:4px 8px; border-radius:6px;">${label} ${idx+1}</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i data-lucide="grip-vertical" style="width:16px; color:rgba(255,255,255,0.3);"></i>
+                    <span style="background:${color}; color:#000; font-size:10px; font-weight:900; padding:4px 8px; border-radius:6px;">${label} ${idx+1}</span>
+                </div>
                 <div style="display:flex; gap:5px;">
-                    <button onclick="moveItiWaypoint(${idx}, -1)" style="background:rgba(255,255,255,0.1); border:none; color:white; border-radius:5px; padding:5px; cursor:pointer;" ${idx===0?'disabled':''}><i data-lucide="chevron-up" style="width:14px;"></i></button>
-                    <button onclick="moveItiWaypoint(${idx}, 1)" style="background:rgba(255,255,255,0.1); border:none; color:white; border-radius:5px; padding:5px; cursor:pointer;" ${idx===currentItiWaypoints.length-1?'disabled':''}><i data-lucide="chevron-down" style="width:14px;"></i></button>
-                    <button onclick="removeItiWaypoint(${idx})" style="background:rgba(255,82,82,0.2); border:none; color:#ff5252; border-radius:5px; padding:5px; cursor:pointer;"><i data-lucide="x" style="width:14px;"></i></button>
+                    <button onclick="removeItiWaypoint(${idx})" style="background:rgba(255,82,82,0.2); border:none; color:#ff5252; border-radius:5px; padding:5px; cursor:pointer;" title="Rimuovi"><i data-lucide="x" style="width:14px;"></i></button>
                 </div>
             </div>
-            <input type="text" class="f-input" value="${wp.title}" onchange="updateItiWaypointTitle(${idx}, this.value)" placeholder="Nome Tappa" style="background:#111; border:none; border-radius:8px; padding:8px; color:white;">
+            <input type="text" class="f-input" value="${wp.title}" onchange="updateItiWaypointTitle(${idx}, this.value)" placeholder="Nome Tappa" style="background:#111; border:none; border-radius:8px; padding:8px; color:white; margin-top:5px;">
             <select class="f-input" onchange="updateItiWaypointFiche(${idx}, this.value)" style="background:#111; border:none; border-radius:8px; padding:8px; color:white; font-size:11px;">
                 ${getFicheOptionsHtml(wp.ficheId)}
             </select>
