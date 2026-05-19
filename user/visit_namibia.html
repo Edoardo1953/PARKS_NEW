@@ -167,7 +167,7 @@
         </main>
     </div>
 
-    <div id="map-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; flex-direction:column; padding:20px;">
+    <div id="map-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:100000; flex-direction:column; padding:20px; padding-top: max(20px, env(safe-area-inset-top));">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h2 id="map-modal-title" style="color:var(--accent); margin:0; letter-spacing:2px; text-transform:uppercase;">Posizione Luogo</h2>
             <button class="lb-close" onclick="closeMapModal()" style="position:static; width:40px; height:40px; font-size:20px;"><i data-lucide="x"></i></button>
