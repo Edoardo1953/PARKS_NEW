@@ -409,6 +409,98 @@
         
         .sidebar-menu li img { transition: 0.3s; }
         .sidebar-menu li:hover img { transform: scale(1.2); }
+
+        /* SPONSORS BAR */
+        .sponsors-section {
+            margin-bottom: 40px;
+            animation: fadeInUp 1.4s ease-out;
+            display: none;
+        }
+        .sponsors-section.visible { display: block; }
+        .sponsors-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .sponsors-header h3 {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.7rem;
+            letter-spacing: 4px;
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .sponsors-header .sp-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, rgba(255,255,255,0.1), transparent);
+        }
+        .sponsors-strip {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            overflow-x: auto;
+            padding: 15px 5px;
+            scrollbar-width: none;
+        }
+        .sponsors-strip::-webkit-scrollbar { display: none; }
+        .sponsor-logo-card {
+            flex-shrink: 0;
+            width: 140px;
+            height: 80px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .sponsor-logo-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,215,0,0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .sponsor-logo-card:hover {
+            border-color: rgba(255,215,0,0.3);
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3), 0 0 20px rgba(255,215,0,0.08);
+        }
+        .sponsor-logo-card:hover::before { opacity: 1; }
+        .sponsor-logo-card img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: brightness(0.9);
+            transition: filter 0.4s;
+        }
+        .sponsor-logo-card:hover img { filter: brightness(1.1); }
+        .sponsor-logo-card .sp-name {
+            position: absolute;
+            bottom: -30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-transform: uppercase;
+            transition: bottom 0.3s;
+            background: rgba(0,0,0,0.8);
+            padding: 4px;
+            border-radius: 0 0 16px 16px;
+        }
+        .sponsor-logo-card:hover .sp-name { bottom: 0; }
     </style>
 </head>
 <body>
@@ -492,6 +584,17 @@
 
                 <div class="description-card" id="home-description" style="margin-bottom: 40px; max-width: 900px; min-height: 100px;">
                     <!-- Caricamento... -->
+                </div>
+
+                <!-- SPONSORS LOGOS -->
+                <div class="sponsors-section" id="sponsors-section">
+                    <div class="sponsors-header">
+                        <h3>I Nostri Sponsor</h3>
+                        <div class="sp-line"></div>
+                    </div>
+                    <div class="sponsors-strip" id="sponsors-strip">
+                        <!-- Populated by JS -->
+                    </div>
                 </div>
 
                 <div class="grid-sections">
@@ -706,6 +809,39 @@
                     }
                     galleryLoaded = true;
                     checkAllLoaded();
+                });
+
+                // Load Sponsors
+                window.PARKS_DB.get('parks_sponsors_partners', null, function(spData) {
+                    if (!spData || !spData.sponsors) return;
+                    var activeSponsors = spData.sponsors.filter(function(s) {
+                        return s.isActive !== false && s.image && s.image.length > 0;
+                    });
+                    if (activeSponsors.length === 0) return;
+
+                    var section = document.getElementById('sponsors-section');
+                    var strip = document.getElementById('sponsors-strip');
+                    if (!section || !strip) return;
+
+                    strip.innerHTML = activeSponsors.map(function(sp) {
+                        var link = sp.website ? 'onclick="window.open(\'' + sp.website + '\', \'_blank\')"' : '';
+                        return '<div class="sponsor-logo-card" ' + link + ' title="' + (sp.name || '') + '">' +
+                            '<img src="' + sp.image + '" alt="' + (sp.name || 'Sponsor') + '">' +
+                            '<div class="sp-name">' + (sp.name || '') + '</div>' +
+                        '</div>';
+                    }).join('');
+
+                    section.classList.add('visible');
+
+                    // Auto-scroll animation for many sponsors
+                    if (activeSponsors.length > 4) {
+                        var scrollDir = 1;
+                        setInterval(function() {
+                            strip.scrollLeft += scrollDir;
+                            if (strip.scrollLeft >= strip.scrollWidth - strip.clientWidth) scrollDir = -1;
+                            if (strip.scrollLeft <= 0) scrollDir = 1;
+                        }, 30);
+                    }
                 });
             });
         });

@@ -68,6 +68,9 @@ function renderLib() {
                                         <button onclick="event.stopPropagation(); event.preventDefault(); toggleListMustSee('${cat.id}','${sub.id}','${it.id}')" style="background:none; border:none; color:${it.isMustSee ? '#ffeb3b' : '#666'}; cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border-radius:5px;" title="Must See">
                                             <i data-lucide="star" style="width:12px; height:12px; fill:${it.isMustSee ? '#ffeb3b' : 'none'};"></i>
                                         </button>
+                                        <button onclick="event.stopPropagation(); event.preventDefault(); toggleListPartner('${cat.id}','${sub.id}','${it.id}')" style="background:none; border:none; color:${it.isPartner ? '#00BCD4' : '#666'}; cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border-radius:5px; font-size:11px; font-weight:900; min-width:24px;" title="Partner">
+                                            <span>P</span>
+                                        </button>
                                         <button onclick="event.stopPropagation(); event.preventDefault(); toggleVisibility('${cat.id}','${sub.id}','${it.id}')" style="background:none; border:none; color:${it.isVisible !== false ? '#4caf50' : '#ff5252'}; cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border-radius:5px;" title="Visibile allo User">
                                             <i data-lucide="${it.isVisible !== false ? 'eye' : 'eye-off'}" style="width:12px; height:12px;"></i>
                                         </button>
@@ -191,6 +194,11 @@ function editItem(cId, sId, iId) {
         star.style.color = curEditItem.isMustSee ? '#ffeb3b' : '#666';
         const icon = star.querySelector('i');
         if(icon) icon.style.fill = curEditItem.isMustSee ? '#ffeb3b' : 'none';
+    }
+
+    var partnerBtn = document.getElementById('f-partner');
+    if(partnerBtn) {
+        partnerBtn.style.color = curEditItem.isPartner ? '#00BCD4' : '#666';
     }
 
     try {
@@ -340,6 +348,15 @@ function toggleVisibility(cId, sId, iId) {
     save(true);
 }
 
+function toggleListPartner(cId, sId, iId) {
+    var data = (curSection === 'visit') ? visitNamibia : library;
+    var cat = data.categories.find(x => x.id === cId);
+    var sub = cat.subcategories.find(x => x.id === sId);
+    var it = sub.items.find(x => x.id === iId);
+    it.isPartner = !it.isPartner;
+    save(true);
+}
+
 function toggleMustSee() {
     if(!curEditItem) return;
     curEditItem.isMustSee = !curEditItem.isMustSee;
@@ -348,6 +365,16 @@ function toggleMustSee() {
         star.style.color = curEditItem.isMustSee ? '#ffeb3b' : '#666';
         const icon = star.querySelector('i');
         if (icon) icon.style.fill = curEditItem.isMustSee ? '#ffeb3b' : 'none';
+    }
+    save(false);
+}
+
+function togglePartner() {
+    if(!curEditItem) return;
+    curEditItem.isPartner = !curEditItem.isPartner;
+    var partnerBtn = document.getElementById('f-partner');
+    if (partnerBtn) {
+        partnerBtn.style.color = curEditItem.isPartner ? '#00BCD4' : '#666';
     }
     save(false);
 }

@@ -15,6 +15,7 @@ function exportBackup() {
         parks_kids_memory_v2: window.memoryGames || [],
         parks_kids_quiz: window.kidsQuiz || [],
         parks_kids_puzzles: window.kidsPuzzles || [],
+        parks_sponsors_partners: window.sponsorsPartners || { sponsors: [], partners: [] },
         timestamp: Date.now()
     };
     
@@ -129,7 +130,7 @@ async function pushLocalToCloud() {
         'parks_itineraries', 'parks_users', 'parks_tourists', 
         'parks_library_v2', 'parks_visit_namibia_v1', 'parks_home_v1', 
         'parks_gallery', 'parks_kids_drawings', 'parks_kids_memory_v2', 
-        'parks_kids_quiz', 'parks_kids_puzzles'
+        'parks_kids_quiz', 'parks_kids_puzzles', 'parks_sponsors_partners'
     ];
 
     for(let key of keys) {
@@ -139,6 +140,7 @@ async function pushLocalToCloud() {
         if(key === 'parks_itineraries') data = window.itinerariesList;
         if(key === 'parks_home_v1') data = window.homeContent;
         if(key === 'parks_kids_memory_v2') data = window.memoryGames;
+        if(key === 'parks_sponsors_partners') data = window.sponsorsPartners;
         
         if(data && window.firebase && firebase.apps && firebase.apps.length && typeof firebase.database === 'function') {
             await firebase.database().ref(key).set(data);
@@ -161,7 +163,7 @@ function cloudRecovery() {
         'parks_itineraries', 'parks_users', 'parks_tourists', 
         'parks_library_v2', 'parks_visit_namibia_v1', 'parks_home_v1', 
         'parks_gallery', 'parks_kids_drawings', 'parks_kids_memory_v2', 
-        'parks_kids_quiz', 'parks_kids_puzzles'
+        'parks_kids_quiz', 'parks_kids_puzzles', 'parks_sponsors_partners'
     ];
 
     let completed = 0;

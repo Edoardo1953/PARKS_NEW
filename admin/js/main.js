@@ -18,6 +18,7 @@ var kidsDrawings = [];
 var memoryGames = [];
 var kidsQuiz = [];
 var kidsPuzzles = [];
+var sponsorsPartners = { sponsors: [], partners: [] };
 
 // Navigation
 function switchView(view) {
@@ -30,7 +31,7 @@ function switchView(view) {
     const nav = document.getElementById('nav-' + view);
     if(nav) nav.classList.add('active');
     
-    const transientViews = ['fiche-editor', 'tourist-editor', 'itinerary-editor-modal', 'quiz-editor-modal'];
+    const transientViews = ['fiche-editor', 'tourist-editor', 'itinerary-editor-modal', 'quiz-editor-modal', 'sponsor-editor'];
     if(!transientViews.includes(view)) {
         curSection = view;
     }
@@ -43,6 +44,7 @@ function switchView(view) {
     if(view === 'kids' && typeof renderKids === 'function') renderKids();
     if(view === 'home' && typeof renderHome === 'function') renderHome();
     if(view === 'map' && typeof renderMapEditor === 'function') renderMapEditor();
+    if(view === 'sponsors' && typeof renderSponsors === 'function') renderSponsors();
     
     if(window.lucide) lucide.createIcons();
 }
@@ -131,4 +133,5 @@ window.PARKS_APP.init(() => {
     loadData('parks_kids_quiz', [], 'kidsQuiz');
     loadData('parks_kids_memory_v2', [], 'memoryGames');
     loadData('parks_kids_puzzles', [], 'kidsPuzzles');
+    loadData('parks_sponsors_partners', { sponsors: [], partners: [] }, 'sponsorsPartners');
 });

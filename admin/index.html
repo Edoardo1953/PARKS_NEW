@@ -190,6 +190,7 @@
             <button class="nav-btn" id="nav-library" onclick="switchView('library')"><i data-lucide="folders"></i> LIBRERIA</button>
             <button class="nav-btn" id="nav-visit" onclick="switchView('visit')"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:18px; border-radius:3px; margin-right:4px;"> VISIT NAMIBIA</button>
             <button class="nav-btn" id="nav-kids" onclick="switchView('kids')"><i data-lucide="baby"></i> KIDS CORNER</button>
+            <button class="nav-btn" id="nav-sponsors" onclick="switchView('sponsors')"><i data-lucide="handshake"></i> SPONSOR & PARTNER</button>
             <button class="nav-btn" id="nav-weather" onclick="switchView('weather')"><i data-lucide="sun"></i> METEO</button>
             <button class="nav-btn" id="nav-users" onclick="switchView('users')"><i data-lucide="shield-check"></i> ACCESSI & UTENTI</button>
         </nav>
@@ -769,6 +770,9 @@
                             <button id="f-star" onclick="toggleMustSee()" style="background:none; border:none; cursor:pointer; color:#666; transition:0.3s; padding:0; display:flex; align-items:center;" title="Aggiungi ai MUST SEE">
                                 <i data-lucide="star" style="width:32px; height:32px;"></i>
                             </button>
+                            <button id="f-partner" onclick="togglePartner()" style="background:none; border:none; cursor:pointer; color:#666; transition:0.3s; padding:0; display:flex; align-items:center;" title="Segna come Partner">
+                                <span style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; border:3px solid currentColor; border-radius:50%; line-height:1;">P</span>
+                            </button>
                         </div>
                         <div style="display:flex; gap:12px; align-items:center;">
                             <button class="btn-editor btn-save" onclick="saveFiche()">
@@ -915,6 +919,133 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <!-- SPONSOR & PARTNER SECTION -->
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <div id="view-sponsors" class="view-pane">
+                <div class="lib-centered-hub">
+                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
+                        <div style="display:flex; align-items:center; gap:20px;">
+                            <button class="btn-editor btn-close" onclick="switchView('dashboard')" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:40px;">
+                                <i data-lucide="chevron-left"></i> BACK
+                            </button>
+                            <div>
+                                <h1 style="letter-spacing: 5px; margin:0;">SPONSOR & PARTNER</h1>
+                                <p style="font-size:11px; opacity:0.5; margin-top:5px; font-weight:700; color:var(--accent);">GESTIONE SOGGETTI FINANZIARI E PROMOZIONALI • AREA RISERVATA ADMIN</p>
+                            </div>
+                        </div>
+                        <button class="btn-editor" onclick="syncPartnersFromLibrary()" style="background:rgba(0,188,212,0.1); border:2px solid rgba(0,188,212,0.4); color:#00BCD4; padding:10px 20px; border-radius:12px; font-weight:900; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:0.3s;" onmouseover="this.style.background='rgba(0,188,212,0.2)'" onmouseout="this.style.background='rgba(0,188,212,0.1)'">
+                            <i data-lucide="refresh-cw" style="width:14px;"></i> SYNC DA LIBRERIA
+                        </button>
+                    </header>
+
+                    <!-- TABS -->
+                    <div style="display:flex; gap:10px; margin-bottom:30px; background:rgba(255,255,255,0.03); padding:10px; border-radius:20px; width:fit-content;">
+                        <button id="tab-sp-sponsors" class="kid-tab active" onclick="switchSpTab('sponsors')">✦ Sponsor</button>
+                        <button id="tab-sp-partners" class="kid-tab" onclick="switchSpTab('partners')">🤝 Partner</button>
+                    </div>
+
+                    <!-- SPONSORS ZONE -->
+                    <div id="sp-sponsors-zone">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                            <h3 style="margin:0; opacity:0.6; letter-spacing:2px; font-size:0.8rem;">ELENCO SPONSOR</h3>
+                            <button class="btn-plus-s" onclick="addSponsor()" style="margin:0; padding:8px 20px; font-size:11px;"><i data-lucide="plus"></i> AGGIUNGI SPONSOR</button>
+                        </div>
+                        <div id="sp-sponsors-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px; padding-bottom:50px;"></div>
+                    </div>
+
+                    <!-- PARTNERS ZONE -->
+                    <div id="sp-partners-zone" style="display:none;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                            <h3 style="margin:0; opacity:0.6; letter-spacing:2px; font-size:0.8rem;">ELENCO PARTNER</h3>
+                            <button class="btn-plus-s" onclick="addPartner()" style="margin:0; padding:8px 20px; font-size:11px;"><i data-lucide="plus"></i> AGGIUNGI PARTNER</button>
+                        </div>
+                        <div id="sp-partners-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px; padding-bottom:50px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPONSOR/PARTNER EDITOR -->
+            <div id="view-sponsor-editor" class="view-pane">
+                <div class="lib-centered-hub">
+                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                        <div style="display:flex; align-items:center; gap:20px;">
+                            <h1 id="sp-editor-title">MODIFICA SOGGETTO</h1>
+                            <button id="sp-active-toggle" onclick="toggleSpActive()" style="background:none; border:none; cursor:pointer; color:#4CAF50; transition:0.3s; padding:0; display:flex; align-items:center;" title="Attivo / Inattivo">
+                                <i data-lucide="toggle-right" style="width:32px; height:32px;"></i>
+                            </button>
+                        </div>
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <button class="btn-editor btn-save" onclick="saveSponsorPartner()">
+                                <i data-lucide="check"></i> SALVA
+                            </button>
+                            <button class="btn-editor btn-delete" onclick="deleteSponsorPartner()">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                            <button class="btn-editor btn-close" onclick="switchView('sponsors')" title="Esci senza salvare" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:40px;">
+                                <i data-lucide="chevron-left"></i> BACK
+                            </button>
+                        </div>
+                    </header>
+                    <div class="editor-grid">
+                        <!-- LEFT: Main info -->
+                        <div class="db-section" style="padding:1.5rem;">
+                            <div class="input-group">
+                                <span class="label">NOME SOGGETTO</span>
+                                <input id="sp-name" type="text" class="f-input" placeholder="Es: NATIONAL GEOGRAPHIC">
+                            </div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                                <div class="input-group">
+                                    <span class="label">TIPOLOGIA / LIVELLO</span>
+                                    <select id="sp-type" class="f-input" style="background:#222;"></select>
+                                </div>
+                                <div class="input-group">
+                                    <span class="label">TIPO DI IMPEGNO</span>
+                                    <select id="sp-commitment" class="f-input" style="background:#222;"></select>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <span class="label">SITO WEB</span>
+                                <input id="sp-website" type="url" class="f-input" placeholder="https://www.example.com">
+                            </div>
+                            <div class="input-group">
+                                <span class="label">DESCRIZIONE</span>
+                                <textarea id="sp-desc" class="f-input f-area" style="height:200px;" placeholder="Descrizione del soggetto..."></textarea>
+                            </div>
+                            <div class="input-group">
+                                <span class="label">NOTE INTERNE (SOLO ADMIN)</span>
+                                <textarea id="sp-notes" class="f-input" style="height:100px; resize:vertical; background:rgba(255,82,82,0.05); border-color:rgba(255,82,82,0.2);" placeholder="Note riservate, non visibili..."></textarea>
+                            </div>
+                            <div style="margin-top:10px; padding:12px; background:rgba(255,82,82,0.08); border-radius:10px; border:1px solid rgba(255,82,82,0.2); font-size:10px; font-weight:700; color:#ff8a80; display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="lock" style="width:14px; flex-shrink:0;"></i>
+                                <span>Le Note Interne e questa intera sezione sono visibili SOLO all'Admin.</span>
+                            </div>
+                        </div>
+                        <!-- RIGHT: Logo + Media -->
+                        <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                            <div class="db-section" style="padding:1.5rem;">
+                                <div class="section-header" style="background:none; border:none; padding:0 0 10px 0;">LOGO / IMMAGINE PRINCIPALE</div>
+                                <div style="position:relative; width:100%; height:180px; border-radius:15px; overflow:hidden; background:rgba(0,0,0,0.5); border:2px dashed rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.3s;" onclick="document.getElementById('sp-logo-file').click()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
+                                    <div id="sp-logo-preview" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+                                        <i data-lucide="image-plus" style="width:30px; height:30px; opacity:0.2;"></i>
+                                    </div>
+                                    <input type="file" id="sp-logo-file" accept="image/*" style="display:none;" onchange="uploadSpLogo(event)">
+                                </div>
+                            </div>
+                            <div id="sp-media-section" class="db-section" style="padding:1.5rem;">
+                                <div class="section-header" style="background:none; border:none; padding:0 0 10px 0;">MULTIMEDIA HUB (IMG/PDF/VIDEO)</div>
+                                <label class="btn-plus-s" style="margin:0 0 5px 0;">
+                                    + AGGIUNGI MEDIA
+                                    <input type="file" multiple accept="image/*,application/pdf,video/mp4" style="display:none;" onchange="uploadSpMedia(event)">
+                                </label>
+                                <div id="sp-media-grid" class="photo-grid"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     <!-- MODAL PER NUOVO GIOCO MEMORY -->
     <div id="new-game-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:4000; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
@@ -953,6 +1084,7 @@
     <script src="js/itineraries.js?v=3.1"></script>
     <script src="js/home.js?v=3.1"></script>
     <script src="js/map_editor_v2.js?v=3.7"></script>
+    <script src="js/sponsors.js?v=3.1"></script>
 
     <script>
         // Emergency Patch (Windhoek)
