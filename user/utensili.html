@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETOSHA | Utensili</title>
+    <link rel="stylesheet" href="../shared/design.css">
+    <link rel="stylesheet" href="../shared/logo.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../shared/db.js?v=2.5"></script>
+    <script src="../shared/app.js?v=2.5"></script>
+    <link rel="stylesheet" href="../shared/mobile_responsive.css?v=2.4">
+    <style>
+        :root { --primary-green: #1a3c34; --darker-green: #0d1e1a; --accent: #ffab40; }
+        body { 
+            background-color: var(--darker-green); color: white; height: 100vh; margin: 0; 
+            font-family: sans-serif; display: flex; flex-direction: column; 
+        }
+        
+        header { padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .main-container { flex: 1; display: grid; grid-template-columns: 300px 1fr; overflow: hidden; }
+        
+        .sidebar { padding: 20px; border-right: 1px solid rgba(255,255,255,0.1); background: rgba(26, 60, 52, 0.4); display: flex; flex-direction: column; }
+        
+        .sidebar-logo {
+            width: 260px;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+        .sidebar-logo img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        .sidebar-menu li { padding: 0.8rem 0; font-size: 1.1rem; opacity: 0.7; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .sidebar-menu li.active { opacity: 1; color: var(--accent); font-weight: 900; }
+        
+        .content-area { display: flex; flex-direction: column; padding: 2rem; overflow-y: auto; }
+
+        .search-bar { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 15px 20px; border-radius: 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .search-bar input { background: none; border: none; color: white; font-size: 1.1rem; outline: none; flex: 1; font-weight: 700; }
+        
+        .type-filters { display: flex; gap: 15px; margin-bottom: 30px; }
+        .filter-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 800; font-size: 12px; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
+        .filter-btn.active { background: rgba(255,255,255,0.2); border-color: white; }
+
+        .section-block { margin-bottom: 40px; }
+        .section-header { font-size: 1.2rem; font-weight: 900; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        
+        .utensil-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 15px; transition: 0.3s; position: relative; overflow: hidden; backdrop-filter: blur(10px); }
+        .utensil-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        .u-document { border-top: 4px solid #ffab40; }
+        .u-link { border-top: 4px solid #00bcd4; }
+        .u-app { border-top: 4px solid #4caf50; }
+
+        .u-card-header { display: flex; align-items: center; gap: 15px; }
+        .u-icon-box { width: 45px; height: 45px; border-radius: 12px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; }
+        .u-document .u-icon-box { color: #ffab40; background: rgba(255,171,64,0.1); }
+        .u-link .u-icon-box { color: #00bcd4; background: rgba(0,188,212,0.1); }
+        .u-app .u-icon-box { color: #4caf50; background: rgba(76,175,80,0.1); }
+        
+        .u-title { font-weight: 900; font-size: 1.1rem; line-height: 1.2; margin: 0; }
+        .u-desc { font-size: 0.9rem; opacity: 0.6; line-height: 1.5; flex: 1; }
+        
+        .u-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
+        .u-tags span { background: rgba(255,255,255,0.1); font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 6px; opacity: 0.8; }
+        
+        .u-action { background: rgba(255,255,255,0.1); border: none; color: white; padding: 12px; border-radius: 12px; font-weight: 900; font-size: 12px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 15px; }
+        .u-action:hover { background: rgba(255,255,255,0.2); }
+        
+        /* Mobile handling */
+        @media (max-width: 900px) {
+            .grid-3 { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 600px) {
+            .grid-3 { grid-template-columns: 1fr; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display: flex; align-items: center; gap: 40px;"></div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button id="admin-btn" onclick="window.location.href='../admin/index.html'" style="display:none; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; padding: 8px 16px; border-radius: 30px; font-weight:bold; cursor:pointer; font-size:11px;">ADMIN ACCESS</button>
+            <button onclick="logout()" style="background:#ff5252; border:none; color:white; padding: 8px 20px; border-radius: 30px; font-weight:900; cursor:pointer; font-size:11px; display:flex; align-items:center; gap:8px;">LOGOUT <i data-lucide="log-out" style="width:14px;"></i></button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="../shared/parks_logo_combined_white.svg" alt="PARKS">
+            </div>
+            <h2 id="sidebar-title" style="font-size: 0.7rem; letter-spacing: 3px; opacity: 0.4; font-weight: 900; margin-bottom: 20px; text-transform: uppercase;">Menu</h2>
+            <ul class="sidebar-menu">
+                <li onclick="window.location.href='homepage.html'"><i data-lucide="home"></i> <span>Home</span></li>
+                <li onclick="window.location.href='map.html'"><i data-lucide="map"></i> <span>Mappa Interattiva</span></li>
+                <li onclick="window.location.href='itineraries.html'"><i data-lucide="milestone"></i> <span>Itinerari</span></li>
+                <li onclick="window.location.href='alerts.html'"><i data-lucide="bell"></i> <span>Inserisci un ALERT</span></li>
+                <li onclick="window.location.href='library.html'"><i data-lucide="book-open"></i> <span>Libreria</span></li>
+                <li onclick="window.location.href='visit_namibia.html'"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:20px; border-radius:3px;"> <span>Visit NAMIBIA</span></li>
+                <li onclick="window.location.href='library.html?view=mustsee'"><i data-lucide="star"></i> <span>Must See</span></li>
+                <li onclick="window.location.href='kids_corner.html'"><i data-lucide="baby"></i> <span>Kid's Corner</span></li>
+                <li onclick="window.location.href='memory2/index.html'"><i data-lucide="film"></i> <span>Memory Composer</span></li>
+                <li onclick="window.location.href='forex_light.html'"><i data-lucide="trending-up"></i> <span>Cambi Valute</span></li>
+                <li class="active" onclick="window.location.href='utensili.html'"><i data-lucide="wrench"></i> <span>Utensili</span></li>
+            </ul>
+        </aside>
+
+        <main class="content-area">
+            <h1 style="color:var(--accent); font-weight:900; margin-bottom:10px; text-transform:uppercase; letter-spacing:3px; font-size: 2.5rem;">Utensili</h1>
+            <p style="opacity:0.6; margin-bottom:30px; font-size:1.1rem; font-weight:300;">Strumenti, applicazioni e materiali utili per la tua esperienza.</p>
+            
+            <div class="search-bar">
+                <i data-lucide="search" style="color:var(--accent);"></i>
+                <input type="text" id="u-search" placeholder="Cerca tra gli strumenti..." oninput="renderUtensili()">
+            </div>
+
+            <div class="type-filters">
+                <button class="filter-btn active" id="f-all" onclick="setFilter('all')"><i data-lucide="grid"></i> Tutti</button>
+                <button class="filter-btn" id="f-doc" onclick="setFilter('document')"><i data-lucide="file-text"></i> Documenti</button>
+                <button class="filter-btn" id="f-link" onclick="setFilter('link')"><i data-lucide="link"></i> Links</button>
+                <button class="filter-btn" id="f-app" onclick="setFilter('app')"><i data-lucide="layout-grid"></i> App Interne</button>
+            </div>
+
+            <div id="utensili-view"></div>
+        </main>
+    </div>
+
+    <!-- BOTTOM TAB BAR rimosso (ora iniettato da app.js) -->
+
+    <script>
+        var utensili = { sections: [] };
+        var activeFilter = 'all';
+
+        function setFilter(type) {
+            activeFilter = type;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(type === 'all' ? 'f-all' : (type === 'document' ? 'f-doc' : (type === 'link' ? 'f-link' : 'f-app'))).classList.add('active');
+            renderUtensili();
+        }
+
+        function renderUtensili() {
+            var container = document.getElementById('utensili-view');
+            var searchTxt = document.getElementById('u-search').value.toLowerCase();
+
+            if (!utensili.sections || utensili.sections.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:5rem; opacity:0.3;">Nessuno strumento disponibile al momento.</div>`;
+                return;
+            }
+
+            var html = "";
+            var itemsFound = 0;
+
+            utensili.sections.forEach(sec => {
+                // Filter items
+                var filteredItems = (sec.items || []).filter(it => {
+                    if (it.isVisible === false) return false;
+                    if (activeFilter !== 'all' && it.type !== activeFilter) return false;
+                    
+                    if (searchTxt) {
+                        var mText = (it.title || '') + ' ' + (it.description || '') + ' ' + (it.tags || []).join(' ');
+                        if (!mText.toLowerCase().includes(searchTxt)) return false;
+                    }
+                    return true;
+                });
+
+                if (filteredItems.length > 0) {
+                    itemsFound += filteredItems.length;
+                    html += `
+                        <div class="section-block">
+                            <div class="section-header">
+                                <i data-lucide="${sec.icon || 'folder'}" style="color:${sec.color || 'var(--accent)'}"></i> 
+                                ${sec.title}
+                            </div>
+                            <div class="grid-3">
+                                ${filteredItems.map(it => `
+                                    <div class="utensil-card u-${it.type}">
+                                        <div class="u-card-header">
+                                            <div class="u-icon-box"><i data-lucide="${it.icon || 'file'}"></i></div>
+                                            <h3 class="u-title">${it.title}</h3>
+                                        </div>
+                                        <div class="u-desc">${it.description || ''}</div>
+                                        
+                                        ${(it.tags && it.tags.length > 0) ? `
+                                            <div class="u-tags">
+                                                ${it.tags.map(t => `<span>${t}</span>`).join('')}
+                                            </div>
+                                        ` : ''}
+                                        
+                                        <button class="u-action" onclick="openUtensile('${it.type}', '${it.fileUrl || ''}')">
+                                            ${it.type === 'document' ? 'APRI DOCUMENTO <i data-lucide="external-link"></i>' : 
+                                             (it.type === 'link' ? 'VISITA SITO <i data-lucide="external-link"></i>' : 'LANCIA APP <i data-lucide="play"></i>')}
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (itemsFound === 0) {
+                html = `<div style="text-align:center; padding:5rem; opacity:0.3;">Nessun risultato trovato.</div>`;
+            }
+
+            container.innerHTML = html;
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function openUtensile(type, url) {
+            if (!url) return alert("URL non disponibile");
+            
+            if (type === 'app') {
+                // Apps are relative pages
+                window.location.href = url;
+            } else {
+                // Docs and links are usually absolute or need to open in new tab
+                window.open(url, '_blank');
+            }
+        }
+
+        function logout() {
+            window.PARKS_APP.setSession({ loggedIn: false }, function() {
+                window.location.href = 'index.html';
+            });
+        }
+
+        window.PARKS_APP.init(() => { 
+            window.PARKS_APP.getSession(function(session) {
+                if (session && (session.role === 'SUPER_ADMIN' || session.role === 'ADMIN')) {
+                    document.getElementById('admin-btn').style.display = 'block';
+                }
+
+                // Load Utensili Data
+                window.PARKS_DB.get('parks_utensili_v1', {sections:[]}, function(data) {
+                    utensili = data;
+                    renderUtensili();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

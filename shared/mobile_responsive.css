@@ -460,8 +460,12 @@
         }
 
         .language-selector {
-            top: 100px !important; /* Spostato più in basso */
+            top: 130px !important; /* Spostato più in basso per evitare il logo sponsor */
             right: 15px !important;
+        }
+        .lang-icon {
+            width: 24px !important;
+            height: 24px !important;
         }
 
         #meteo-card {

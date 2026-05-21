@@ -34,6 +34,25 @@ function renderSponsors() {
     var ptZone = document.getElementById('sp-partners-zone');
     if (!spZone || !ptZone) return;
 
+    var shapeSelect = document.getElementById('main-sponsor-shape-select');
+    if (shapeSelect) {
+        shapeSelect.value = (sponsorsPartners && sponsorsPartners.mainSponsorShape) || 'round';
+    }
+
+    var zoomInput = document.getElementById('main-sponsor-zoom');
+    if (zoomInput) {
+        var zoomVal = (sponsorsPartners && sponsorsPartners.mainSponsorZoom !== undefined) ? sponsorsPartners.mainSponsorZoom : 100;
+        zoomInput.value = zoomVal;
+        document.getElementById('zoom-val').innerText = zoomVal + '%';
+    }
+
+    var padInput = document.getElementById('main-sponsor-padding');
+    if (padInput) {
+        var padVal = (sponsorsPartners && sponsorsPartners.mainSponsorPadding !== undefined) ? sponsorsPartners.mainSponsorPadding : 20;
+        padInput.value = padVal;
+        document.getElementById('pad-val').innerText = padVal + 'px';
+    }
+
     if (curSpTab === 'sponsors') {
         spZone.style.display = 'block';
         ptZone.style.display = 'none';
@@ -233,6 +252,33 @@ function updateSpActiveToggle() {
 
 // ─── MEDIA MANAGEMENT ────────────────────────────────────────
 
+function updateMainSponsorShape(val) {
+    if (!sponsorsPartners) return;
+    sponsorsPartners.mainSponsorShape = val;
+    saveSponsorsData(true);
+    
+    var previewContainer = document.getElementById('preview-sponsor-container');
+    if (previewContainer) {
+        previewContainer.className = 'preview-sponsor-logo shape-' + val;
+    }
+}
+
+function updateMainSponsorStyle() {
+    if (!sponsorsPartners) return;
+    var zoom = document.getElementById('main-sponsor-zoom').value;
+    var imgZoom = document.getElementById('main-sponsor-img-zoom').value;
+    sponsorsPartners.mainSponsorZoom = parseInt(zoom) || 100;
+    sponsorsPartners.mainSponsorImgZoom = parseInt(imgZoom) || 100;
+    saveSponsorsData(true);
+    
+    var previewContainer = document.getElementById('preview-sponsor-container');
+    if (previewContainer) {
+        previewContainer.style.setProperty('--zoom', sponsorsPartners.mainSponsorZoom / 100);
+        previewContainer.style.setProperty('--img-zoom', sponsorsPartners.mainSponsorImgZoom / 100);
+        previewContainer.style.padding = '0px'; // Reset padding since we zoom now
+    }
+}
+
 function renderSpMediaGrid() {
     var container = document.getElementById('sp-media-grid');
     if (!container || !curSpEditItem) return;
@@ -281,6 +327,26 @@ async function uploadSpLogo(e) {
         alert("Errore durante il caricamento del logo.");
     } finally {
         if (preview) preview.style.opacity = '1';
+        e.target.value = '';
+    }
+}
+
+async function uploadMainSponsorLogo(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    try {
+        var cloudUrl = await window.PARKS_DB.uploadFile(file);
+        sponsorsPartners.mainSponsorLogo = cloudUrl;
+        saveSponsorsData();
+        
+        var previewImg = document.getElementById('preview-sponsor-img');
+        if (previewImg) previewImg.src = cloudUrl;
+        
+        alert("Logo principale aggiornato con successo!");
+    } catch (err) {
+        console.error("Upload main sponsor logo error:", err);
+        alert("Errore durante il caricamento del logo principale.");
+    } finally {
         e.target.value = '';
     }
 }

@@ -15,6 +15,7 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <script src="../shared/db.js?v=1.5"></script>
     <script src="../shared/app.js?v=1.5"></script>
+    <script src="js/utensili.js?v=1.0"></script>
     <style>
         :root { --primary-green: #2d7a4d; --danger: #ff5252; --accent: #ffab40; --dark-bg: #0d1e1a; }
         body { background: var(--dark-bg); color: white; display: flex; height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; margin: 0; }
@@ -100,6 +101,7 @@
         .input-group { margin-bottom: 1.2rem; }
         .label { display: block; font-size: 10px; font-weight: 900; color: var(--accent); margin-bottom: 5px; letter-spacing: 1px; }
         .f-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 10px; font-weight: 700; outline: none; }
+        .f-input option { background: #222; color: white; }
         .f-area { height: 450px; resize: vertical; font-family: inherit; line-height: 1.6; }
         .photo-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .photo-box { width: 100px; height: 100px; border-radius: 10px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.1); }
@@ -169,6 +171,41 @@
             #iti-leaflet-map { height: 400px !important; min-height: 400px !important; }
             .editor-header-mobile { display: flex !important; }
         }
+        .preview-sponsor-logo {
+            --zoom: 1;
+            background: white;
+            border: 4px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+            transition: all 0.3s;
+            overflow: hidden;
+        }
+        .preview-sponsor-logo.shape-round {
+            width: calc(150px * var(--zoom));
+            height: calc(150px * var(--zoom));
+            border-radius: 50%;
+        }
+        .preview-sponsor-logo.shape-square {
+            width: calc(150px * var(--zoom));
+            height: calc(150px * var(--zoom));
+            border-radius: 20px;
+        }
+        .preview-sponsor-logo.shape-rect {
+            width: calc(200px * var(--zoom));
+            height: calc(90px * var(--zoom));
+            border-radius: 20px;
+        }
+        .preview-sponsor-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            transform: scale(var(--img-zoom, 1));
+            transition: transform 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -191,6 +228,7 @@
             <button class="nav-btn" id="nav-visit" onclick="switchView('visit')"><img src="../assets/library/FLAGS/Namibia Flag 01.png" style="width:18px; border-radius:3px; margin-right:4px;"> VISIT NAMIBIA</button>
             <button class="nav-btn" id="nav-kids" onclick="switchView('kids')"><i data-lucide="baby"></i> KIDS CORNER</button>
             <button class="nav-btn" id="nav-sponsors" onclick="switchView('sponsors')"><i data-lucide="handshake"></i> SPONSOR & PARTNER</button>
+            <button class="nav-btn" id="nav-utensili" onclick="switchView('utensili')"><i data-lucide="wrench"></i> UTENSILI</button>
             <button class="nav-btn" id="nav-weather" onclick="switchView('weather')"><i data-lucide="sun"></i> METEO</button>
             <button class="nav-btn" id="nav-users" onclick="switchView('users')"><i data-lucide="shield-check"></i> ACCESSI & UTENTI</button>
         </nav>
@@ -401,7 +439,7 @@
                         </button>
                     </header>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem;">
                         <div class="db-section" style="padding:1.5rem;">
                             <h3 style="color:var(--accent); font-size:12px; letter-spacing:3px; margin-bottom:20px;">1. TESTI HOMEPAGE</h3>
                             <div class="input-group">
@@ -430,6 +468,50 @@
                             <div id="gallery-grid" class="photo-grid">
                                 <!-- Gallery photos here -->
                             </div>
+                        </div>
+
+                        <div class="db-section" style="padding:1.5rem;">
+                            <h3 style="color:var(--accent); font-size:12px; letter-spacing:3px; margin-bottom:20px;">3. LOGO PRINCIPALE</h3>
+                            <p style="font-size:11px; opacity:0.6; margin-bottom:20px;">Configura il logo visualizzato in alto a destra nella Homepage.</p>
+                            
+                            <label class="btn-editor" style="background:rgba(255,171,64,0.1); border:2px solid rgba(255,171,64,0.4); color:var(--accent); padding:10px 20px; border-radius:12px; font-weight:900; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:0.3s; margin-bottom: 25px; width: fit-content;" onmouseover="this.style.background='rgba(255,171,64,0.2)'" onmouseout="this.style.background='rgba(255,171,64,0.1)'">
+                                <i data-lucide="image-plus" style="width:14px;"></i> CARICA NUOVO LOGO
+                                <input type="file" id="main-sponsor-logo-upload" accept="image/*" style="display:none;" onchange="uploadMainSponsorLogo(event)">
+                            </label>
+
+                            <div style="display:flex; flex-direction:column; gap:20px;">
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <label style="font-size:9px; opacity:0.6; font-weight:800; letter-spacing:1px;">FORMA DEL CONTENITORE</label>
+                                    <select id="main-sponsor-shape-select" class="f-input" style="width:100%; height:38px; padding:0 10px; font-size:11px;" onchange="updateMainSponsorShape(this.value)">
+                                        <option value="round">Cerchio</option>
+                                        <option value="square">Quadrato</option>
+                                        <option value="rect">Rettangolo</option>
+                                    </select>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <label style="font-size:9px; opacity:0.6; font-weight:800; letter-spacing:1px;">DIMENSIONI CONTENITORE (%)</label>
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <input type="range" id="main-sponsor-zoom" min="50" max="200" step="5" value="100" style="width:100%;" oninput="document.getElementById('zoom-val').innerText=this.value+'%'; updateMainSponsorStyle()">
+                                        <span id="zoom-val" style="font-size:11px; font-weight:800; width:45px;">100%</span>
+                                    </div>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <label style="font-size:9px; opacity:0.6; font-weight:800; letter-spacing:1px;">ZOOM IMMAGINE INTERNA (%)</label>
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <input type="range" id="main-sponsor-img-zoom" min="50" max="300" step="5" value="100" style="width:100%;" oninput="document.getElementById('img-zoom-val').innerText=this.value+'%'; updateMainSponsorStyle()">
+                                        <span id="img-zoom-val" style="font-size:11px; font-weight:800; width:45px;">100%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ANTEPRIMA LIVE -->
+                            <div style="margin-top: 30px; padding: 20px; background: rgba(13,30,26,0.8); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction:column; justify-content: center; align-items: center; min-height: 250px; position:relative;">
+                                <div style="position:absolute; top:10px; left:15px; font-size:9px; font-weight:800; opacity:0.5; letter-spacing:1px;">ANTEPRIMA LIVE</div>
+                                <div id="preview-sponsor-container" class="preview-sponsor-logo shape-round" style="--zoom: 1; padding: 20px;">
+                                    <img id="preview-sponsor-img" src="../assets/library/SPONSORS-PARTNERS/Sponsors/WWF/02 World-Wildlife-Fund-.png" alt="Anteprima Logo">
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -554,6 +636,25 @@
                 </div>
             </div>
 
+            <!-- UTENSILI VIEW -->
+            <div id="view-utensili" class="view-pane">
+                <div class="lib-centered-hub">
+                    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
+                        <div style="display:flex; align-items:center; gap:20px;">
+                            <button class="btn-editor btn-close" onclick="switchView('dashboard')" style="background:rgba(255,255,255,0.1); color:white; border:none; display:flex; align-items:center; gap:8px; width:auto; padding:0 15px; height:40px;">
+                                <i data-lucide="chevron-left"></i> BACK
+                            </button>
+                            <div>
+                                <h1 style="letter-spacing: 5px; margin:0; color:var(--accent);">ZONA UTENSILI PRO</h1>
+                                <p style="font-size:11px; opacity:0.5; margin-top:5px; font-weight:700;">GESTIONE STRUMENTI, APPLICAZIONI E MATERIALI UTILI</p>
+                            </div>
+                        </div>
+                        <button class="btn-plus-s" onclick="addUtensiliSection()" style="margin:0;">+ AGGIUNGI SEZIONE</button>
+                    </header>
+                    <div id="utensili-container" style="display:flex; flex-direction:column; gap:1rem; padding-bottom:5rem;"></div>
+                </div>
+            </div>
+
             <!-- MODAL EDITOR FOR KIDS DRAWINGS -->
             <div id="kid-editor-modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -580,12 +681,84 @@
                                 <p style="font-size:12px; opacity:0.4; font-weight:700;">CLICCA QUI PER SELEZIONARE L'IMMAGINE</p>
                             </div>
                         </div>
-
-                        <div style="display:flex; gap:15px; margin-top:10px;">
+                            <div style="display:flex; gap:15px; margin-top:10px;">
                             <button class="btn-editor btn-save" onclick="saveKidDrawing()" style="flex:2; justify-content:center;">SALVA NEL DATABASE</button>
                             <button class="btn-editor btn-close" onclick="closeKidEditor()" style="flex:1; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1);"><i data-lucide="x"></i></button>
                         </div>
+                        </div>
                     </div>
+            </div>
+
+            <!-- MODAL EDITOR FOR UTENSILI -->
+            <div id="utensili-editor-modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+                <div style="background:rgba(20,30,26,0.95); border:1px solid rgba(255,255,255,0.1); padding:40px; border-radius:20px; width:500px; max-width:90%; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h2 style="letter-spacing:5px; margin:0; color:var(--accent); font-size:1.2rem;">EDITOR ITEM UTENSILI</h2>
+                        <button class="btn-editor btn-close" onclick="closeUtensiliItemEditor()" style="height:35px; font-size:10px;">
+                            <i data-lucide="x" style="width:14px;"></i>
+                        </button>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:15px;">
+                        
+                        <div class="input-group">
+                            <span class="label">TIPO DI STRUMENTO</span>
+                            <select id="u-type" class="f-input" onchange="onUtensiliTypeChange()" style="appearance:none; cursor:pointer;">
+                                <option value="document">📄 Documento / Materiale (File)</option>
+                                <option value="link">🔗 Link Esterno / Web App</option>
+                                <option value="app">🚀 Applicazione Interna</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <span class="label">TITOLO (NOME STRUMENTO)</span>
+                            <input type="text" id="u-title" placeholder="Es: Manuale Operativo" class="f-input">
+                        </div>
+
+                        <div class="input-group">
+                            <span class="label">DESCRIZIONE / ISTRUZIONI BREVI</span>
+                            <textarea id="u-desc" class="f-input" rows="3" placeholder="A cosa serve questo strumento?"></textarea>
+                        </div>
+
+                        <div class="input-group">
+                            <span class="label">TAGS (SEPARATI DA VIRGOLA)</span>
+                            <input type="text" id="u-tags" placeholder="Es: manuale, pdf, guida" class="f-input">
+                        </div>
+
+                        <!-- SPECIFIC AREAS -->
+                        <div id="u-doc-area" style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; border:1px dashed rgba(255,255,255,0.1);">
+                            <span class="label">CARICA FILE</span>
+                            <input type="file" id="u-file" style="display:none;" onchange="uploadUtensiliFile(event)">
+                            <button onclick="document.getElementById('u-file').click()" class="btn-editor" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); width:100%; justify-content:center; margin-bottom:10px;">
+                                <i data-lucide="upload-cloud"></i> SELEZIONA FILE DA CARICARE
+                            </button>
+                            <div id="u-file-preview" style="text-align:center;"></div>
+                        </div>
+
+                        <div id="u-link-area" style="display:none; background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
+                            <span class="label">URL COLLEGAMENTO ESTERNO</span>
+                            <input type="text" id="u-url-input" placeholder="https://..." class="f-input">
+                        </div>
+
+                        <div id="u-app-area" style="display:none; background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
+                            <span class="label">SELEZIONA APP INTERNA</span>
+                            <select id="u-app-select" class="f-input" style="appearance:none; cursor:pointer;">
+                                <option value="map.html">Mappa Interattiva</option>
+                                <option value="weather_original.html">Meteo Live</option>
+                                <option value="forex_light.html">Cambi Valute (Forex)</option>
+                                <option value="kids_corner.html">Kids Corner</option>
+                                <option value="memory2/index.html">Memory Composer</option>
+                                <option value="library.html">Libreria</option>
+                                <option value="itineraries.html">Itinerari</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-top:10px;">
+                            <button class="btn-editor btn-save" onclick="saveUtensiliItem()" style="width:100%; justify-content:center;">SALVA STRUMENTO</button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -935,9 +1108,11 @@
                                 <p style="font-size:11px; opacity:0.5; margin-top:5px; font-weight:700; color:var(--accent);">GESTIONE SOGGETTI FINANZIARI E PROMOZIONALI • AREA RISERVATA ADMIN</p>
                             </div>
                         </div>
-                        <button class="btn-editor" onclick="syncPartnersFromLibrary()" style="background:rgba(0,188,212,0.1); border:2px solid rgba(0,188,212,0.4); color:#00BCD4; padding:10px 20px; border-radius:12px; font-weight:900; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:0.3s;" onmouseover="this.style.background='rgba(0,188,212,0.2)'" onmouseout="this.style.background='rgba(0,188,212,0.1)'">
-                            <i data-lucide="refresh-cw" style="width:14px;"></i> SYNC DA LIBRERIA
-                        </button>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <button class="btn-editor" onclick="syncPartnersFromLibrary()" style="background:rgba(0,188,212,0.1); border:2px solid rgba(0,188,212,0.4); color:#00BCD4; padding:10px 20px; border-radius:12px; font-weight:900; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:0.3s;" onmouseover="this.style.background='rgba(0,188,212,0.2)'" onmouseout="this.style.background='rgba(0,188,212,0.1)'">
+                                <i data-lucide="refresh-cw" style="width:14px;"></i> SYNC DA LIBRERIA
+                            </button>
+                        </div>
                     </header>
 
                     <!-- TABS -->

@@ -14,6 +14,41 @@ function renderHome() {
         window.gallery = data;
         renderGallery();
     });
+
+    if (window.sponsorsPartners) {
+        var zoomVal = window.sponsorsPartners.mainSponsorZoom !== undefined ? window.sponsorsPartners.mainSponsorZoom : 100;
+        var imgZoomVal = window.sponsorsPartners.mainSponsorImgZoom !== undefined ? window.sponsorsPartners.mainSponsorImgZoom : 100;
+        var shapeVal = window.sponsorsPartners.mainSponsorShape || 'round';
+
+        var shapeSelect = document.getElementById('main-sponsor-shape-select');
+        if (shapeSelect) shapeSelect.value = shapeVal;
+
+        var zoomInput = document.getElementById('main-sponsor-zoom');
+        if (zoomInput) {
+            zoomInput.value = zoomVal;
+            document.getElementById('zoom-val').innerText = zoomVal + '%';
+        }
+
+        var imgZoomInput = document.getElementById('main-sponsor-img-zoom');
+        if (imgZoomInput) {
+            imgZoomInput.value = imgZoomVal;
+            document.getElementById('img-zoom-val').innerText = imgZoomVal + '%';
+        }
+        
+        // Initialize Live Preview
+        var previewContainer = document.getElementById('preview-sponsor-container');
+        if (previewContainer) {
+            previewContainer.className = 'preview-sponsor-logo shape-' + shapeVal;
+            previewContainer.style.setProperty('--zoom', zoomVal / 100);
+            previewContainer.style.setProperty('--img-zoom', imgZoomVal / 100);
+            previewContainer.style.padding = '0px';
+        }
+        
+        var previewImg = document.getElementById('preview-sponsor-img');
+        if (previewImg && window.sponsorsPartners.mainSponsorLogo) {
+            previewImg.src = window.sponsorsPartners.mainSponsorLogo;
+        }
+    }
 }
 
 function renderGallery() {
