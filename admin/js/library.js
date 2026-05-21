@@ -259,7 +259,7 @@ function renderEditPhotos() {
         var isPpt = (typeof p === 'object' && (p.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || p.type === 'application/vnd.ms-powerpoint')) || (typeof p === 'string' && (p.startsWith('data:application/vnd.openxmlformats-officedocument.presentationml.presentation') || p.startsWith('data:application/vnd.ms-powerpoint')));
         
         return `
-            <div class="photo-box" onclick="${(isPdf || isVideo || isPpt) ? `openDoc('${url}', '${name}')` : ''}">
+            <div class="photo-box" draggable="true" ondragstart="handlePhotoDragStart(event, ${idx})" ondragover="handlePhotoDragOver(event)" ondrop="handlePhotoDrop(event, ${idx})" onclick="${(isPdf || isVideo || isPpt) ? `openDoc('${url}', '${name}')` : ''}" style="cursor: grab;">
                 ${isPdf ? `<div class="pdf-icon"><i data-lucide="file-text"></i><span>${name || 'PDF'}</span></div>` : 
                   (isVideo ? `<video src="${url}" muted style="width:100%; height:100%; object-fit:cover;"></video>` :
                   (isPpt ? `<div class="ppt-icon"><i data-lucide="monitor-play"></i><span>${name || 'PPTX'}</span></div>` :
@@ -269,6 +269,31 @@ function renderEditPhotos() {
         `;
     }).join('');
     if(window.lucide) lucide.createIcons();
+}
+
+var curPhotoDragIdx = null;
+
+function handlePhotoDragStart(e, idx) {
+    curPhotoDragIdx = idx;
+    e.dataTransfer.effectAllowed = 'move';
+    e.stopPropagation();
+}
+
+function handlePhotoDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+function handlePhotoDrop(e, targetIdx) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (curPhotoDragIdx === null || curPhotoDragIdx === targetIdx) return;
+    
+    var item = curEditItem.photos.splice(curPhotoDragIdx, 1)[0];
+    curEditItem.photos.splice(targetIdx, 0, item);
+    
+    curPhotoDragIdx = null;
+    renderEditPhotos();
 }
 
 function openDoc(dataUrl, name) {
