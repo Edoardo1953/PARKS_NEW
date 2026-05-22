@@ -79,11 +79,11 @@ window.PARKS_APP = {
             
             // Adjust main content padding to account for fixed top bar
             // Enforce with !important to override mobile_responsive.css
-            const containers = ['.main-content-scroll', '.main-content', '.layout', '.app-container'];
+            const containers = ['.main-content-scroll', '.main-content', '.layout', '.app-container', '.content-area'];
             for (let selector of containers) {
                 const el = document.querySelector(selector);
                 if (el) {
-                    el.style.setProperty('padding-top', '60px', 'important');
+                    el.style.setProperty('padding-top', '80px', 'important');
                     break; // Only apply to the first one found!
                 }
             }

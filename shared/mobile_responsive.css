@@ -290,9 +290,22 @@
     }
 
     /* Content containers inside either the overlay or the library page */
-    .fiche-content, #fiche-view {
+    .fiche-content {
         padding: 15px !important;
         padding-top: 80px !important; /* Space for the close button */
+        padding-bottom: 100px !important;
+        margin-top: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+        height: auto !important;
+        min-height: min-content !important;
+    }
+    
+    #fiche-view {
+        padding: 15px !important;
+        padding-top: 15px !important; /* Parent .content-area already provides top padding */
         padding-bottom: 100px !important;
         margin-top: 0 !important;
         width: 100% !important;
@@ -341,8 +354,12 @@
     }
 
     /* Adjust content to fit below header */
-    .fiche-content, #fiche-view {
+    .fiche-content {
         padding-top: 85px !important;
+    }
+    
+    #fiche-view {
+        padding-top: 15px !important;
     }
 }
 
