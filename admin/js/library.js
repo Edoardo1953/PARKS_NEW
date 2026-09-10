@@ -169,9 +169,108 @@ function delSub(cId, sId) {
     var data = (curSection === 'visit') ? visitNamibia : library;
     if(confirm("ELIMINARE SOTTOCATEGORIA?")) { var c = data.categories.find(x=>x.id===cId); c.subcategories = c.subcategories.filter(s=>s.id!==sId); save(); } 
 }
-function addItem(cId, sId) { 
+async function generateDescriptionAI(itemName, catName) {
+    // Usiamo una chiave univoca per questa app
+    let apiKey = localStorage.getItem('parks_geminiApiKey');
+    if (!apiKey || apiKey === 'null') {
+        apiKey = prompt("Inserisci la tua chiave API di Google Gemini per attivare l'IA:");
+        if (!apiKey) return "";
+        localStorage.setItem('parks_geminiApiKey', apiKey.trim());
+    }
+    
+    try {
+        // 1. Scopriamo dinamicamente quale modello è disponibile per questa chiave API
+        let targetModel = "gemini-1.5-flash";
+        const modelRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        const modelData = await modelRes.json();
+        
+        if (modelData.error) {
+            alert("La tua chiave API sembra non essere valida o non ha i permessi: " + modelData.error.message);
+            localStorage.removeItem('parks_geminiApiKey');
+            return "";
+        }
+
+        if (modelData.models) {
+            let foundModel = modelData.models.find(m => 
+                m.name.includes("gemini") && 
+                m.supportedGenerationMethods && 
+                m.supportedGenerationMethods.includes("generateContent")
+            );
+            if (foundModel) {
+                targetModel = foundModel.name.replace("models/", "");
+            } else {
+                alert("La tua chiave API è valida, ma il tuo account Google non ha accesso a nessun modello Gemini compatibile con la generazione di testo.");
+                return "";
+            }
+        }
+
+        const promptText = `Sei una guida turistica esperta per un'app di viaggi (specializzata in Africa/Namibia). Scrivi una descrizione turistica accattivante e interessante di massimo 500 parole per l'elemento "${itemName}" (categoria: ${catName}). Evita di formattare con asterischi o markdown eccessivo, usa semplicemente paragrafi puliti.`;
+        
+        // 2. Chiamiamo il modello corretto appena trovato
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: promptText }] }]
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            console.error("Gemini API Error:", result.error);
+            alert("Errore durante la generazione: " + (result.error.message || "Errore sconosciuto").toString());
+            return "";
+        }
+        
+        if (result.candidates && result.candidates[0] && result.candidates[0].content) {
+            return result.candidates[0].content.parts[0].text;
+        }
+    } catch (err) {
+        console.error("Errore connessione IA:", err);
+        alert("Impossibile connettersi all'IA. Controlla la tua connessione o eventuali adblocker. Errore: " + err.message);
+    }
+    return "";
+}
+
+async function addItem(cId, sId) { 
     var data = (curSection === 'visit') ? visitNamibia : library;
-    var n = prompt("Nome Elemento:"); if(n) { var c = data.categories.find(x=>x.id===cId); var s = c.subcategories.find(x=>x.id===sId); s.items.push({ id:'it_'+Date.now(), name:n.toUpperCase(), photos:[], description:'', facts:{}, lat:'', lng:'' }); save(); } 
+    var n = prompt("Nome Elemento:"); 
+    if(!n) return;
+    
+    var c = data.categories.find(x=>x.id===cId); 
+    var s = c.subcategories.find(x=>x.id===sId); 
+    
+    // UI di caricamento
+    let loadingDiv = document.createElement("div");
+    loadingDiv.style.position = "fixed";
+    loadingDiv.style.top = "50%";
+    loadingDiv.style.left = "50%";
+    loadingDiv.style.transform = "translate(-50%, -50%)";
+    loadingDiv.style.background = "rgba(0,0,0,0.9)";
+    loadingDiv.style.color = "var(--primary-green, #4caf50)";
+    loadingDiv.style.padding = "30px";
+    loadingDiv.style.borderRadius = "15px";
+    loadingDiv.style.zIndex = "9999";
+    loadingDiv.style.textAlign = "center";
+    loadingDiv.style.boxShadow = "0 10px 30px rgba(0,0,0,0.5)";
+    loadingDiv.style.border = "1px solid rgba(255,255,255,0.1)";
+    loadingDiv.innerHTML = `
+        <div style="margin-bottom:15px;"><i data-lucide="bot" style="width:40px; height:40px; opacity:0.8; animation: pulse 1.5s infinite;"></i></div>
+        <div style="font-weight:900; font-size:1.2rem; margin-bottom:5px;">L'Intelligenza Artificiale sta scrivendo...</div>
+        <div style="opacity:0.6; font-size:0.9rem;">Generazione testo per <b>${n.toUpperCase()}</b> in corso</div>
+    `;
+    document.body.appendChild(loadingDiv);
+    if(window.lucide) window.lucide.createIcons();
+    
+    let generatedDesc = await generateDescriptionAI(n, c.name);
+    
+    if(document.body.contains(loadingDiv)) {
+        document.body.removeChild(loadingDiv);
+    }
+    
+    s.items.push({ id:'it_'+Date.now(), name:n.toUpperCase(), photos:[], description: generatedDesc || '', facts:{}, lat:'', lng:'' }); 
+    save(); 
 }
 
 function editItem(cId, sId, iId) { 

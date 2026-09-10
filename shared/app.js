@@ -3,6 +3,19 @@
 window.PARKS_APP = {
     init: function(callback) {
         console.log("🚀 PARKS_APP: Avvio sistema...");
+        
+        // Iniezione globale per gestire le immagini rotte (Errore 402 Firebase o 404 Unsplash)
+        document.addEventListener('error', function(e) {
+            if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === 'img') {
+                if (!e.target.dataset.fallbackApplied) {
+                    e.target.dataset.fallbackApplied = 'true';
+                    const isSubdir = window.location.pathname.includes('/memory2/');
+                    const pathPrefix = isSubdir ? '../../' : '../';
+                    e.target.src = pathPrefix + 'assets/bg_homepage_1.jpg';
+                }
+            }
+        }, true);
+
         this.renderMobileNav(); // Inietta la navigazione mobile se necessario
 
         if (window.PARKS_DB) {

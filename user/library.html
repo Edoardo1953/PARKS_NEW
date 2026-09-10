@@ -236,7 +236,7 @@
                 
                 catsHtml += (library.categories || []).map(c => `
                     <div class="card" onclick="navToSub('${c.id}')">
-                        <img src="${c.image || 'https://images.unsplash.com/photo-1516422317518-3ee0f01192e2?q=20&w=300'}">
+                        <img src="${c.image || '../assets/bg_homepage_1.jpg'}" onerror="this.onerror=null; this.src='../assets/bg_homepage_1.jpg';">
                         <div class="card-label">${c.name}</div>
                     </div>
                 `).join('');
@@ -252,10 +252,10 @@
                 });
                 grid.innerHTML = allStarred.map(it => {
                     const firstImg = (it.photos || []).find(p => typeof p !== 'object' || (p.type !== 'application/pdf' && p.type !== 'video/mp4'));
-                    const thumb = firstImg ? (typeof firstImg === 'object' ? firstImg.url : firstImg) : 'https://images.unsplash.com/photo-1504173010663-125039294200?q=20&w=300';
+                    const thumb = firstImg ? (typeof firstImg === 'object' ? firstImg.url : firstImg) : '../assets/bg_homepage_1.jpg';
                     return `
                         <div class="card" onclick="openFicheFromAnywhere('${it.id}')">
-                            <img src="${thumb}">
+                            <img src="${thumb}" onerror="this.onerror=null; this.src='../assets/bg_homepage_1.jpg';">
                             <div class="card-label">${it.name} <i data-lucide="star" style="width:10px; fill:var(--accent); color:var(--accent); margin-left:5px;"></i></div>
                         </div>
                     `;
@@ -266,7 +266,7 @@
                 document.getElementById('main-title').innerText = cat.name;
                 grid.innerHTML = (cat.subcategories || []).map(s => `
                     <div class="card" onclick="navToItems('${cat.id}', '${s.id}')">
-                        <img src="${s.image || 'https://images.unsplash.com/photo-1581283307431-7bcce3b06076?q=20&w=300'}">
+                        <img src="${s.image || '../assets/bg_homepage_2.JPG'}" onerror="this.onerror=null; this.src='../assets/bg_homepage_2.JPG';">
                         <div class="card-label">${s.name}</div>
                     </div>
                 `).join('');
@@ -277,10 +277,10 @@
                 document.getElementById('main-title').innerText = sub.name;
                 grid.innerHTML = (sub.items || []).filter(it => it.isVisible !== false).map(it => {
                     var firstImg = (it.photos || []).find(p => typeof p !== 'object' || (p.type !== 'application/pdf' && p.type !== 'video/mp4'));
-                    var thumb = firstImg ? (typeof firstImg === 'object' ? firstImg.url : firstImg) : 'https://images.unsplash.com/photo-1504173010663-125039294200?q=20&w=300';
+                    var thumb = firstImg ? (typeof firstImg === 'object' ? firstImg.url : firstImg) : '../assets/bg_homepage_3.jpg';
                     return `
                         <div class="card" onclick="openFiche('${it.id}')">
-                            <img src="${thumb}">
+                            <img src="${thumb}" onerror="this.onerror=null; this.src='../assets/bg_homepage_3.jpg';">
                             <div class="card-label">${it.name}</div>
                         </div>
                     `;
@@ -633,8 +633,11 @@
 
         function updateSlider() {
             var src = itemImages[slideIdx] || "";
+            var fallback = '../assets/bg_homepage_4.JPG';
             document.getElementById('slider-img').src = src;
+            document.getElementById('slider-img').onerror = function() { this.onerror=null; this.src = fallback; };
             document.getElementById('lightbox-img').src = src;
+            document.getElementById('lightbox-img').onerror = function() { this.onerror=null; this.src = fallback; };
             
             // Hide slider if no images
             document.querySelector('.fiche-header').style.display = (itemImages.length > 0) ? 'block' : 'none';
