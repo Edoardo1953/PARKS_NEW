@@ -77,11 +77,19 @@ window.PARKS_APP.init(() => {
                 if(data) {
                     if(key === 'parks_itineraries') {
                         let raw = Array.isArray(data) ? data : Object.values(data);
+                        let needSave = false;
                         window.itinerariesList = raw.filter(x => x !== null).map(iti => {
                             if(iti && iti.waypoints && !Array.isArray(iti.waypoints)) iti.waypoints = Object.values(iti.waypoints);
                             if(iti && !iti.waypoints) iti.waypoints = [];
+                            if(iti && iti.title && iti.title.includes('Luderiutz')) {
+                                iti.title = iti.title.replace(/Luderiutz/g, 'Lüderitz');
+                                needSave = true;
+                            }
                             return iti;
                         });
+                        if(needSave) {
+                            window.PARKS_DB.save('parks_itineraries', window.itinerariesList);
+                        }
                     } else {
                         window[targetVar] = data;
                     }
