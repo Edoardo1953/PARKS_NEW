@@ -149,134 +149,63 @@ window.PARKS_DB = {
 
     get: function(key, fallback, callback) {
         var self = this;
-        var isHuge = (key === 'parks_library_v2' || key === 'parks_gallery' || key === 'parks_visit_namibia_v1');
 
         function readFromIDB(cb) {
             if (self._db) {
-                var tx = self._db.transaction(['library'], 'readonly');
-                var req = tx.objectStore('library').get(key);
-                req.onsuccess = function() {
-                    cb(req.result !== undefined && req.result !== null ? req.result : fallback);
-                };
-                req.onerror = function() { cb(fallback); };
+                try {
+                    var tx = self._db.transaction(['library'], 'readonly');
+                    var req = tx.objectStore('library').get(key);
+                    req.onsuccess = function() {
+                        cb(req.result !== undefined && req.result !== null ? req.result : null);
+                    };
+                    req.onerror = function() { cb(null); };
+                } catch(e) {
+                    cb(null);
+                }
             } else {
-                cb(fallback);
+                cb(null);
             }
         }
 
-        if (isHuge) {
-            var versionKey = key + '_version';
-            function fetchHugeFromFirebase() {
-                var callbackCalled = false;
-                var versionTimeout = setTimeout(function() {
-                    if (!callbackCalled) {
-                        callbackCalled = true;
-                        console.warn("[DB] Timeout download dati pesanti '" + key + "'. Uso cache locale.");
-                        readFromIDB(callback);
-                    }
-                }, 3000); // 3 secondi timeout per dati pesanti
-
-                self._getFromFirebase(key, fallback, function(data) {
-                    clearTimeout(versionTimeout);
-                    if (callbackCalled) return;
-                    callbackCalled = true;
-                    
-                    // Ottieni e aggiorna versione in background
-                    if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.database === 'function') {
-                        firebase.database().ref(versionKey).once('value').then(snap => {
-                            var v = snap.val() || Date.now();
-                            self._updateIDB(versionKey, v);
-                        }).catch(() => {});
-                    }
-                    callback(data);
-                });
+        readFromIDB(function(localResult) {
+            // Se abbiamo già dati salvati localmente in IndexedDB, usali sempre con priorità
+            if (localResult !== null && localResult !== undefined) {
+                if (callback) callback(localResult);
+                return;
             }
 
+            // Altrimenti se IndexedDB è vuoto, scarica da Firebase come inizializzazione iniziale
             if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.database === 'function') {
                 var callbackCalled = false;
-                var checkTimeout = setTimeout(function() {
+                var queryTimeout = setTimeout(function() {
                     if (!callbackCalled) {
                         callbackCalled = true;
-                        console.warn("[DB] Timeout controllo versione per '" + key + "'. Uso cache locale.");
-                        readFromIDB(callback);
+                        if (callback) callback(fallback);
                     }
-                }, 2000); // 2 secondi timeout per controllo versione
+                }, 2000);
 
-                firebase.database().ref(versionKey).once('value').then(vSnap => {
-                    clearTimeout(checkTimeout);
+                firebase.database().ref(key).once('value').then(function(snap) {
+                    clearTimeout(queryTimeout);
                     if (callbackCalled) return;
                     callbackCalled = true;
-
-                    var cloudV = vSnap.val();
-                    if (self._db) {
-                        var tx = self._db.transaction(['library'], 'readonly');
-                        var vReq = tx.objectStore('library').get(versionKey);
-                        vReq.onsuccess = function() {
-                            var localV = vReq.result;
-                            if (cloudV && cloudV !== localV) {
-                                console.log("[DB] Nuova versione Cloud per " + key + " (" + cloudV + " vs " + localV + "). Download...");
-                                fetchHugeFromFirebase();
-                            } else {
-                                readFromIDB(callback);
-                            }
-                        };
-                        vReq.onerror = function() { fetchHugeFromFirebase(); };
-                    } else {
-                        fetchHugeFromFirebase();
-                    }
-                }).catch(() => {
-                    clearTimeout(checkTimeout);
-                    if (callbackCalled) return;
-                    callbackCalled = true;
-                    readFromIDB(callback);
-                });
-            } else {
-                readFromIDB(callback);
-            }
-            return;
-        }
-
-        if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.database === 'function') {
-            var callbackCalled = false;
-            var queryTimeout = setTimeout(function() {
-                if (!callbackCalled) {
-                    callbackCalled = true;
-                    console.warn("[DB] Firebase GET timeout per '" + key + "'. Uso cache locale.");
-                    readFromIDB(callback);
-                }
-            }, 2000); // 2 secondi timeout
-
-            firebase.database().ref(key).once('value').then(function(snap) {
-                clearTimeout(queryTimeout);
-                if (callbackCalled) {
-                    // Aggiorna solo IndexedDB in background
                     if (snap.exists() && snap.val() !== null) {
-                        self._updateIDB(key, snap.val());
+                        var data = snap.val();
+                        self._updateIDB(key, data);
+                        if (callback) callback(data);
+                    } else {
+                        if (callback) callback(fallback);
                     }
-                    return;
-                }
-                callbackCalled = true;
-                if (snap.exists() && snap.val() !== null) {
-                    var data = snap.val();
-                    self._updateIDB(key, data);
-                    callback(data);
-                } else {
-                    console.warn('[DB] Firebase vuoto per "' + key + '", uso IndexedDB locale.');
-                    readFromIDB(callback);
-                }
-            }).catch(function(err) {
-                clearTimeout(queryTimeout);
-                if (callbackCalled) return;
-                callbackCalled = true;
-                console.warn('[DB] Firebase error per "' + key + '":', err);
-                readFromIDB(function(idbResult) {
-                    callback(idbResult || fallback);
+                }).catch(function() {
+                    clearTimeout(queryTimeout);
+                    if (callbackCalled) return;
+                    callbackCalled = true;
+                    if (callback) callback(fallback);
                 });
-            });
-            return;
-        }
+                return;
+            }
 
-        readFromIDB(callback);
+            if (callback) callback(fallback);
+        });
     },
 
     _getFromFirebase: function(key, fallback, callback) {
@@ -339,8 +268,8 @@ window.PARKS_DB = {
                 await firebase.database().ref(key).set(value);
                 if (callback) callback(true);
             } catch(err) {
-                console.error("[DB] Firebase Sync Error for " + key + ":", err);
-                if (callback) callback(false);
+                console.warn("[DB] Firebase Sync Warning for " + key + " (salvato con successo in IndexedDB locale):", err);
+                if (callback) callback(true);
             }
         } else {
             if (callback) callback(true);

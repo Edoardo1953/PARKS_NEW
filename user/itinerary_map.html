@@ -684,8 +684,9 @@
             setTimeout(() => {
                 if (!mapInstance) {
                     mapInstance = L.map('map-container').setView([activeItem.lat, activeItem.lng], 13);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; OpenStreetMap'
+                    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                        attribution: 'Tiles &copy; Esri',
+                        maxZoom: 19
                     }).addTo(mapInstance);
                 } else {
                     mapInstance.setView([activeItem.lat, activeItem.lng], 13);
@@ -802,8 +803,8 @@
                         setTimeout(() => { if(leafMap) leafMap.invalidateSize(); }, 1500);
 
                         // Carica i layer cartografici stradali/satellitari
-                        var roadLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            attribution: '&copy; OpenStreetMap contributors',
+                        var roadLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                            attribution: 'Tiles &copy; Esri',
                             maxZoom: 19
                         });
                         var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
